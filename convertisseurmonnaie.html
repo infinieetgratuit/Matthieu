@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Infinie & gratuit — Convertisseur de monnaie (à jour)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+      --border:rgba(95,123,255,0.18); --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(1100px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+    .container{max-width:1100px;margin:0 auto;padding:22px 14px 60px}
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+    .logo{width:26px;height:26px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff}
+    .badge{padding:6px 10px;font-size:12px;border-radius:999px;background:#0f1420;color:#9fb4ff;border:1px solid #1a2340}
+    .title{font-size:28px;margin:4px 0 2px}
+    .small{font-size:12px;color:var(--muted)}
+
+    .grid{display:grid;grid-template-columns:1fr 320px;gap:12px}
+    @media (max-width:980px){.grid{grid-template-columns:1fr}}
+
+    .panel{
+      background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+                 linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+      border:1px solid var(--border); border-radius:14px; padding:12px;
+      box-shadow:0 18px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+    }
+
+    .toolbar{display:grid;grid-template-columns:120px 1fr 1fr auto auto;gap:8px;align-items:center;margin-bottom:10px}
+    @media (max-width:680px){.toolbar{grid-template-columns:1fr;}}
+    .btn,.input,select{background:#0b0f1a;border:1px solid #1a2340;color:var(--text);border-radius:10px;padding:10px 12px;font-size:14px;outline:none}
+    .btn{cursor:pointer;font-weight:800}
+    .btn:hover,.input:focus,select:focus{ box-shadow:var(--ring); border-color:#3a63ff }
+    .btn.primary{background:linear-gradient(90deg,var(--accent1),var(--accent2));border:none;color:#fff}
+    .swap{display:inline-grid;place-items:center;width:42px;height:42px;border-radius:10px}
+
+    .big{font-size:28px;font-weight:800;letter-spacing:0.2px}
+    .muted{color:#9fb4ff}
+
+    .side .head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+    .chips{display:flex;flex-wrap:wrap;gap:6px}
+    .chip{border:1px solid #1a2340;background:#0b0f1a;color:#dfe8ff;border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer}
+    .chip.active{outline:2px solid rgba(47,227,255,.35)}
+
+    table{width:100%;border-collapse:separate;border-spacing:0 8px}
+    th{font-size:12px;color:#9fb4ff;text-align:left;padding:4px 8px}
+    td{padding:10px 8px;background:#0b0f1a;border:1px solid #1a2340}
+    tr td:first-child{border-radius:10px 0 0 10px}
+    tr td:last-child{border-radius:0 10px 10px 0;text-align:right}
+
+    .pill{font-size:11px;padding:3px 8px;border:1px solid #1a2340;border-radius:999px;color:#9fb4ff}
+    .row{display:flex;gap:8px;align-items:center}
+    .right{display:flex;gap:8px;align-items:center;justify-content:flex-end}
+    .status{font-size:12px;color:#9fb4ff;margin-top:6px}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand"><div class="logo">∞</div> Infinie & gratuit</div>
+      <span class="badge">Convertisseur de monnaie — Temps réel</span>
+    </div>
+
+    <h1 class="title">Convertisseur de monnaie</h1>
+    <p class="small">Compare toutes les principales devises (EUR, USD, VND, JPY, GBP, etc.). Taux mis à jour via une API publique fiable. Pas de clé, gratuit.</p>
+
+    <div class="grid">
+      <!-- CENTRE -->
+      <div class="panel">
+        <div class="toolbar">
+          <input id="amount" class="input" type="text" inputmode="decimal" value="100" aria-label="Montant"/>
+          <select id="from" class="input" aria-label="De (devise)"></select>
+          <select id="to" class="input" aria-label="Vers (devise)"></select>
+          <button id="swap" class="btn swap" title="Inverser">⇅</button>
+          <button id="convert" class="btn primary">Convertir</button>
+        </div>
+
+        <div class="panel" style="display:grid;gap:6px">
+          <div class="big" id="mainResult">—</div>
+          <div class="status" id="status">Chargement des taux…</div>
+        </div>
+
+        <div class="panel" style="margin-top:10px">
+          <div class="row" style="justify-content:space-between;margin-bottom:8px">
+            <div class="row">
+              <strong class="small" style="text-transform:uppercase;letter-spacing:.08em">Comparaison rapide</strong>
+              <span class="pill" id="baseLine">base: —</span>
+            </div>
+            <div class="right">
+              <input id="search" class="input" placeholder="Rechercher une devise (code ou nom)" style="width:240px"/>
+              <button id="addAllMajors" class="btn">+ Majors</button>
+              <button id="clearList" class="btn">Vider</button>
+            </div>
+          </div>
+          <div id="chips" class="chips" style="margin-bottom:10px"></div>
+          <div style="overflow:auto">
+            <table id="tbl">
+              <thead>
+                <tr>
+                  <th>Devise</th>
+                  <th>Taux 1 <span id="baseCodeTh">—</span></th>
+                  <th style="text-align:right">Montant converti</th>
+                </tr>
+              </thead>
+              <tbody id="tbody"></tbody>
+            </table>
+          </div>
+          <div class="status" id="footnote">Source: open.er-api.com • Prochain refresh auto dans ~60 min.</div>
+        </div>
+      </div>
+
+      <!-- DROITE -->
+      <div class="panel side">
+        <div class="head">
+          <div class="small">Raccourcis</div>
+        </div>
+        <div class="chips" id="quick">
+          <!-- Quelques favoris d'emblée -->
+        </div>
+        <div class="status" id="meta">—</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  const API_BASE = 'https://open.er-api.com/v6/latest/'; // CORS OK, gratuit
+  const API_CODES = 'https://open.er-api.com/v6/codes';
+
+  const amountEl = document.getElementById('amount');
+  const fromEl   = document.getElementById('from');
+  const toEl     = document.getElementById('to');
+  const swapEl   = document.getElementById('swap');
+  const convertEl= document.getElementById('convert');
+  const mainResult = document.getElementById('mainResult');
+  const statusEl = document.getElementById('status');
+  const baseLine = document.getElementById('baseLine');
+  const baseCodeTh = document.getElementById('baseCodeTh');
+  const chipsEl = document.getElementById('chips');
+  const searchEl = document.getElementById('search');
+  const addAllMajorsEl = document.getElementById('addAllMajors');
+  const clearListEl = document.getElementById('clearList');
+  const tbody = document.getElementById('tbody');
+  const quick = document.getElementById('quick');
+  const meta = document.getElementById('meta');
+
+  // Liste de devises "majors" pour les chips rapides
+  const MAJORS = ['USD','EUR','GBP','JPY','CHF','CAD','AUD','NZD','CNY','HKD','SGD','SEK','NOK','DKK','PLN','CZK','HUF','RON','TRY','ZAR','INR','KRW','TWD','THB','IDR','MYR','PHP','MXN','BRL','CLP','COP','PEN','AED','SAR','ILS','VND'];
+
+  // État
+  let codes = {};        // { "EUR": "Euro", ... }
+  let rates = {};        // pour la base courante
+  let base = 'EUR';
+  let toList = new Set(['USD','GBP','VND','JPY','CNY']);
+  let lastMeta = null;   // {last,next}
+
+  function fmtMoney(val, ccy){
+    try{ return new Intl.NumberFormat(navigator.language || 'fr-FR', {style:'currency', currency:ccy}).format(val); }
+    catch(e){ return val.toFixed(2) + ' ' + ccy; }
+  }
+  function fmtNum(val, max=6){
+    return new Intl.NumberFormat(navigator.language || 'fr-FR', {maximumFractionDigits:max}).format(val);
+  }
+  function parseAmount(s){
+    if(typeof s === 'number') return s;
+    if(!s) return 0;
+    s = (''+s).replace(/\s/g,'').replace(',','.');
+    const v = parseFloat(s);
+    return isNaN(v) ? 0 : v;
+  }
+
+  async function fetchJSON(url){
+    const r = await fetch(url, { cache:'no-store' });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    return await r.json();
+  }
+
+  async function loadCodes(){
+    try{
+      const data = await fetchJSON(API_CODES);
+      // data.supported_codes = [["AED","United Arab Emirates Dirham"], ...]
+      codes = Object.fromEntries(data.supported_codes);
+    }catch(e){
+      // Fallback minimal si l'API codes est KO
+      codes = {
+        EUR:'Euro', USD:'US Dollar', VND:'Vietnamese Dong', GBP:'Pound Sterling', JPY:'Japanese Yen',
+        CNY:'Chinese Yuan', CHF:'Swiss Franc', CAD:'Canadian Dollar', AUD:'Australian Dollar', NZD:'New Zealand Dollar'
+      };
+    }
+  }
+
+  function cacheKey(b){ return 'fx_'+b; }
+  function saveCache(b, payload){ localStorage.setItem(cacheKey(b), JSON.stringify(payload)); }
+  function loadCache(b){ try{ return JSON.parse(localStorage.getItem(cacheKey(b))||'null'); }catch(e){ return null; } }
+  function cacheFresh(x){ if(!x||!x.time_next_update_unix) return false; const now=Date.now()/1000; return now < (x.time_next_update_unix - 60); }
+
+  async function loadRates(newBase){
+    base = newBase;
+    statusEl.textContent = 'Chargement des taux pour '+base+'…';
+    let data = loadCache(base);
+    if(!cacheFresh(data)){
+      data = await fetchJSON(API_BASE + encodeURIComponent(base));
+      saveCache(base, data);
+    }
+    if(data.result !== 'success') throw new Error('API error');
+    rates = data.rates; // { USD: 1.08, ... }
+    lastMeta = {
+      last: new Date(data.time_last_update_utc),
+      next: new Date(data.time_next_update_utc)
+    };
+    baseLine.textContent = 'base: '+base;
+    baseCodeTh.textContent = base;
+    statusEl.textContent = 'Dernière mise à jour: '+ lastMeta.last.toLocaleString();
+    meta.textContent = `Base ${base} • Dernière MAJ: ${lastMeta.last.toLocaleString()} • Prochaine: ${lastMeta.next.toLocaleString()}`;
+    populateSelects();
+    renderQuick();
+    renderTable();
+    renderMain();
+  }
+
+  function populateSelects(){
+    // Construire listes triées par nom (quand dispo)
+    const allCodes = Object.keys(rates);
+    if(!allCodes.includes(base)) allCodes.push(base);
+    const list = allCodes.sort((a,b)=> (codes[a]||a).localeCompare(codes[b]||b));
+    const mk = (ccy)=> `<option value="${ccy}">${ccy} — ${(codes[ccy]||'')}</option>`;
+    fromEl.innerHTML = list.map(mk).join('');
+    toEl.innerHTML = list.map(mk).join('');
+    fromEl.value = base;
+    if(!list.includes(toEl.value)) toEl.value = 'USD';
+  }
+
+  function convert(amount, from, to){
+    if(from === to) return amount;
+    if(from !== base){
+      // Convertir amount FROM→BASE, puis BASE→TO
+      // amount_in_base = amount / rate[from]
+      const rFrom = rates[from];
+      if(!rFrom) return NaN;
+      const inBase = amount / rFrom;
+      const rTo = rates[to];
+      if(!rTo) return NaN;
+      return inBase * rTo;
+    } else {
+      const rTo = rates[to];
+      if(!rTo) return NaN;
+      return amount * rTo;
+    }
+  }
+
+  function renderMain(){
+    const amt = parseAmount(amountEl.value);
+    const from = fromEl.value; const to = toEl.value;
+    // S'assurer que we can convert even if base != from: we have cross calc
+    const oneRate = convert(1, from, to);
+    const result = convert(amt, from, to);
+    if(!isFinite(result)){
+      mainResult.textContent = '—';
+      return;
+    }
+    const line1 = `1 ${from} = ${fmtNum(oneRate, 6)} ${to}`;
+    const line2 = `${fmtMoney(amt, from)} ≈ ${fmtMoney(result, to)}`;
+    mainResult.innerHTML = `${line1}<br><span class="muted">${line2}</span>`;
+  }
+
+  function renderTable(){
+    const amt = parseAmount(amountEl.value);
+    const from = fromEl.value;
+    const rows = [];
+    for(const ccy of toList){
+      if(!rates[ccy] && ccy!==base) continue;
+      const one = convert(1, from, ccy);
+      const val = convert(amt, from, ccy);
+      rows.push({ ccy, one, val });
+    }
+    rows.sort((a,b)=> (codes[a.ccy]||a.ccy).localeCompare(codes[b.ccy]||b.ccy));
+    tbody.innerHTML = rows.map(r=>
+      `<tr>
+        <td class="row"><strong>${r.ccy}</strong> <span class="muted">${codes[r.ccy]||''}</span></td>
+        <td>${fmtNum(r.one, 6)}</td>
+        <td>${fmtMoney(r.val, r.ccy)}</td>
+      </tr>`
+    ).join('');
+  }
+
+  function renderChips(){
+    chipsEl.innerHTML = Array.from(toList).map(ccy=>
+      `<span class="chip active" data-ccy="${ccy}">${ccy}</span>`
+    ).join('');
+  }
+
+  function renderQuick(){
+    quick.innerHTML = MAJORS.map(ccy=> `<span class="chip" data-ccy="${ccy}">${ccy}</span>`).join('');
+  }
+
+  // --- Events ---
+  amountEl.addEventListener('input', ()=>{ renderMain(); renderTable(); });
+  fromEl.addEventListener('change', async ()=>{
+    // Si l'utilisateur choisit une autre base, on recharge les taux pour cette base pour plus de précision
+    await loadRates(fromEl.value);
+    renderMain(); renderTable();
+  });
+  toEl.addEventListener('change', ()=>{ renderMain(); });
+  swapEl.addEventListener('click', async ()=>{
+    const a = fromEl.value; const b = toEl.value; toEl.value = a; fromEl.value = b;
+    await loadRates(fromEl.value);
+    renderMain(); renderTable();
+  });
+  convertEl.addEventListener('click', ()=>{ renderMain(); renderTable(); });
+
+  chipsEl.addEventListener('click', (e)=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    const code = c.dataset.ccy;
+    toList.delete(code); renderChips(); renderTable();
+  });
+  quick.addEventListener('click', (e)=>{
+    const c = e.target.closest('.chip'); if(!c) return;
+    const code = c.dataset.ccy;
+    if(code===fromEl.value) return;
+    toList.add(code); renderChips(); renderTable();
+  });
+  addAllMajorsEl.addEventListener('click', ()=>{
+    MAJORS.forEach(ccy=>{ if(ccy!==fromEl.value) toList.add(ccy); });
+    renderChips(); renderTable();
+  });
+  clearListEl.addEventListener('click', ()=>{ toList.clear(); renderChips(); renderTable(); });
+  searchEl.addEventListener('input', ()=>{
+    const q = searchEl.value.trim().toLowerCase();
+    if(!q){ renderQuick(); return; }
+    const list = Object.keys(codes).filter(k=> k.toLowerCase().includes(q) || (codes[k]||'').toLowerCase().includes(q));
+    // limiter à 20
+    quick.innerHTML = list.slice(0,20).map(ccy=> `<span class="chip" data-ccy="${ccy}">${ccy}</span>`).join('');
+  });
+
+  // Init
+  (async function init(){
+    try{
+      await loadCodes();
+      await loadRates(base);
+      renderChips();
+      renderMain();
+      renderTable();
+    }catch(e){
+      statusEl.textContent = 'Impossible de charger les taux (réseau/CORS). Réessaie plus tard.';
+      console.error(e);
+    }
+  })();
+})();
+</script>
+</body>
+</html>

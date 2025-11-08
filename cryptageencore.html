@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — PDF Locker (mot de passe)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ========= THEME : Rose sombre / Néon magenta ========= */
+    :root{
+      --bg:#0A0609;                 /* noir bordeaux profond */
+      --panel:#120912;              /* panneau principal */
+      --panel-2:#0E0710;            /* variante plus sombre */
+      --text:#F6EAF1;               /* texte crème rosé */
+      --muted:#C9AFC0;              /* secondaire */
+      --border:rgba(255,77,164,.20);/* liseré rose néon */
+      --accent1:#FF4DA4;            /* hot pink */
+      --accent2:#B3005E;            /* magenta dense */
+      --accent3:#FF7AC8;            /* rose clair */
+      --ring:0 0 0 2px rgba(255,77,164,.32), 0 0 0 8px rgba(255,77,164,.06);
+      --shadow-lg:0 28px 90px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
+      --radius:16px;
+    }
+
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text);
+      font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+      background:
+        radial-gradient(1200px 600px at 18% 12%, rgba(255,77,164,.08), transparent 60%),
+        radial-gradient(1000px 700px at 84% 86%, rgba(179,0,94,.10), transparent 55%),
+        var(--bg);
+      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      overflow-x:hidden; position:relative;
+    }
+    /* Grille + grain subtils façon “studio” */
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        repeating-linear-gradient(0deg, rgba(255,77,164,.08) 0px, rgba(255,77,164,.08) 1px, transparent 1px, transparent 24px),
+        repeating-linear-gradient(90deg, rgba(255,77,164,.06) 0px, rgba(255,77,164,.06) 1px, transparent 1px, transparent 24px);
+      opacity:.32;
+      -webkit-mask-image: radial-gradient(950px 650px at 20% 20%, rgba(0,0,0,.9), transparent 70%),
+                          radial-gradient(900px 600px at 80% 80%, rgba(0,0,0,.8), transparent 65%);
+              mask-image: radial-gradient(950px 650px at 20% 20%, rgba(0,0,0,.9), transparent 70%),
+                          radial-gradient(900px 600px at 80% 80%, rgba(0,0,0,.8), transparent 65%);
+    }
+    body::after{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.9' numOctaves='2' stitchTiles='stitch' type='fractalNoise'/%3E%3CfeColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+      mix-blend-mode:soft-light; opacity:.35;
+    }
+
+    *,*:before,*:after{box-sizing:border-box}
+    :focus-visible{outline:none; box-shadow:var(--ring)}
+    ::selection{background:rgba(255,77,164,.22)}
+
+    /* ====== Header ====== */
+    .header{
+      position:sticky; top:0; z-index:10;
+      backdrop-filter:saturate(110%) blur(8px);
+      background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.00));
+      border-bottom:1px solid rgba(255,77,164,.14);
+    }
+    .wrap{max-width:1200px; margin:0 auto; padding:16px 18px}
+    .top{display:flex; align-items:center; gap:12px}
+    .brand{display:flex; align-items:center; gap:10px; font-weight:800; letter-spacing:.2px}
+    .logo{
+      display:inline-grid; place-items:center; width:32px; height:32px; border-radius:999px; color:#2A041B; font-weight:800;
+      background:radial-gradient(circle at 35% 30%, var(--accent1), var(--accent2));
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.10), 0 0 0 6px rgba(255,77,164,.12), 0 12px 28px rgba(0,0,0,.45);
+      text-shadow:0 1px 0 rgba(255,255,255,.4);
+    }
+    .badge{
+      margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:6px 10px;
+      border-radius:999px; font-size:12px; color:#F5CCE2;
+      background:linear-gradient( to bottom right, rgba(255,77,164,.16), rgba(0,0,0,.0) );
+      border:1px solid rgba(255,77,164,.28);
+    }
+    .badge .dot{width:8px; height:8px; border-radius:50%; background:linear-gradient(90deg, var(--accent2), var(--accent1)); box-shadow:0 0 8px rgba(255,77,164,.6)}
+
+    /* ====== Layout : Rail (gauche) / Stage (centre) / Side (droite) ====== */
+    .shell{max-width:1200px; margin:0 auto; padding:28px 18px 120px; position:relative; z-index:1}
+    .title{font-size:28px; line-height:1.15; margin:6px 0 18px; font-weight:800; letter-spacing:.2px}
+
+    .layout{
+      display:grid; grid-template-columns:220px 1fr 320px; gap:16px;
+    }
+    @media (max-width:1140px){ .layout{grid-template-columns:180px 1fr 300px} }
+    @media (max-width:980px){  .layout{grid-template-columns:1fr; gap:14px} }
+
+    /* ====== Rail d'étapes ====== */
+    .rail{
+      border:1px solid var(--border); border-radius:var(--radius);
+      background:
+        linear-gradient(160deg, rgba(255,77,164,.07), transparent),
+        var(--panel-2);
+      box-shadow:var(--shadow-lg);
+      position:sticky; top:84px; height:fit-content;
+      padding:14px 12px;
+    }
+    .rail h3{margin:4px 8px 10px; font-size:12px; color:#EEC2D7; letter-spacing:.6px; text-transform:uppercase}
+    .stepper{display:flex; flex-direction:column; gap:10px}
+    .step{
+      display:flex; align-items:center; gap:10px; padding:10px 10px; border-radius:12px; cursor:default;
+      border:1px solid rgba(255,77,164,.18);
+      background:linear-gradient( to bottom right, rgba(255,77,164,.06), rgba(0,0,0,.0) );
+      opacity:.7; transition:opacity .2s ease, border-color .2s ease;
+    }
+    .step .dot{width:10px; height:10px; border-radius:50%; background:linear-gradient(90deg,var(--accent2),var(--accent1)); box-shadow:0 0 10px rgba(255,77,164,.65)}
+    .step span{font-weight:700}
+    .step.is-active{opacity:1; border-color:rgba(255,77,164,.34)}
+    .step.is-done{opacity:.9}
+
+    /* ====== Stage (centre) : Drop / Hero ====== */
+    .stage{
+      border:1px solid var(--border); border-radius:var(--radius);
+      background:
+        radial-gradient(600px 300px at 20% 15%, rgba(255,77,164,.08), transparent 55%),
+        var(--panel);
+      box-shadow:var(--shadow-lg);
+      overflow:hidden;
+    }
+    .stage-head{
+      display:flex; align-items:center; justify-content:space-between;
+      padding:14px 16px; border-bottom:1px solid rgba(255,77,164,.14);
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0));
+    }
+    .stage-head .label{font-weight:800}
+    .stage-body{padding:16px}
+    .drop{
+      position:relative; display:grid; place-items:center; height:460px; border-radius:14px;
+      border:1.5px dashed rgba(255,77,164,.30);
+      background:
+        radial-gradient(800px 340px at 25% 20%, rgba(255,122,200,.10), transparent 55%),
+        #0B070A;
+      color:#F8D9E8; cursor:pointer;
+      transition:transform .2s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      overflow:hidden;
+      isolation:isolate;
+    }
+    .drop::before{
+      content:""; position:absolute; inset:-35%;
+      background:conic-gradient(from 0deg, rgba(255,77,164,.10), transparent 40%, rgba(255,77,164,.05));
+      filter:blur(20px); opacity:.35; pointer-events:none; animation:spin 12s linear infinite;
+    }
+    .drop::after{
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background:
+        radial-gradient(400px 200px at 50% 110%, rgba(255,77,164,.18), transparent 60%),
+        radial-gradient(380px 200px at -10% -10%, rgba(255,77,164,.08), transparent 60%);
+      mix-blend-mode:screen; opacity:.4;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .drop input{position:absolute; inset:0; opacity:0; cursor:pointer}
+    .drop:hover{border-color:rgba(255,77,164,.55); box-shadow:0 0 0 1px rgba(255,77,164,.15), 0 20px 60px rgba(0,0,0,.45)}
+    .drop.is-drag{transform:scale(1.01); box-shadow:0 0 0 2px rgba(255,77,164,.38), 0 28px 80px rgba(0,0,0,.55)}
+    .hint{text-align:center; font-weight:800; letter-spacing:.2px}
+    .hint small{display:block; color:var(--muted); font-weight:600; opacity:.95}
+
+    /* ====== Side (droite) : Info, statut, mot de passe ====== */
+    .side{
+      border:1px solid var(--border); border-radius:var(--radius);
+      background:
+        linear-gradient(160deg, rgba(255,77,164,.07), transparent),
+        var(--panel-2);
+      box-shadow:var(--shadow-lg);
+      display:flex; flex-direction:column; min-height:0;
+    }
+    .side-head{padding:14px 16px; border-bottom:1px solid rgba(255,77,164,.14)}
+    .side-body{padding:14px 16px; display:flex; flex-direction:column; gap:12px; min-height:0}
+
+    .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .grow{flex:1 1 auto}
+    .meta{display:flex; align-items:center; gap:10px; color:var(--muted); font-size:12px}
+    .name{font-weight:800; color:var(--text)}
+    #fileRow{display:none}
+
+    .pill{
+      display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px;
+      background:linear-gradient( to bottom right, rgba(255,77,164,.10), rgba(0,0,0,.0) );
+      border:1px solid rgba(255,77,164,.24); font-size:12px;
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+    }
+    .dot{width:8px; height:8px; border-radius:50%}
+    .ok{background:linear-gradient(90deg, var(--accent2), var(--accent1)); box-shadow:0 0 10px rgba(255,77,164,.7)}
+    .err{background:#9b2c2c}
+
+    .pass{
+      display:flex; align-items:center; gap:10px; justify-content:space-between;
+      border:1px solid rgba(255,77,164,.26);
+      background:linear-gradient(180deg, rgba(255,77,164,.08), rgba(0,0,0,.0));
+      border-radius:14px; padding:10px 12px
+    }
+    .pass b{font-size:18px; letter-spacing:1px; color:#FFE9F4}
+    .hide{display:none}
+
+    /* ====== Dock d’actions (flottant bas) ====== */
+    .dock{
+      position:fixed; left:50%; transform:translateX(-50%);
+      bottom:20px; z-index:20;
+      display:flex; align-items:center; gap:10px;
+      background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)), var(--panel-2);
+      border:1px solid rgba(255,77,164,.28);
+      border-radius:14px; padding:10px 12px;
+      box-shadow:0 24px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.03);
+      backdrop-filter:blur(8px) saturate(110%);
+    }
+    @media (max-width:520px){ .dock{right:12px; left:12px; transform:none} }
+
+    .btn{
+      appearance:none; background:#120812; border:1px solid rgba(255,77,164,.22); color:var(--text);
+      border-radius:12px; padding:12px 14px; font-weight:800; cursor:pointer;
+      transition:transform .15s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease, opacity .2s ease;
+    }
+    .btn:hover{box-shadow:0 0 0 1px rgba(255,77,164,.22), 0 14px 36px rgba(0,0,0,.5)}
+    .btn:active{transform:translateY(1px)}
+    .btn.primary{
+      background:linear-gradient(90deg, var(--accent2), var(--accent1));
+      border:none; color:#2A041B; text-shadow:0 1px 0 rgba(255,255,255,.35);
+      box-shadow:0 0 0 0 rgba(255,77,164,0), 0 18px 50px rgba(0,0,0,.55);
+    }
+    .btn.primary:hover{box-shadow:0 0 0 6px rgba(255,77,164,.10), 0 22px 64px rgba(0,0,0,.6)}
+    .btn.ghost{background:transparent; border-color:rgba(255,77,164,.26); color:var(--muted)}
+    .btn.ghost:hover{color:var(--text)}
+
+    /* Loader */
+    .spin{
+      --d:18px; width:var(--d); height:var(--d); border-radius:50%;
+      border:2px solid rgba(255,255,255,.14); border-right-color:rgba(255,77,164,.95);
+      animation:sp 1s linear infinite; filter:drop-shadow(0 0 6px rgba(255,77,164,.45));
+    }
+    @keyframes sp{to{transform:rotate(360deg)}}
+  </style>
+  <!-- qpdf-wasm -->
+  <script src="https://cdn.jsdelivr.net/npm/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.js"></script>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="wrap top">
+      <div class="brand">
+        <div class="logo" aria-hidden>∞</div>
+        <span>Infinie & gratuit</span>
+      </div>
+      <div class="badge"><span class="dot"></span><span><strong>Protection PDF</strong> — 100% local</span></div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="shell">
+    <h1 class="title">PDF Locker — Mot de passe</h1>
+
+    <div class="layout">
+      <!-- RAIL GAUCHE -->
+      <nav class="rail">
+        <h3>Processus</h3>
+        <div class="stepper" id="stepper">
+          <div class="step is-active" data-step="1"><div class="dot"></div><span>Importer</span></div>
+          <div class="step" data-step="2"><div class="dot"></div><span>Chiffrer</span></div>
+          <div class="step" data-step="3"><div class="dot"></div><span>Exporter</span></div>
+        </div>
+      </nav>
+
+      <!-- STAGE CENTRE : DROP -->
+      <section class="stage">
+        <div class="stage-head">
+          <div class="label">1. Déposez votre PDF</div>
+          <div class="meta">Chiffrement AES-256 en local</div>
+        </div>
+        <div class="stage-body">
+          <div class="drop" id="drop" role="button" tabindex="0" aria-label="Déposez un PDF ou cliquez pour importer">
+            <input id="file" type="file" accept="application/pdf" aria-label="Importer un PDF">
+            <div class="hint">
+              📄 Glisser-déposer / Cliquer pour sélectionner
+              <small>Vos fichiers ne quittent jamais votre appareil.</small>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- SIDE DROITE : INFOS / MOT DE PASSE -->
+      <aside class="side">
+        <div class="side-head"><strong>Détails & Statut</strong></div>
+        <div class="side-body">
+          <!-- Fichier sélectionné -->
+          <div class="row" id="fileRow">
+            <div class="meta grow">
+              <span class="name" id="fname">document.pdf</span>
+              <span>•</span>
+              <span id="fsize">0 Mo</span>
+            </div>
+            <div id="statusPill" class="pill"><span class="dot ok"></span><span id="statusTxt">Prêt</span></div>
+          </div>
+
+          <!-- Mot de passe -->
+          <div class="pass hide" id="passBox">
+            <span class="meta">Mot de passe</span>
+            <b id="passTxt">—</b>
+            <button class="btn" id="copyBtn" aria-label="Copier le mot de passe">Copier</button>
+          </div>
+
+          <!-- Note -->
+          <div class="meta" style="justify-content:space-between">
+            <span>Export automatique du PDF protégé.</span>
+            <span id="tip" class="hide">Téléchargement automatique activé.</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+  <!-- DOCK D’ACTIONS -->
+  <div class="dock">
+    <button class="btn primary" id="lockBtn">Crypter (local)</button>
+    <button class="btn ghost" id="resetBtn">Réinitialiser</button>
+    <div class="row" id="loader" style="margin-left:8px; display:none"><div class="spin" title="Chargement"></div></div>
+  </div>
+
+  <script>
+    const $ = (s, r=document)=> r.querySelector(s);
+
+    // UI refs
+    const drop = $('#drop');
+    const fileInput = $('#file');
+    const fileRow = $('#fileRow');
+    const fname = $('#fname');
+    const fsize = $('#fsize');
+    const statusTxt = $('#statusTxt');
+    const statusPill = $('#statusPill');
+    const loader = $('#loader');
+    const lockBtn = $('#lockBtn');
+    const resetBtn = $('#resetBtn');
+    const passBox = $('#passBox');
+    const passTxt = $('#passTxt');
+    const copyBtn = $('#copyBtn');
+    const tip = $('#tip');
+    const stepper = $('#stepper');
+
+    let currentFile = null;
+    let qpdfInstance = null;
+    const WASM_URL = 'https://cdn.jsdelivr.net/npm/@neslinesli93/qpdf-wasm@0.3.0/dist/qpdf.wasm';
+
+    function setStep(n){
+      const steps = stepper?.querySelectorAll('.step') || [];
+      steps.forEach(el=>{
+        const s = Number(el.dataset.step||0);
+        el.classList.remove('is-active','is-done');
+        if(s < n) el.classList.add('is-done');
+        if(s === n) el.classList.add('is-active');
+      });
+    }
+
+    // Robust PDF check
+    function isPdf(file){
+      const nameOk = /\.pdf$/i.test(file?.name || '');
+      const mime = (file?.type || '').toLowerCase();
+      const mimeOk = mime === 'application/pdf' || mime === 'application/x-pdf' || mime.startsWith('application/pdf');
+      return mimeOk || nameOk;
+    }
+
+    // Drag & Drop + clavier
+    const prevent = e => { e.preventDefault(); e.stopPropagation(); };
+    ['dragenter','dragover'].forEach(ev=> drop.addEventListener(ev, e=>{ prevent(e); drop.classList.add('is-drag'); }));
+    ['dragleave','drop'].forEach(ev=> drop.addEventListener(ev, e=>{ prevent(e); drop.classList.remove('is-drag'); }));
+
+    drop.addEventListener('drop', e => {
+      const f = e.dataTransfer?.files?.[0];
+      if(f) onFile(f);
+      fileInput.value = '';
+    });
+
+    drop.addEventListener('click', ()=> fileInput.click());
+    drop.addEventListener('keydown', e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileInput.click(); } });
+
+    fileInput.addEventListener('change', e=>{
+      const f = e.target.files?.[0];
+      if(f) onFile(f);
+      e.target.value = '';
+    });
+
+    function onFile(file){
+      if(!isPdf(file)){ alert('Merci d’importer un fichier PDF.'); return; }
+      currentFile = file;
+      fname.textContent = file.name;
+      fsize.textContent = (file.size/1024/1024).toFixed(2) + ' Mo';
+      fileRow.style.display = 'flex';
+      passBox.classList.add('hide');
+      tip.classList.add('hide');
+      setStatus('PDF chargé', true);
+      setStep(2);
+    }
+
+    resetBtn.addEventListener('click', ()=>{
+      currentFile = null; fileInput.value = '';
+      fileRow.style.display = 'none';
+      passBox.classList.add('hide');
+      tip.classList.add('hide');
+      setStatus('Prêt', true);
+      setStep(1);
+    });
+
+    copyBtn.addEventListener('click', async()=>{
+      try{
+        await navigator.clipboard.writeText(passTxt.textContent);
+        copyBtn.textContent = 'Copié';
+        setTimeout(()=> copyBtn.textContent='Copier', 1200);
+      }catch{}
+    });
+
+    lockBtn.addEventListener('click', async()=>{
+      if(!currentFile){ alert('Importe un PDF d’abord.'); return; }
+      if(!qpdfInstance){ await loadQpdf(); }
+
+      await busy('Analyse du PDF…', 400);
+      await busy('Chiffrement AES-256…', 700);
+
+      const password = genPassword();
+      try{
+        const outBlob = await encryptPdfWithQpdf(currentFile, password);
+        passTxt.textContent = password;
+        passBox.classList.remove('hide');
+        autoDownload(outBlob, 'secured_' + (currentFile.name.replace(/\.pdf$/i,'') || 'document') + '.pdf');
+        tip.classList.remove('hide');
+        setStatus('PDF protégé', true);
+        setStep(3);
+      }catch(err){
+        console.error(err);
+        setStatus('Erreur', false);
+        alert('Échec du chiffrement du PDF.');
+      }
+    });
+
+    function setStatus(text, ok){
+      statusTxt.textContent = text;
+      const dot = statusPill.querySelector('.dot');
+      if(dot) dot.className = 'dot ' + (ok ? 'ok' : 'err');
+    }
+
+    async function busy(text, ms){
+      setStatus(text, true);
+      loader.style.display = 'flex';
+      await new Promise(r=> setTimeout(r, ms));
+      loader.style.display = 'none';
+    }
+
+    async function loadQpdf(){
+      setStatus('Chargement du module…', true);
+      loader.style.display = 'flex';
+      qpdfInstance = await window.Module({
+        locateFile: () => WASM_URL,
+        noInitialRun: true,
+        preRun: [ m => { try{ m.FS.mkdir('/in'); m.FS.mkdir('/out'); }catch{} } ],
+      });
+      loader.style.display = 'none';
+      setStatus('Module prêt', true);
+    }
+
+    async function encryptPdfWithQpdf(file, password){
+      const buf = new Uint8Array(await file.arrayBuffer());
+      const inPath = '/in/doc.pdf';
+      const outPath = '/out/locked.pdf';
+      qpdfInstance.FS.writeFile(inPath, buf);
+      const args = ['--encrypt', password, password, '256', '--', inPath, outPath];
+      qpdfInstance.callMain(args);
+      const out = qpdfInstance.FS.readFile(outPath);
+      try{ qpdfInstance.FS.unlink(inPath); qpdfInstance.FS.unlink(outPath); }catch{}
+      return new Blob([out], {type:'application/pdf'});
+    }
+
+    function genPassword(){
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let s=''; for(let i=0;i<10;i++) s += chars[(Math.random()*chars.length)|0];
+      return s.slice(0,4)+'-'+s.slice(4,8)+'-'+s.slice(8);
+    }
+
+    function autoDownload(blob, filename){
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+      setTimeout(()=> URL.revokeObjectURL(a.href), 800);
+    }
+
+    // Init
+    setStep(1);
+  </script>
+</body>
+</html>

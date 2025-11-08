@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Infinie & gratuit — Mind Map (100% local)</title>
+<meta name="color-scheme" content="dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+
+<style>
+:root{
+  --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+  --border:rgba(95,123,255,0.18); --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:
+    radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+    radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+    var(--bg);
+  color:var(--text); overflow:hidden;
+}
+
+/* Top bar */
+.nav{
+  position:fixed; inset:16px 16px auto 16px; z-index:30;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 12px; background:
+    linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+    linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+  border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+.logo{width:28px;height:28px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800}
+.badge{padding:6px 10px;font-size:12px;border-radius:999px;background:#0f1420;color:#9fb4ff;border:1px solid #1a2340}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap}
+.btn{
+  background:#0b0f1a;border:1px solid #1a2340;color:var(--text);
+  border-radius:10px;padding:10px 12px;font-size:13px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:8px
+}
+.btn:hover{ box-shadow:var(--ring); border-color:#3a63ff }
+.btn.primary{ background: linear-gradient(90deg, var(--accent1), var(--accent2)); border:none; color:white }
+.btn.ghost{ background:transparent;border-color:var(--border) }
+.sep{width:1px;height:28px;background:#1a2340;margin:0 4px}
+
+/* Sidebar */
+.sidebar{
+  position:fixed; left:16px; bottom:16px; top:76px; width:300px; z-index:20;
+  background:
+    linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+    linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+  border:1px solid var(--border); border-radius:14px; padding:12px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.sidebar h4{margin:4px 6px 6px;font-size:12px;color:var(--muted);font-weight:600}
+.info{font-size:12px;color:var(--muted);line-height:1.4;padding:6px 8px;background:#0b0f1a;border:1px solid #1a2340;border-radius:10px}
+
+/* Workspace */
+.workspace{
+  position:fixed; inset:76px 16px 16px 332px; border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+  background:radial-gradient(700px 500px at 60% 40%, rgba(47,227,255,0.06), transparent 60%), #0a0f18;
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.view{position:absolute; inset:0; cursor:grab}
+.view.panning{cursor:grabbing}
+
+/* Monde logique */
+.world{ position:absolute; left:0; top:0; transform-origin:0 0; width:12000px; height:12000px; }
+
+/* Grille & arêtes */
+.grid{ position:absolute; inset:0; pointer-events:none; opacity:.15;
+  background-image:
+    linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size:64px 64px, 64px 64px;
+}
+svg#edges{position:absolute; inset:0; overflow:visible; pointer-events:none}
+
+/* Nœuds */
+.node{ position:absolute; min-width:160px; max-width:360px; color:var(--text);
+  user-select:none; transform:translate(-50%,-50%); }
+.bubble{
+  background:#0d1120; border:1px solid #1a2340; border-radius:14px; padding:10px 12px;
+  box-shadow:0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.node.selected .bubble{ box-shadow:var(--ring), 0 10px 30px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); border-color:#3a63ff }
+.title[contenteditable]{ outline:none; font-weight:800; font-size:16px; letter-spacing:.2px; }
+.thumb{margin-top:8px;border-radius:10px;max-height:220px;max-width:100%;display:block;border:1px solid rgba(255,255,255,.08)}
+.pdf-pill{margin-top:8px;display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;background:#0b0f1a;border:1px solid #1a2340;font-size:12px;color:#d0dcff}
+
+.floating{ position:fixed; right:24px; bottom:24px; z-index:25; display:flex; gap:8px }
+.small{font-size:12px;color:var(--muted)}
+.hidden{display:none!important}
+</style>
+</head>
+
+<body>
+  <!-- Top bar -->
+  <div class="nav">
+    <div class="brand"><div class="logo">∞</div> Infinie & gratuit</div>
+    <span class="badge">Mind Map — 100% local</span>
+    <div class="toolbar">
+      <button class="btn" id="addChild">+ Enfant</button>
+      <button class="btn" id="addSibling">+ Sibling</button>
+      <div class="sep"></div>
+      <button class="btn" id="attachImg">Image</button>
+      <button class="btn" id="attachPDF">PDF</button>
+      <input type="file" id="imgInput" accept="image/*" class="hidden"/>
+      <input type="file" id="pdfInput" accept="application/pdf" class="hidden"/>
+      <div class="sep"></div>
+      <button class="btn ghost" id="center">Recentrer</button>
+      <button class="btn ghost" id="zoomOut">–</button>
+      <button class="btn ghost" id="zoomIn">+</button>
+      <div class="sep"></div>
+      <button class="btn primary" id="exportPNG">Exporter PNG</button>
+      <button class="btn primary" id="exportPDF">Exporter PDF</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h4>Raccourcis</h4>
+    <div class="info">Entrée/Tab = enfant • Suppr = supprimer • Espace + glisser = déplacer • Ctrl/⌘ + molette = zoom (pinch OK)</div>
+    <h4>Astuce</h4>
+    <div class="info">Dépose une image/PDF dans la zone pour créer un nœud automatiquement.</div>
+  </aside>
+
+  <!-- Workspace -->
+  <section class="workspace" id="workspace">
+    <div class="view" id="view">
+      <div class="world" id="world">
+        <div class="grid"></div>
+        <svg id="edges"></svg>
+      </div>
+    </div>
+  </section>
+
+  <div class="floating small" id="status">Prêt</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+/* ================== State ================== */
+const WORLD=12000, HALF=WORLD/2, SCALE_MIN=0.25, SCALE_MAX=3;
+const state = {
+  nodes:new Map(), sizes:new Map(), // sizes[id]={w,h}
+  rootId:null, selectedId:null,
+  scale:1, origin:{x:HALF, y:HALF}
+};
+const ws = document.getElementById('workspace');
+const view = document.getElementById('view');
+const world = document.getElementById('world');
+const edgesSvg = document.getElementById('edges');
+const statusEl = document.getElementById('status');
+
+/* ================== Utils ================== */
+const uid = ()=> Math.random().toString(36).slice(2,9);
+const setStatus = t => statusEl.textContent=t;
+const ensureSel = ()=> { if(!state.selectedId && state.rootId) selectNode(state.rootId); return !!state.selectedId; };
+const applyTransform = ()=> world.style.transform = `translate(${-state.origin.x}px, ${-state.origin.y}px) scale(${state.scale})`;
+
+function screenToWorld(px, py){
+  const r = ws.getBoundingClientRect();
+  const vx = px - r.left, vy = py - r.top;
+  return { x: state.origin.x + vx/state.scale, y: state.origin.y + vy/state.scale };
+}
+function clampOrigin(){
+  const maxX = Math.max(0, WORLD - ws.clientWidth/state.scale);
+  const maxY = Math.max(0, WORLD - ws.clientHeight/state.scale);
+  state.origin.x = Math.max(0, Math.min(maxX, state.origin.x));
+  state.origin.y = Math.max(0, Math.min(maxY, state.origin.y));
+}
+
+/* ---- Smooth zoom anchored to pointer ---- */
+let zoomAnim=null;
+function setScaleAround(screenX, screenY, newScale){
+  newScale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, newScale));
+  const before = screenToWorld(screenX, screenY);
+  state.scale = newScale;
+  const after = screenToWorld(screenX, screenY);
+  state.origin.x += (after.x - before.x);
+  state.origin.y += (after.y - before.y);
+  clampOrigin(); applyTransform();
+}
+function smoothZoom(screenX, screenY, targetScale, ms=160){
+  if(zoomAnim) cancelAnimationFrame(zoomAnim);
+  const startScale = state.scale;
+  targetScale = Math.max(SCALE_MIN, Math.min(SCALE_MAX, targetScale));
+  const start = performance.now(), dur = ms;
+  const before = screenToWorld(screenX, screenY);
+
+  const step = (now)=>{
+    const t = Math.min(1, (now-start)/dur);
+    const ease = 1 - Math.pow(1-t, 3); // easeOutCubic
+    const curScale = startScale * Math.pow(targetScale/startScale, ease);
+    state.scale = curScale;
+    const after = screenToWorld(screenX, screenY);
+    state.origin.x += (after.x - before.x);
+    state.origin.y += (after.y - before.y);
+    clampOrigin(); applyTransform();
+    if(t<1) zoomAnim = requestAnimationFrame(step);
+  };
+  zoomAnim = requestAnimationFrame(step);
+}
+
+function fileToURL(f){
+  if(window.URL && URL.createObjectURL) return Promise.resolve(URL.createObjectURL(f));
+  return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(f); });
+}
+
+/* ================== Nodes ================== */
+function createNode({x,y,text='Nouvelle idée',parentId=null,imgSrc=null,pdfUrl=null,pdfName=null}){
+  const id=uid();
+  state.nodes.set(id,{id,x,y,text,parentId,imgSrc,pdfUrl,pdfName});
+  if(!state.rootId) state.rootId=id;
+  renderNode(id); selectNode(id); drawEdges();
+  return id;
+}
+function measureNode(id){
+  const el = world.querySelector(`.node[data-id="${id}"]`);
+  if(!el) return;
+  // dimensions réelles (node centré via translate(-50%,-50%))
+  const bubble = el.querySelector('.bubble') || el;
+  const w = bubble.offsetWidth || 220;
+  const h = bubble.offsetHeight || 70;
+  state.sizes.set(id,{w,h});
+}
+function renderNode(id){
+  const n = state.nodes.get(id); if(!n) return;
+  let el = world.querySelector(`.node[data-id="${id}"]`);
+  if(!el){
+    el = document.createElement('div'); el.className='node'; el.dataset.id=id;
+    el.innerHTML = `
+      <div class="bubble">
+        <div class="title" contenteditable="true"></div>
+        <img class="thumb hidden" alt="">
+        <a class="pdf-pill hidden" target="_blank" rel="noopener noreferrer">📄 <span class="name"></span></a>
+      </div>`;
+    world.appendChild(el);
+
+    // drag (pas pendant saisie)
+    el.addEventListener('mousedown', e=>{
+      if(e.button!==0) return;
+      if(e.target.closest('.title')) return;
+      startDragNode(e, id);
+    });
+    el.addEventListener('click', e=>{ selectNode(id); e.stopPropagation(); });
+
+    const title = el.querySelector('.title');
+    title.addEventListener('input', ()=>{
+      state.nodes.get(id).text = title.textContent.trim()||'Nouvelle idée';
+      measureNode(id); scheduleEdges();
+    });
+    title.addEventListener('mousedown', e=> e.stopPropagation());
+  }
+  el.style.left = n.x+'px'; el.style.top = n.y+'px';
+  el.querySelector('.title').textContent = n.text || 'Nouvelle idée';
+
+  const imgEl = el.querySelector('.thumb');
+  if(n.imgSrc){
+    imgEl.src=n.imgSrc; imgEl.classList.remove('hidden');
+    imgEl.onload = ()=>{ measureNode(id); scheduleEdges(); };
+  } else {
+    imgEl.removeAttribute('src'); imgEl.classList.add('hidden');
+  }
+
+  const pdfEl = el.querySelector('.pdf-pill');
+  if(n.pdfUrl){ pdfEl.href=n.pdfUrl; pdfEl.querySelector('.name').textContent=n.pdfName||'document.pdf'; pdfEl.classList.remove('hidden'); }
+  else{ pdfEl.classList.add('hidden'); pdfEl.removeAttribute('href'); }
+
+  measureNode(id);
+}
+function selectNode(id){
+  state.selectedId=id;
+  world.querySelectorAll('.node').forEach(n=> n.classList.toggle('selected', n.dataset.id===id));
+}
+function removeNode(id){
+  if(id===state.rootId) return;
+  for(const n of Array.from(state.nodes.values())) if(n.parentId===id) removeNode(n.id);
+  state.nodes.delete(id);
+  state.sizes.delete(id);
+  world.querySelector(`.node[data-id="${id}"]`)?.remove();
+  if(state.selectedId===id) state.selectedId=state.rootId;
+  drawEdges();
+}
+
+/* ================== Edges ================== */
+function cubicPath(a,b){ const dx=(b.x-a.x)*0.5; return `M ${a.x} ${a.y} C ${a.x+dx} ${a.y}, ${b.x-dx} ${b.y}, ${b.x} ${b.y}`; }
+function nodePoint(id){ const n=state.nodes.get(id); return {x:n.x,y:n.y}; }
+let raf=null; const scheduleEdges=()=>{ cancelAnimationFrame(raf); raf=requestAnimationFrame(drawEdges); };
+function drawEdges(){
+  edgesSvg.innerHTML='';
+  for(const n of state.nodes.values()){
+    if(!n.parentId) continue;
+    const p = nodePoint(n.parentId), c = nodePoint(n.id);
+    const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d', cubicPath(p,c));
+    path.setAttribute('fill','none'); path.setAttribute('stroke','rgba(159,180,255,.9)'); path.setAttribute('stroke-width','2');
+    edgesSvg.appendChild(path);
+  }
+}
+
+/* ================== Pan / Zoom ================== */
+let pan=false, panStart={x:0,y:0}, originStart={x:0,y:0};
+view.addEventListener('mousedown', e=>{
+  if(e.button!==0 && e.button!==1) return;
+  if(!(e.target===view || e.target===world || e.target.classList.contains('grid'))) return;
+  if(!e.ctrlKey){ pan=true; panStart={x:e.clientX,y:e.clientY}; originStart={...state.origin}; view.classList.add('panning'); }
+});
+window.addEventListener('mousemove', e=>{
+  if(!pan) return;
+  const dx=(e.clientX-panStart.x)/state.scale, dy=(e.clientY-panStart.y)/state.scale;
+  state.origin={x:originStart.x-dx, y:originStart.y-dy}; clampOrigin(); applyTransform();
+});
+window.addEventListener('mouseup', ()=>{ pan=false; view.classList.remove('panning'); });
+
+/* Molette — zoom fluide ancré au pointeur */
+view.addEventListener('wheel', e=>{
+  if(!(e.ctrlKey||e.metaKey)) return; // pinch trackpad Safari déclenche ctrlKey
+  e.preventDefault();
+  const factor = Math.exp(-e.deltaY*0.0015);
+  const target = state.scale*factor;
+  smoothZoom(e.clientX, e.clientY, target, 160);
+}, {passive:false});
+
+/* Pinch Safari (gesture events) */
+let gestureStartScale=1;
+view.addEventListener('gesturestart', e=>{ e.preventDefault(); gestureStartScale=state.scale; }, {passive:false});
+view.addEventListener('gesturechange', e=>{ e.preventDefault(); setScaleAround(e.clientX,e.clientY, gestureStartScale*e.scale); }, {passive:false});
+view.addEventListener('gestureend', e=>{ e.preventDefault(); }, {passive:false});
+
+/* Boutons */
+document.getElementById('zoomIn').onclick = ()=> {
+  const r = ws.getBoundingClientRect(); smoothZoom(r.left+r.width/2, r.top+r.height/2, state.scale*1.12, 140);
+};
+document.getElementById('zoomOut').onclick = ()=> {
+  const r = ws.getBoundingClientRect(); smoothZoom(r.left+r.width/2, r.top+r.height/2, state.scale/1.12, 140);
+};
+document.getElementById('center').onclick = ()=>{ state.scale=1; clampOrigin(); centerOn(state.rootId); };
+function centerOn(id){
+  const n = state.nodes.get(id); if(!n) return;
+  state.origin.x = n.x - (ws.clientWidth/2)/state.scale;
+  state.origin.y = n.y - (ws.clientHeight/2)/state.scale;
+  clampOrigin(); applyTransform();
+}
+window.addEventListener('resize', ()=>{ clampOrigin(); applyTransform(); });
+
+/* ================== Drag nodes ================== */
+let dragId=null, dragStart=null, nodeStart=null;
+function startDragNode(e,id){
+  dragId=id; dragStart={x:e.clientX,y:e.clientY};
+  const n=state.nodes.get(id); nodeStart={x:n.x,y:n.y};
+  selectNode(id);
+  window.addEventListener('mousemove', dragMove);
+  window.addEventListener('mouseup', dragEnd, {once:true});
+}
+function dragMove(e){
+  if(!dragId) return;
+  const dx=(e.clientX-dragStart.x)/state.scale, dy=(e.clientY-dragStart.y)/state.scale;
+  const n=state.nodes.get(dragId); n.x=nodeStart.x+dx; n.y=nodeStart.y+dy;
+  renderNode(dragId); scheduleEdges();
+}
+function dragEnd(){ dragId=null; window.removeEventListener('mousemove', dragMove); }
+
+/* ================== Actions ================== */
+function addChildTo(id){
+  const p = state.nodes.get(id);
+  const child = createNode({x:p.x+200, y:p.y+(Math.random()*120-60), text:'Nouvelle idée', parentId:id});
+  renderNode(child); scheduleEdges();
+}
+document.getElementById('addChild').onclick = ()=> { if(!ensureSel()) return; addChildTo(state.selectedId); };
+document.getElementById('addSibling').onclick = ()=>{
+  if(!ensureSel()) return;
+  const s=state.nodes.get(state.selectedId); if(!s?.parentId) return;
+  const p=state.nodes.get(s.parentId);
+  const sib=createNode({x:p.x+200, y:p.y+(Math.random()*120-60), text:'Nouvelle idée', parentId:p.id});
+  renderNode(sib); scheduleEdges();
+};
+window.addEventListener('keydown', e=>{
+  if(e.code==='Space') view.classList.add('panning');
+  if((e.key==='Enter'||e.key==='Tab') && document.activeElement?.contentEditable!=='true'){
+    e.preventDefault(); if(!ensureSel()) return; addChildTo(state.selectedId);
+  }
+  if((e.key==='Delete'||e.key==='Backspace') && document.activeElement?.contentEditable!=='true'){
+    const s=state.nodes.get(state.selectedId); if(s) removeNode(s.id);
+  }
+});
+window.addEventListener('keyup', e=>{ if(e.code==='Space') view.classList.remove('panning'); });
+
+/* ================== Attachments ================== */
+const imgInput=document.getElementById('imgInput');
+const pdfInput=document.getElementById('pdfInput');
+document.getElementById('attachImg').onclick = ()=> imgInput.click();
+document.getElementById('attachPDF').onclick = ()=> pdfInput.click();
+
+imgInput.addEventListener('change', async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  if(!ensureSel()) return; const url=await fileToURL(f);
+  const n=state.nodes.get(state.selectedId); n.imgSrc=url; renderNode(n.id); setStatus('Image ajoutée');
+});
+pdfInput.addEventListener('change', async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  if(!ensureSel()) return; const url=await fileToURL(f);
+  const n=state.nodes.get(state.selectedId); n.pdfUrl=url; n.pdfName=f.name; renderNode(n.id); setStatus('PDF lié');
+});
+
+/* Drop to create */
+view.addEventListener('dragover', e=> e.preventDefault());
+view.addEventListener('drop', async e=>{
+  e.preventDefault();
+  const f=e.dataTransfer.files?.[0]; if(!f) return;
+  const pt=screenToWorld(e.clientX,e.clientY);
+  const url=await fileToURL(f);
+  if(f.type.startsWith('image/')){
+    const id=createNode({x:pt.x,y:pt.y,text:'Image',parentId:state.selectedId||state.rootId});
+    state.nodes.get(id).imgSrc=url; renderNode(id); scheduleEdges();
+  }else if(f.type==='application/pdf'){
+    const id=createNode({x:pt.x,y:pt.y,text:'PDF',parentId:state.selectedId||state.rootId});
+    const n=state.nodes.get(id); n.pdfUrl=url; n.pdfName=f.name; renderNode(id); scheduleEdges();
+  }
+});
+
+/* ================== Export ================== */
+/* Mesure exacte: on utilise state.sizes (mis à jour à chaque rendu / image.onload) */
+function computeBounds(){
+  if(state.nodes.size===0) return {x:0,y:0,w:1000,h:600};
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  for(const n of state.nodes.values()){
+    const sz = state.sizes.get(n.id) || {w:220,h:70};
+    const left = n.x - sz.w/2;
+    const right = n.x + sz.w/2;
+    const top = n.y - sz.h/2;
+    const bottom = n.y + sz.h/2;
+    minX=Math.min(minX,left); minY=Math.min(minY,top);
+    maxX=Math.max(maxX,right); maxY=Math.max(maxY,bottom);
+  }
+  const M=60; // marge
+  return {x:minX-M,y:minY-M,w:(maxX-minX)+2*M,h:(maxY-minY)+2*M};
+}
+
+async function waitImagesLoaded(scope){
+  const imgs = Array.from(scope.querySelectorAll('img')).filter(i=>!i.complete);
+  if(!imgs.length) return;
+  await Promise.race([
+    Promise.all(imgs.map(i=> new Promise(res=>{ i.onload=()=>res(); i.onerror=()=>res(); }))),
+    new Promise(res=> setTimeout(res, 800)) // garde-fou
+  ]);
+}
+
+function buildExportFrame(){
+  const box=computeBounds();
+  const frame=document.createElement('div');
+  frame.style.position='fixed'; frame.style.left='-99999px'; frame.style.top='-99999px';
+  frame.style.width=box.w+'px'; frame.style.height=box.h+'px';
+  frame.style.background=getComputedStyle(document.body).background;
+  document.body.appendChild(frame);
+
+  const wrap=document.createElement('div');
+  wrap.style.position='relative'; wrap.style.width=box.w+'px'; wrap.style.height=box.h+'px';
+  frame.appendChild(wrap);
+
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.setAttribute('width',box.w); svg.setAttribute('height',box.h);
+  svg.style.position='absolute'; svg.style.left='0'; svg.style.top='0'; wrap.appendChild(svg);
+
+  for(const n of state.nodes.values()){
+    if(!n.parentId) continue;
+    const p=state.nodes.get(n.parentId);
+    const A={x:p.x-box.x,y:p.y-box.y}, B={x:n.x-box.x,y:n.y-box.y};
+    const dx=(B.x-A.x)*0.5;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M ${A.x} ${A.y} C ${A.x+dx} ${A.y}, ${B.x-dx} ${B.y}, ${B.x} ${B.y}`);
+    path.setAttribute('fill','none'); path.setAttribute('stroke','rgba(159,180,255,.95)'); path.setAttribute('stroke-width','2');
+    svg.appendChild(path);
+  }
+
+  for(const n of state.nodes.values()){
+    const sz = state.sizes.get(n.id) || {w:220,h:70};
+    const el=document.createElement('div');
+    el.className='node'; el.style.transform='translate(-50%,-50%)';
+    el.style.left=(n.x-box.x)+'px'; el.style.top=(n.y-box.y)+'px';
+    el.innerHTML = `
+      <div class="bubble" style="border-color:#1a2340">
+        <div class="title" style="font-weight:800;font-size:16px">${escapeHtml(n.text||'Nouvelle idée')}</div>
+        ${n.imgSrc?`<img class="thumb" src="${n.imgSrc}" style="display:block;margin-top:8px;max-height:220px;border-radius:10px;border:1px solid rgba(255,255,255,.08)"/>`:''}
+        ${n.pdfUrl?`<div class="pdf-pill">📄 ${escapeHtml(n.pdfName||'document.pdf')}</div>`:''}
+      </div>`;
+    wrap.appendChild(el);
+    // pas besoin d'utiliser sz ici (le DOM export aura la vraie taille), mais le bbox est déjà surdimensionné avec marges.
+  }
+  return {frame, wrap};
+}
+const escapeHtml = s => (s||'').replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+
+async function exportPNG(){
+  const {frame, wrap} = buildExportFrame();
+  await waitImagesLoaded(wrap);
+  const canvas = await html2canvas(frame,{backgroundColor:null,scale:2});
+  frame.remove();
+  const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download='mindmap.png'; a.click();
+}
+async function exportPDF(){
+  const { jsPDF } = window.jspdf;
+  const {frame, wrap} = buildExportFrame();
+  await waitImagesLoaded(wrap);
+  const canvas = await html2canvas(frame,{backgroundColor:'#0B0B0D',scale:2});
+  frame.remove();
+  const img = canvas.toDataURL('image/png');
+  const landscape = canvas.width>=canvas.height;
+  const pdf = new jsPDF({orientation:landscape?'landscape':'portrait',unit:'pt',format:'a4'});
+  const W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight();
+  const r=Math.min(W/canvas.width,H/canvas.height), w=canvas.width*r, h=canvas.height*r, x=(W-w)/2, y=(H-h)/2;
+
+  try{ pdf.saveGraphicsState(); pdf.setGState(new pdf.GState({opacity:0.06}));
+       pdf.setFont('helvetica','bold'); pdf.setFontSize(86); pdf.setTextColor(30,60,120);
+       pdf.text('Infinie & gratuit', W/2, H/2, {align:'center', angle:-28}); pdf.restoreGraphicsState(); }catch(e){}
+
+  pdf.addImage(img,'PNG',x,y,w,h); pdf.save('mindmap.pdf');
+}
+document.getElementById('exportPNG').onclick = exportPNG;
+document.getElementById('exportPDF').onclick = exportPDF;
+
+/* ================== Init ================== */
+function centerOn(id){
+  const n = state.nodes.get(id); if(!n) return;
+  state.origin.x = n.x - (ws.clientWidth/2)/state.scale;
+  state.origin.y = n.y - (ws.clientHeight/2)/state.scale;
+  clampOrigin(); applyTransform();
+}
+function init(){
+  applyTransform();
+  const root = createNode({x:HALF, y:HALF, text:'Ma nouvelle carte mentale'});
+  selectNode(root); centerOn(root);
+  setStatus('Double-clic pour éditer · Entrée/Tab pour enfant');
+}
+init();
+}); // DOMContentLoaded
+</script>
+</body>
+</html>

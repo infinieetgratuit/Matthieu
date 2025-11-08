@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Infinie & gratuit — Générateur de citation</title>
+<meta name="color-scheme" content="dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+  --border:rgba(95,123,255,0.18); --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+}
+*{box-sizing:border-box} html,body{height:100%}
+body{
+  margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:
+    radial-gradient(900px 500px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+    radial-gradient(800px 600px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+    var(--bg);
+  color:var(--text);
+}
+.container{max-width:880px;margin:0 auto;padding:28px 16px 64px}
+.nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}
+.logo{width:26px;height:26px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff}
+.badge{padding:6px 10px;font-size:12px;border-radius:999px;background:#0f1420;color:#9fb4ff;border:1px solid #1a2340}
+.title{font-size:36px;margin:4px 0 6px;line-height:1.12}
+.small{font-size:12px;color:var(--muted)}
+
+.panel{
+  margin-top:14px; background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+                   linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+  border:1px solid var(--border); border-radius:16px; padding:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); position:relative;
+}
+
+.stage{
+  width:100%; aspect-ratio:16/10; border-radius:14px; overflow:hidden; background:#090f17; display:grid; place-items:center;
+  border:1.5px dashed #223054;
+}
+.stage.ready{ border-color:rgba(255,255,255,.08); border-style:solid }
+.stage img{max-width:100%;max-height:100%;display:block}
+.placeholder{ text-align:center; color:#93a6d3 }
+
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+.btn{
+  background:#0b0f1a;border:1px solid #1a2340;color:var(--text); border-radius:12px;padding:11px 13px;font-size:14px;cursor:pointer;font-weight:700
+}
+.btn:hover{ box-shadow:var(--ring); border-color:#3a63ff }
+.btn.primary{ background: linear-gradient(90deg, var(--accent1), var(--accent2)); border:none; color:white }
+.btn:disabled{opacity:.6;cursor:not-allowed}
+
+.footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+.badge-pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;font-size:12px;background:#0b0f1a;border:1px solid #1a2340;border-radius:999px}
+
+.progress{
+  width:58px;height:58px;border-radius:999px; background:radial-gradient(circle at 30% 30%, rgba(47,227,255,.25), rgba(27,76,255,.15));
+  display:grid;place-items:center;position:absolute;bottom:14px;right:14px; box-shadow:0 10px 28px rgba(0,0,0,.45), inset 0 2px 8px rgba(255,255,255,.06)
+}
+.progress .ring{ width:44px;height:44px;border-radius:999px;border:3px solid rgba(255,255,255,.12); border-right-color:rgba(47,227,255,.9); animation:spin 1s linear infinite }
+@keyframes spin{ to{ transform:rotate(360deg) } }
+.ai-note{
+  position:absolute; right:14px; bottom:84px; font-size:11px; color:#b8c7ff; background:#0b0f1a; border:1px solid #1a2340;
+  padding:6px 10px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.4)
+}
+.hidden{display:none!important}
+.mini{font-size:11px;color:#9fb4ff}
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand"><div class="logo">∞</div> Infinie & gratuit</div>
+      <span class="badge">Générateur de citation — 100% local</span>
+    </div>
+
+    <h1 class="title">Générer une citation</h1>
+    <p class="small">Source : <code>citations.html</code> • <span id="count">chargement…</span></p>
+
+    <div class="panel">
+      <div class="stage" id="stage">
+        <div class="placeholder" id="ph">
+          <div style="font-size:17px;font-weight:800;margin-bottom:4px">Appuie sur « Générer »</div>
+          <div class="small">Une citation stylée s’affichera ici.</div>
+        </div>
+        <img id="preview" class="hidden" alt="Citation"/>
+        <div class="ai-note hidden" id="aiNote">VerbaMind v3 réfléchit… <span id="eta">5</span> s</div>
+        <div class="progress hidden" id="busy"><div class="ring"></div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn primary" id="btnGen">Générer</button>
+        <button class="btn" id="btnCopy" disabled>Copier</button>
+        <button class="btn" id="btnPNG" disabled>Exporter PNG</button>
+        <button class="btn" id="btnPDF" disabled>Exporter PDF</button>
+      </div>
+
+      <div class="footer">
+        <div class="badge-pill">
+          <span id="dot" style="width:8px;height:8px;border-radius:99px;background:#3a3f54"></span>
+          <span id="status">Chargement des citations…</span>
+        </div>
+        <div class="mini" id="meta">Aucune citation générée</div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* ====== Config ====== */
+const AI_NAME = 'VerbaMind v3';
+const SOURCE = 'citations.html';
+const CANVAS_W = 1400, CANVAS_H = 900;
+
+/* ====== State/DOM ====== */
+const countEl = document.getElementById('count');
+const stage = document.getElementById('stage');
+const ph = document.getElementById('ph');
+const preview = document.getElementById('preview');
+const busy = document.getElementById('busy');
+const aiNote = document.getElementById('aiNote'); const eta = document.getElementById('eta');
+const btnGen = document.getElementById('btnGen');
+const btnCopy = document.getElementById('btnCopy');
+const btnPNG = document.getElementById('btnPNG');
+const btnPDF = document.getElementById('btnPDF');
+const dot = document.getElementById('dot'); const statusEl = document.getElementById('status');
+const meta = document.getElementById('meta');
+
+let QUOTES = [];
+let lastQuote = null;
+let lastCanvas = null;
+
+/* ====== Helpers UI ====== */
+const sleep = (ms)=> new Promise(r=>setTimeout(r,ms));
+function setBusy(v){ busy.classList.toggle('hidden', !v); aiNote.classList.toggle('hidden', !v); }
+function setOK(msg){ statusEl.textContent = msg; dot.style.background = 'linear-gradient(90deg, var(--accent1), var(--accent2))'; }
+function setERR(msg){ statusEl.textContent = '⚠️ ' + msg; dot.style.background = '#9b2c2c'; }
+
+/* ====== Load quotes (iframe => fetch => fallback) ====== */
+init();
+async function init(){
+  try{
+    const n = await loadViaIframe();
+    countEl.textContent = `${n} citations`; setOK(`${AI_NAME} prêt — ${n} cit.`);
+  }catch{
+    try{
+      const n = await loadViaFetch(1600);
+      countEl.textContent = `${n} citations`; setOK(`${AI_NAME} prêt — ${n} cit.`);
+    }catch{
+      QUOTES = [
+        "Commence là où tu es, avec ce que tu as.",
+        "Petit pas répété bat grand effort isolé.",
+        "Rêve en grand, exécute en simple.",
+        "La constance est un super-pouvoir discret.",
+        "Le futur adore les fichiers propres."
+      ];
+      countEl.textContent = `${QUOTES.length} (fallback)`; setERR('Citations chargées en secours');
+    }
+  }
+}
+
+function loadViaIframe(){
+  return new Promise((resolve, reject)=>{
+    const ifr = document.createElement('iframe');
+    ifr.src = SOURCE; ifr.style.display = 'none'; document.body.appendChild(ifr);
+    const timer = setTimeout(()=>{ cleanup(); reject(new Error('Timeout iframe')); }, 1800);
+    function cleanup(){ clearTimeout(timer); ifr.remove(); }
+    ifr.onload = ()=>{
+      try{
+        const arr = ifr.contentWindow && ifr.contentWindow.QUOTES;
+        if (Array.isArray(arr) && arr.length){ QUOTES = arr.slice(); cleanup(); resolve(QUOTES.length); }
+        else { cleanup(); reject(new Error('QUOTES introuvables dans iframe')); }
+      }catch(e){ cleanup(); reject(e); }
+    };
+  });
+}
+
+async function loadViaFetch(timeoutMs=1500){
+  const ctrl = new AbortController(); const t = setTimeout(()=>ctrl.abort(), timeoutMs);
+  const res = await fetch(SOURCE, {cache:'no-store', signal:ctrl.signal}); clearTimeout(t);
+  const txt = await res.text();
+  // Cherche "const QUOTES = [ ... ];"
+  const m = txt.match(/const\s+QUOTES\s*=\s*(\[[\s\S]*?\]);/);
+  if(!m) throw new Error('QUOTES non trouvées');
+  let arr;
+  try{ arr = JSON.parse(m[1]); }
+  catch{ arr = (new Function('return ' + m[1]))(); }
+  if(!Array.isArray(arr) || !arr.length) throw new Error('Liste vide');
+  QUOTES = arr.slice(); return QUOTES.length;
+}
+
+/* ====== Generate with fake AI (2–5s) ====== */
+btnGen.addEventListener('click', async ()=>{
+  if(!QUOTES.length){ setERR('Aucune citation chargée'); return; }
+  setBusy(true); stage.classList.remove('ready'); preview.classList.add('hidden'); ph.classList.remove('hidden');
+  const wait = 2000 + Math.floor(Math.random()*3000);
+  let secs = Math.ceil(wait/1000); eta.textContent = secs;
+  const int = setInterval(()=>{ secs=Math.max(0,secs-1); eta.textContent=secs; },1000);
+  statusEl.textContent = `Analyse sémantique… (${AI_NAME})`;
+
+  // Choix citation en parallèle
+  const pQuote = Promise.resolve(pickQuote());
+  await Promise.all([sleep(wait), pQuote]);
+  clearInterval(int); eta.textContent = '0';
+
+  lastQuote = await pQuote;
+  lastCanvas = renderQuote(lastQuote);
+
+  const url = lastCanvas.toDataURL('image/png');
+  preview.src = url;
+  preview.onload = ()=>{
+    ph.classList.add('hidden');
+    preview.classList.remove('hidden');
+    stage.classList.add('ready');
+    setOK('Citation prête');
+    btnCopy.disabled = btnPNG.disabled = btnPDF.disabled = false;
+    meta.textContent = `Longueur : ${lastQuote.length} caractères`;
+  };
+
+  setBusy(false);
+});
+
+btnCopy.addEventListener('click', ()=>{
+  if(!lastQuote) return;
+  navigator.clipboard.writeText('“' + lastQuote + '”');
+  statusEl.textContent = 'Citation copiée dans le presse-papiers';
+});
+
+btnPNG.addEventListener('click', ()=>{
+  if(!lastCanvas) return;
+  const a = document.createElement('a');
+  a.href = lastCanvas.toDataURL('image/png');
+  a.download = 'citation_infinie.png';
+  a.click();
+});
+
+btnPDF.addEventListener('click', ()=>{
+  if(!lastCanvas) return;
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit:'pt', format:'a4' });
+  const pageW=595, pageH=842, margin=36;
+
+  // Filigrane léger
+  try {
+    pdf.saveGraphicsState(); pdf.setGState(new pdf.GState({ opacity: 0.06 }));
+    pdf.setFont('helvetica','bold'); pdf.setFontSize(82); pdf.setTextColor(30,60,120);
+    pdf.text('Infinie & gratuit', pageW/2, pageH/2, { align:'center', angle:-28 });
+    pdf.restoreGraphicsState();
+  } catch(e){}
+
+  // Titre & date
+  pdf.setFont('helvetica','bold'); pdf.setFontSize(18); pdf.setTextColor(0,0,0);
+  pdf.text('Infinie & gratuit — Générateur de citation', margin, 60);
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(11); pdf.text(new Date().toLocaleString(), margin, 78);
+
+  // Image
+  const imgW = pageW - margin*2, imgH = imgW * (CANVAS_H/CANVAS_W);
+  pdf.addImage(lastCanvas.toDataURL('image/png'), 'PNG', margin, 110, imgW, imgH, undefined, 'FAST');
+
+  // Footer
+  pdf.setDrawColor(30,30,40); pdf.line(margin, pageH-70, pageW-margin, pageH-70);
+  pdf.setTextColor(120); pdf.setFontSize(10); pdf.text(`${AI_NAME} · 100% local`, margin, pageH-50);
+
+  pdf.save('citation_infinie.pdf');
+});
+
+/* ====== Quote selection ====== */
+function pickQuote(){
+  if(!QUOTES.length) return 'Le futur adore les fichiers propres.';
+  let q = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+  let safe=0; while(q===lastQuote && QUOTES.length>1 && safe++<8){ q = QUOTES[Math.floor(Math.random()*QUOTES.length)]; }
+  return q;
+}
+
+/* ====== Canvas render (compact & stylé) ====== */
+function renderQuote(quote){
+  const DPR = Math.min(2, window.devicePixelRatio || 1);
+  const W = CANVAS_W*DPR, H = CANVAS_H*DPR;
+  const c = document.createElement('canvas'); c.width=W; c.height=H; c.style.width='100%';
+  const ctx = c.getContext('2d');
+
+  // Fond
+  const g = ctx.createLinearGradient(0,0,W,H);
+  g.addColorStop(0,'#0d1120'); g.addColorStop(1,'#0a0f18'); ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  const halo = ctx.createRadialGradient(W*0.18,H*0.2,0, W*0.18,H*0.2, Math.min(W,H)*0.7);
+  halo.addColorStop(0,'rgba(47,227,255,0.14)'); halo.addColorStop(1,'rgba(47,227,255,0)'); ctx.fillStyle=halo; ctx.fillRect(0,0,W,H);
+
+  // Filigrane de marque discret
+  ctx.save(); ctx.globalAlpha=0.06; ctx.translate(W/2,H/2); ctx.rotate(-Math.PI/8);
+  ctx.fillStyle='#7aa0ff'; setFont(ctx, 86*DPR, 800); centerText(ctx,'Infinie & gratuit',0,0); ctx.restore();
+
+  // Guillemets
+  ctx.fillStyle='#9fb4ff'; setFont(ctx, 120*DPR, 800); ctx.fillText('“', 54*DPR, 160*DPR);
+
+  // Texte adaptatif
+  const maxW = W - 2*(110*DPR);
+  let fs = 52*DPR, lines;
+  do {
+    setFont(ctx, fs, 700);
+    lines = wrap(ctx, quote, maxW);
+    if(lines.length>8 || maxWidth(ctx,lines)>maxW) fs -= 2*DPR; else break;
+  } while(fs>26*DPR);
+
+  ctx.fillStyle='#E6ECF7';
+  let y = 250*DPR, lh = fs*1.35;
+  for(const ln of lines){ ctx.fillText(ln, 110*DPR, y); y += lh; }
+
+  // Signature discrète
+  setFont(ctx, 18*DPR, 600); ctx.fillStyle='#8aa0ff';
+  ctx.fillText('— Infinie · Citation aléatoire', 110*DPR, y + 24*DPR);
+
+  // Bordure
+  ctx.strokeStyle='rgba(255,255,255,.08)'; ctx.lineWidth=2*DPR; roundRect(ctx, 12*DPR,12*DPR,W-24*DPR,H-24*DPR,16*DPR);
+
+  return c;
+}
+
+/* ====== Canvas utils ====== */
+function setFont(ctx, size, weight=600){
+  ctx.font = `${weight} ${size}px Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial`;
+  ctx.textBaseline='alphabetic';
+}
+function wrap(ctx, text, max){
+  const words = text.split(/\s+/); const out=[]; let line='';
+  for(const w of words){
+    const t = line? line+' '+w : w;
+    if(ctx.measureText(t).width <= max) line=t;
+    else{ if(line) out.push(line); line=w; }
+  }
+  if(line) out.push(line); return out;
+}
+function maxWidth(ctx, lines){ return Math.max(...lines.map(l=>ctx.measureText(l).width)); }
+function centerText(ctx, txt, x, y){ const m=ctx.measureText(txt); ctx.fillText(txt, x - m.width/2, y); }
+function roundRect(ctx,x,y,w,h,r){
+  const rr=Math.min(r,w/2,h/2); ctx.beginPath();
+  ctx.moveTo(x+rr,y); ctx.arcTo(x+w,y,x+w,y+h,rr); ctx.arcTo(x+w,y+h,x,y+h,rr);
+  ctx.arcTo(x,y+h,x,y,rr); ctx.arcTo(x,y,x+w,y,rr); ctx.closePath(); ctx.stroke();
+}
+</script>
+</body>
+</html>

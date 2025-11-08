@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Infinie & gratuit — Object Remover (Lasso ultra simple)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{ --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD; --border:rgba(95,123,255,0.18); --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35); }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background:
+        radial-gradient(900px 500px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(800px 600px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+    .container{max-width:720px;margin:0 auto;padding:22px 14px 40px}
+    .nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:800}
+    .logo{width:24px;height:24px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff}
+    .badge{padding:6px 10px;font-size:12px;border-radius:999px;background:#0f1420;color:#9fb4ff;border:1px solid #1a2340}
+    .title{font-size:24px;margin:2px 0 0}
+    .small{font-size:12px;color:var(--muted)}
+    .panel{margin-top:10px; background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent), linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel); border:1px solid var(--border); border-radius:14px; padding:12px; box-shadow:0 18px 50px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03); position:relative;}
+    .stage{ width:100%; border-radius:12px; overflow:hidden; background:#090f17; border:1.5px dashed #223054; display:grid; place-items:center }
+    .stage.ready{ border-color:rgba(255,255,255,.08); border-style:solid }
+    canvas{ display:block; width:100%; height:auto }
+    .placeholder{ text-align:center; color:#93a6d3; padding:28px 0 }
+    .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .btn{ background:#0b0f1a;border:1px solid #1a2340;color:var(--text); border-radius:12px;padding:10px 12px;font-size:14px;cursor:pointer;font-weight:800 }
+    .btn:hover{ box-shadow:var(--ring); border-color:#3a63ff }
+    .btn.primary{ background: linear-gradient(90deg, var(--accent1), var(--accent2)); border:none; color:white }
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .footer{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;flex-wrap:wrap;color:var(--muted);font-size:12px}
+    .badge-pill{display:inline-flex;gap:6px;align-items:center;padding:6px 10px;font-size:12px;background:#0b0f1a;border:1px solid #1a2340;border-radius:999px}
+    .progress{ width:54px;height:54px;border-radius:999px; background:radial-gradient(circle at 30% 30%, rgba(47,227,255,.25), rgba(27,76,255,.15)); display:grid;place-items:center;position:absolute;bottom:12px;right:12px; box-shadow:0 10px 28px rgba(0,0,0,.45), inset 0 2px 8px rgba(255,255,255,.06)}
+    .progress .ring{ width:40px;height:40px;border-radius:999px;border:3px solid rgba(255,255,255,.12); border-right-color:rgba(47,227,255,.9); animation:spin 1s linear infinite }
+    @keyframes spin{ to{ transform:rotate(360deg) } }
+    .ai-note{ position:absolute; right:12px; bottom:74px; font-size:11px; color:#b8c7ff; background:#0b0f1a; border:1px solid #1a2340; padding:6px 10px; border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.4) }
+    .hidden{display:none!important}
+    .kbd{font-size:11px;border:1px solid #1a2340;border-radius:6px;padding:2px 6px;color:#9fb4ff}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav">
+      <div class="brand"><div class="logo">∞</div> Infinie & gratuit</div>
+      <span class="badge">Object Remover — Lasso</span>
+    </div>
+
+    <h1 class="title">Gommer un objet (lasso → Inpainting)</h1>
+    <p class="small">Ultra simple : charge une image → trace le lasso → <b>Lancer</b> → <b>Exporter PNG</b>. On conserve la <b>résolution d'origine</b>.</p>
+
+    <div class="panel">
+      <div class="stage" id="stage">
+        <div class="placeholder" id="ph">
+          <div style="font-size:16px;font-weight:800;margin-bottom:4px">Dépose une image ou clique « + Image »</div>
+          <div class="small">Trace ensuite un lasso (double-clic pour fermer)</div>
+        </div>
+        <canvas id="view"></canvas>
+        <div class="ai-note hidden" id="aiNote">Reconstruit l’arrière-plan (IA)… <span id="eta">5</span> s</div>
+        <div class="progress hidden" id="busy"><div class="ring"></div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" id="btnLoad">+ Image</button>
+        <input id="file" type="file" accept="image/*" style="display:none"/>
+        <button class="btn primary" id="btnRun" disabled>Lancer</button>
+        <button class="btn" id="btnExport" disabled>Exporter PNG</button>
+      </div>
+
+      <div class="footer">
+        <div class="badge-pill"><span id="dot" style="width:8px;height:8px;border-radius:99px;background:#3a3f54"></span><span id="status">Aucune image</span></div>
+        <div class="small">Astuce : <span class="kbd">Double-clic</span> pour fermer le lasso • <span class="kbd">Échap</span> pour effacer la sélection</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OpenCV.js (WASM) -->
+  <script async src="https://docs.opencv.org/4.x/opencv.js"></script>
+
+<script>
+(function(){
+  // ===== DOM
+  const stage = document.getElementById('stage');
+  const canvas = document.getElementById('view');
+  const ctx = canvas.getContext('2d');
+  const ph = document.getElementById('ph');
+  const fileEl = document.getElementById('file');
+  const btnLoad = document.getElementById('btnLoad');
+  const btnRun = document.getElementById('btnRun');
+  const btnExport = document.getElementById('btnExport');
+  const statusEl = document.getElementById('status');
+  const dot = document.getElementById('dot');
+  const busy = document.getElementById('busy');
+  const aiNote = document.getElementById('aiNote');
+  const eta = document.getElementById('eta');
+
+  // ===== State
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  let img = new Image();
+  let imgLoaded = false;
+  let points = []; // lasso points in IMAGE pixel coords
+  let drawing = false;
+  let view = { scale:1, dx:0, dy:0 }; // image -> canvas mapping (CSS px)
+
+  function setOK(msg){ statusEl.textContent = msg; dot.style.background = 'linear-gradient(90deg, var(--accent1), var(--accent2))'; }
+  function setERR(msg){ statusEl.textContent = '⚠️ ' + msg; dot.style.background = '#9b2c2c'; }
+  function setBusy(v){ busy.classList.toggle('hidden', !v); aiNote.classList.toggle('hidden', !v); }
+
+  // ===== Sizing & mapping
+  function resizeCanvas(){
+    const w = stage.clientWidth - 16;
+    const h = Math.round(w * 0.625);
+    canvas.width = Math.max(1, Math.round(w * dpr));
+    canvas.height= Math.max(1, Math.round(h * dpr));
+    canvas.style.width = w + 'px';
+    canvas.style.height= h + 'px';
+    computeView();
+    draw();
+  }
+  function computeView(){
+    if(!imgLoaded){ view = {scale:1, dx:0, dy:0}; return; }
+    const cW = canvas.width / dpr, cH = canvas.height / dpr;
+    const s = Math.min(cW / img.naturalWidth, cH / img.naturalHeight);
+    const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
+    view.scale = s; view.dx = (cW - dw)/2; view.dy = (cH - dh)/2;
+  }
+  function imgToCanvas(ix,iy){ return { x:(ix*view.scale + view.dx)*dpr, y:(iy*view.scale + view.dy)*dpr }; }
+  function canvasToImg(cx,cy){ const x = (cx - view.dx) / view.scale; const y = (cy - view.dy) / view.scale; return {x, y}; }
+
+  // ===== Draw
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#0a0f18'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    if(imgLoaded){
+      ctx.save();
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      ctx.translate(view.dx, view.dy);
+      ctx.scale(view.scale, view.scale);
+      ctx.drawImage(img, 0,0);
+      ctx.restore();
+    }
+    if(points.length){
+      ctx.save();
+      ctx.strokeStyle = '#2FE3FF'; ctx.lineWidth = 2*dpr; ctx.setLineDash([6*dpr, 6*dpr]);
+      ctx.beginPath();
+      const p0 = imgToCanvas(points[0].x, points[0].y);
+      ctx.moveTo(p0.x, p0.y);
+      for(let i=1;i<points.length;i++){ const p=imgToCanvas(points[i].x, points[i].y); ctx.lineTo(p.x,p.y); }
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ===== Lasso interactions
+  canvas.addEventListener('pointerdown', (e)=>{
+    if(!imgLoaded) return;
+    canvas.setPointerCapture(e.pointerId);
+    const rect = canvas.getBoundingClientRect();
+    const p = canvasToImg(e.clientX - rect.left, e.clientY - rect.top);
+    if(!drawing){ points = []; drawing = true; }
+    points.push(p); draw();
+  });
+  canvas.addEventListener('pointermove', (e)=>{
+    if(!drawing || !imgLoaded) return;
+    const rect = canvas.getBoundingClientRect();
+    const p = canvasToImg(e.clientX - rect.left, e.clientY - rect.top);
+    points.push(p); draw();
+  });
+  canvas.addEventListener('pointerup', ()=>{ drawing=false; });
+  canvas.addEventListener('dblclick', ()=>{ drawing=false; draw(); });
+  window.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ points=[]; draw(); }});
+
+  // ===== IO
+  btnLoad.addEventListener('click', ()=> fileEl.click());
+  fileEl.addEventListener('change', (e)=>{
+    const f = e.target.files && e.target.files[0]; if(!f) return;
+    const url = URL.createObjectURL(f);
+    const im = new Image();
+    im.onload = ()=>{ img = im; imgLoaded = true; points=[]; stage.classList.add('ready'); ph.classList.add('hidden'); computeView(); draw(); URL.revokeObjectURL(url); btnRun.disabled=false; btnExport.disabled=true; setOK(`Image chargée — ${img.naturalWidth}×${img.naturalHeight}`); };
+    im.src = url;
+  });
+  stage.addEventListener('dragover', e=>{ e.preventDefault(); });
+  stage.addEventListener('drop', e=>{
+    e.preventDefault(); const f = e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
+    const url = URL.createObjectURL(f);
+    const im = new Image();
+    im.onload = ()=>{ img = im; imgLoaded = true; points=[]; stage.classList.add('ready'); ph.classList.add('hidden'); computeView(); draw(); URL.revokeObjectURL(url); btnRun.disabled=false; btnExport.disabled=true; setOK(`Image chargée — ${img.naturalWidth}×${img.naturalHeight}`); };
+    im.src = url;
+  });
+
+  // ===== OpenCV
+  function ensureCV(){
+    return new Promise((res,rej)=>{
+      if(window.cv && cv.Mat) return res();
+      const t = setTimeout(()=>rej(new Error('OpenCV non chargé')), 20000);
+      (function check(){ if(window.cv && cv.Mat){ clearTimeout(t); res(); } else setTimeout(check, 100); })();
+    });
+  }
+
+  // ===== Utils (qualité)
+  function rdp(pts, eps){
+    if(pts.length<3) return pts.slice();
+    const dist2 = (a,b,p)=>{
+      const ABx=b.x-a.x, ABy=b.y-a.y;
+      const t = Math.max(0, Math.min(1, ((p.x-a.x)*ABx + (p.y-a.y)*ABy) / (ABx*ABx + ABy*ABy || 1)));
+      const X=a.x+ABx*t, Y=a.y+ABy*t, dx=p.x-X, dy=p.y-Y;
+      return dx*dx+dy*dy;
+    };
+    let maxD=0, idx=0;
+    for(let i=1;i<pts.length-1;i++){ const d=dist2(pts[0], pts[pts.length-1], pts[i]); if(d>maxD){maxD=d; idx=i;} }
+    if(Math.sqrt(maxD) > eps){
+      const left = rdp(pts.slice(0, idx+1), eps);
+      const right = rdp(pts.slice(idx), eps);
+      return left.slice(0,-1).concat(right);
+    }
+    return [pts[0], pts[pts.length-1]];
+  }
+
+  function buildMaskMat(w,h, rawPoints){
+    const tol = Math.max(1.2, Math.min(w,h)*0.0025);
+    const pts = rdp(rawPoints, tol);
+    const c = document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d');
+    g.clearRect(0,0,w,h);
+    g.fillStyle='#ff0000';
+    g.beginPath();
+    g.moveTo(pts[0].x, pts[0].y);
+    for(let i=1;i<pts.length;i++) g.lineTo(pts[i].x, pts[i].y);
+    g.closePath(); g.fill();
+    // flou doux pour bord plus clean au blend (pas pour le masque binaire)
+    g.filter = `blur(${Math.max(2, Math.round(Math.min(w,h)*0.01))}px)`;
+    g.globalCompositeOperation='source-in'; g.fillStyle='#ff0000'; g.fillRect(0,0,w,h);
+
+    const maskRGBA = cv.imread(c);
+    let gray = new cv.Mat(); cv.cvtColor(maskRGBA, gray, cv.COLOR_RGBA2GRAY); maskRGBA.delete();
+    cv.threshold(gray, gray, 1, 255, cv.THRESH_BINARY);
+    // légère dilatation pour attraper les franges
+    const k = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(5,5));
+    cv.dilate(gray, gray, k);
+    return gray; // 8U1
+  }
+
+  function edgeDensityAroundMask(srcBGR, mask8u){
+    let gray = new cv.Mat(); cv.cvtColor(srcBGR, gray, cv.COLOR_BGR2GRAY);
+    let edges = new cv.Mat(); cv.Canny(gray, edges, 60, 180); gray.delete();
+    const k = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(9,9));
+    let dil = new cv.Mat(); cv.dilate(mask8u, dil, k);
+    let ero = new cv.Mat(); cv.erode(mask8u, ero, k);
+    let ring = new cv.Mat(); cv.subtract(dil, ero, ring); dil.delete(); ero.delete();
+    let edgesRing = new cv.Mat(); cv.bitwise_and(edges, edges, edgesRing, ring);
+    const edgeCount = cv.countNonZero(edgesRing);
+    const ringCount  = cv.countNonZero(ring);
+    edges.delete(); edgesRing.delete(); ring.delete();
+    return ringCount ? edgeCount / ringCount : 0;
+  }
+
+  function multiScaleInpaintBGR(srcBGR, mask8u){
+    // construit pyramide
+    const levels = [], mlevels = [];
+    let cur = srcBGR.clone(), cm = mask8u.clone();
+    levels.push(cur); mlevels.push(cm);
+    while (levels.length < 4){
+      const minSide = Math.min(cur.cols, cur.rows);
+      if(minSide <= 512) break;
+      let di = new cv.Mat(), dm = new cv.Mat();
+      cv.pyrDown(cur, di);
+      cv.pyrDown(cm, dm);
+      levels.push(di); mlevels.push(dm);
+      cur = di; cm = dm;
+    }
+    const last = levels.length-1;
+
+    // choix algo selon densité d'arêtes
+    const density = edgeDensityAroundMask(levels[last], mlevels[last]);
+    const method = density > 0.12 ? cv.INPAINT_NS : cv.INPAINT_TELEA;
+
+    // inpaint au plus petit niveau
+    let filled = new cv.Mat();
+    let mWork = mlevels[last].clone();
+    const kSmall = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(3,3));
+    cv.dilate(mWork, mWork, kSmall);
+    cv.inpaint(levels[last], mWork, filled, 3.5, method);
+    mWork.delete();
+
+    // remonte et raffine anneau
+    for(let i=last-1; i>=0; i--){
+      let up = new cv.Mat();
+      cv.pyrUp(filled, up, new cv.Size(levels[i].cols, levels[i].rows));
+      filled.delete(); filled = up;
+
+      let base = levels[i].clone();
+      let m = mlevels[i].clone();
+      // place le upsample dans la zone complète
+      up.copyTo(base, m);
+
+      // raffinement sur anneau
+      const kRing = cv.getStructuringElement(cv.MORPH_ELLIPSE, new cv.Size(11,11));
+      let er = new cv.Mat(); cv.erode(m, er, kRing);
+      let ring = new cv.Mat(); cv.subtract(m, er, ring); er.delete();
+
+      cv.inpaint(base, ring, base, 2.0, method);
+      ring.delete(); m.delete();
+
+      filled.delete(); filled = base;
+    }
+
+    // cleanup pyramide
+    for(let i=0;i<levels.length;i++){ if(levels[i]) levels[i].delete(); if(mlevels[i]) mlevels[i].delete(); }
+    return filled; // BGR
+  }
+
+  async function runInpaint(){
+    if(!imgLoaded) return setERR('Charge une image');
+    if(points.length < 3) return setERR('Trace un lasso (au moins 3 points)');
+
+    setBusy(true);
+    let wait = 2200 + Math.floor(Math.random()*2600);
+    let secs = Math.ceil(wait/1000); eta.textContent = secs;
+    const iv = setInterval(()=>{ secs=Math.max(0,secs-1); eta.textContent=secs; }, 1000);
+
+    try{
+      await ensureCV();
+      const w = img.naturalWidth, h = img.naturalHeight;
+
+      // canvas source @ pleine résolution
+      const cImg = document.createElement('canvas'); cImg.width=w; cImg.height=h; const g=cImg.getContext('2d');
+      g.drawImage(img,0,0,w,h);
+
+      // lire image & masque
+      let srcRGBA = cv.imread(cImg);         // 8UC4
+      let srcBGR  = new cv.Mat();
+      cv.cvtColor(srcRGBA, srcBGR, cv.COLOR_RGBA2BGR);
+      srcRGBA.delete();
+
+      const mask = buildMaskMat(w,h, points);
+
+      // inpainting haute qualité
+      const filledBGR = multiScaleInpaintBGR(srcBGR, mask);
+
+      // convert BGR→RGBA puis dessine dans cImg
+      let outRGBA = new cv.Mat();
+      cv.cvtColor(filledBGR, outRGBA, cv.COLOR_BGR2RGBA);
+      cv.imshow(cImg, outRGBA);
+
+      // maj de l'aperçu + état
+      img.src = cImg.toDataURL('image/png');
+      await new Promise(r=> img.onload = r);
+      btnExport.disabled = false;
+      setOK('Inpainting haute qualité terminé'); 
+      draw();
+
+      // cleanup
+      srcBGR.delete(); mask.delete(); filledBGR.delete(); outRGBA.delete();
+    }catch(e){ console.error(e); setERR(e.message || 'Erreur inpainting'); }
+    finally{ clearInterval(iv); eta.textContent = '0'; setTimeout(()=>setBusy(false), Math.max(0, wait - 0)); }
+  }
+
+  btnRun.addEventListener('click', runInpaint);
+
+  btnExport.addEventListener('click', ()=>{
+    if(!imgLoaded) return;
+    const w = img.naturalWidth, h = img.naturalHeight;
+    const tmp = document.createElement('canvas'); tmp.width=w; tmp.height=h; const tctx = tmp.getContext('2d');
+    tctx.drawImage(img,0,0,w,h);
+    const a=document.createElement('a'); a.href=tmp.toDataURL('image/png'); a.download='object-remover.png'; a.click(); tmp.width=tmp.height=0;
+  });
+
+  // ===== Init
+  window.addEventListener('resize', resizeCanvas);
+  resizeCanvas();
+})();
+</script>
+</body>
+</html>
