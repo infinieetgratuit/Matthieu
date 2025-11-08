@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Convertisseur de fuseaux horaires</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* === Design Tokens — INVARIABLES sur tout le site (logo, couleurs, background) === */
+      --bg:#0B0B0D;           /* fond global */
+      --panel:#0d1120;        /* cartes/panneaux */
+      --text:#E6ECF7;         /* texte principal */
+      --muted:#A4ADBD;        /* texte secondaire */
+      --border:rgba(95,123,255,0.18); /* bordures subtiles */
+      --accent1:#2FE3FF;      /* cyan néon */
+      --accent2:#1B4CFF;      /* bleu électrique */
+      --ring:0 0 0 2px rgba(43,167,255,.35); /* focus/hover */
+      /* Règles d’usage : bouton primaire = dégradé accent1 → accent2, texte blanc */
+      --secondary:#0b0f1a;    /* Inputs/fonds secondaires */
+      --secondary-border:#1a2340;
+
+      --radius-xl:20px; --radius-2xl:24px;
+      --shadow-soft:0 10px 30px rgba(0,0,0,.35);
+      --shadow-press:0 6px 18px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+    }
+    a{color:inherit}
+
+    /* Header (logo & wordmark) */
+    .shell{min-height:100%; display:grid; grid-template-rows:auto 1fr auto}
+    header{position:sticky; top:0; z-index:10; backdrop-filter:saturate(1.1) blur(8px); background:linear-gradient(180deg, rgba(0,0,0,.35), transparent); border-bottom:1px solid rgba(255,255,255,.04)}
+    .bar{max-width:1100px; margin:0 auto; padding:16px 20px; display:flex; align-items:center; gap:12px}
+    .pastille{width:36px; height:36px; border-radius:999px; display:grid; place-items:center; font-weight:800; letter-spacing:.4px; background:radial-gradient(120% 120% at 22% 28%, var(--accent1), var(--accent2)); color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 4px 16px rgba(27,76,255,.35)}
+    .wordmark{font-weight:800; letter-spacing:.2px}
+    .spacer{flex:1}
+
+    /* Layout */
+    .wrap{display:grid; place-items:start center; padding:26px}
+    .grid{width:100%; max-width:1100px; display:grid; gap:16px; grid-template-columns:1fr}
+
+    .card{border:1px solid var(--border); border-radius:var(--radius-2xl);
+      background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+                 linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+      box-shadow:var(--shadow-soft); overflow:hidden}
+    .card .head{display:flex; align-items:center; justify-content:space-between; padding:18px 20px; border-bottom:1px solid rgba(255,255,255,.05)}
+    .card .head h2{margin:0; font-size:18px; letter-spacing:.2px}
+    .hint{color:var(--muted); font-size:12px}
+
+    .body{padding:18px; display:grid; gap:16px}
+    .row{display:grid; gap:12px}
+    @media (min-width:860px){
+      .row{grid-template-columns:1.3fr 1fr 1fr}
+    }
+
+    /* Inputs */
+    .field{display:grid; gap:8px}
+    .label{font-size:12px; color:#cfe3ff; letter-spacing:.2px}
+    .ctrl{display:flex; gap:8px; align-items:center}
+    input[type="text"], input[type="datetime-local"], select{
+      width:100%; padding:12px 12px; border-radius:14px; border:1px solid var(--secondary-border); background:var(--secondary); color:var(--text);
+      outline:none; transition:border .15s ease, box-shadow .15s ease
+    }
+    input:focus, select:focus{box-shadow:var(--ring)}
+
+    .btn{cursor:pointer; user-select:none; padding:12px 14px; border-radius:14px; border:1px solid var(--secondary-border); background:var(--secondary); color:var(--text); font-weight:700; transition:transform .06s ease, box-shadow .12s ease}
+    .btn:hover{box-shadow:var(--ring)}
+    .btn:active{transform:translateY(1px); box-shadow:var(--shadow-press)}
+    .btn.primary{border:none; background:linear-gradient(135deg, var(--accent1), var(--accent2)); color:#0b0f1a}
+    .btn.ghost{background:transparent; border:1px dashed var(--secondary-border); color:var(--muted)}
+
+    /* Targets */
+    .targets{display:flex; flex-wrap:wrap; gap:8px}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border:1px solid var(--border); background:rgba(8,12,22,.6); border-radius:999px; font-size:12px}
+    .chip b{letter-spacing:.2px}
+    .chip button{border:none; background:transparent; color:#9db0ff; cursor:pointer}
+    .chip:hover{box-shadow:var(--ring)}
+
+    /* Results */
+    .results{display:grid; gap:10px}
+    .res{display:grid; grid-template-columns:1.1fr 1fr auto; gap:12px; align-items:center; padding:12px 14px; border:1px solid var(--border); border-radius:16px; background:rgba(8,12,22,.6)}
+    .res h3{margin:0; font-size:16px}
+    .res .when{font-size:18px; font-weight:800; letter-spacing:.2px}
+    .meta{font-size:12px; color:var(--muted)}
+
+    .tools{display:flex; gap:8px}
+
+    .footer{padding:12px 18px 20px; border-top:1px solid rgba(255,255,255,.05); display:flex; gap:8px; justify-content:flex-end}
+
+    .warn{display:inline-flex; align-items:center; gap:8px; padding:8px 10px; background:rgba(255,198,10,.08); border:1px solid rgba(255,198,10,.25); color:#ffd66b; border-radius:10px; font-size:12px}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="bar">
+        <div class="pastille" aria-hidden="true">∞</div>
+        <div class="wordmark">Infinie & gratuit</div>
+        <div class="spacer"></div>
+        <button id="shareBtn" class="btn">Partager</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <div class="grid">
+        <section class="card">
+          <div class="head">
+            <h2>Convertisseur de fuseaux horaires</h2>
+            <div class="hint">Zéro compte • Zéro pub • 100% local</div>
+          </div>
+          <div class="body">
+            <div class="row">
+              <div class="field">
+                <div class="label">Fuseau source</div>
+                <div class="ctrl">
+                  <input id="srcTz" type="text" list="tzlist" placeholder="Ex. Europe/Paris"/>
+                  <button id="detectBtn" class="btn" title="Détecter">📍</button>
+                </div>
+                <small class="hint">Astuce : tape le nom de la ville (Paris, New_York, Tokyo…).</small>
+              </div>
+
+              <div class="field">
+                <div class="label">Date & heure (source)</div>
+                <div class="ctrl">
+                  <input id="srcDT" type="datetime-local"/>
+                  <button id="nowBtn" class="btn">Maintenant</button>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><input id="followNow" type="checkbox"> Suivre l'heure actuelle</label>
+              </div>
+
+              <div class="field">
+                <div class="label">Actions</div>
+                <div class="ctrl">
+                  <button id="swapBtn" class="btn">Échanger ↔︎</button>
+                  <button id="copyAllBtn" class="btn">Copier tout</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="field">
+              <div class="label">Cibles</div>
+              <div class="ctrl">
+                <input id="addTz" type="text" list="tzlist" placeholder="Ajouter un fuseau…"/>
+                <button id="addBtn" class="btn primary">Ajouter</button>
+                <button id="presetsBtn" class="btn">+ Présets</button>
+              </div>
+              <div id="targets" class="targets" aria-live="polite"></div>
+            </div>
+
+            <div id="dstWarn" class="warn" style="display:none">⚠ Changement d'heure proche / heure potentiellement ambiguë</div>
+
+            <div id="results" class="results" aria-live="polite"></div>
+          </div>
+          <div class="footer">
+            <button id="exportBtn" class="btn">Exporter CSV</button>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer style="max-width:1100px;margin:0 auto;padding:16px 20px 28px;color:var(--muted);font-size:12px">
+      Commandes clavier : Entrée pour convertir, ⌘/Ctrl+C copie le premier résultat, Tab → navigation. Compatible heure d'été/hiver.
+    </footer>
+  </div>
+
+  <datalist id="tzlist"></datalist>
+
+<script>
+(() => {
+  // Helpers — Intl/Temporal detection
+  const hasTemporal = typeof Temporal !== 'undefined' && Temporal?.ZonedDateTime;
+
+  // Build TZ list (prefer engine, fallback common list)
+  const COMMON_TZ = [
+    'UTC','Europe/Paris','Europe/London','Europe/Berlin','Europe/Madrid','Europe/Rome','Europe/Amsterdam','Europe/Brussels','Europe/Zurich',
+    'America/New_York','America/Chicago','America/Denver','America/Los_Angeles','America/Toronto','America/Sao_Paulo',
+    'Asia/Tokyo','Asia/Seoul','Asia/Shanghai','Asia/Hong_Kong','Asia/Bangkok','Asia/Kolkata','Asia/Dubai','Asia/Singapore',
+    'Australia/Sydney','Australia/Melbourne','Pacific/Auckland','Africa/Cairo','Africa/Johannesburg'
+  ];
+  let ALL_TZ = COMMON_TZ;
+  try {
+    if (Intl.supportedValuesOf) {
+      ALL_TZ = Intl.supportedValuesOf('timeZone');
+    }
+  } catch {}
+
+  // DOM
+  const srcTz = document.getElementById('srcTz');
+  const srcDT = document.getElementById('srcDT');
+  const addTz = document.getElementById('addTz');
+  const targetsWrap = document.getElementById('targets');
+  const results = document.getElementById('results');
+  const tzlist = document.getElementById('tzlist');
+  const nowBtn = document.getElementById('nowBtn');
+  const followNow = document.getElementById('followNow');
+  const detectBtn = document.getElementById('detectBtn');
+  const addBtn = document.getElementById('addBtn');
+  const swapBtn = document.getElementById('swapBtn');
+  const copyAllBtn = document.getElementById('copyAllBtn');
+  const shareBtn = document.getElementById('shareBtn');
+  const exportBtn = document.getElementById('exportBtn');
+  const presetsBtn = document.getElementById('presetsBtn');
+  const dstWarn = document.getElementById('dstWarn');
+
+  // Fill datalist
+  tzlist.innerHTML = ALL_TZ.map(z => `<option value="${z}"></option>`).join('');
+
+  // State
+  const state = {
+    src: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris',
+    epoch: Date.now(),
+    targets: []
+  };
+
+  // Presets
+  const PRESETS = ['Europe/London','America/New_York','Asia/Tokyo','Australia/Sydney','Asia/Dubai','America/Sao_Paulo'];
+
+  // Init UI
+  srcTz.value = state.src;
+  setNowInSource(); // sets srcDT to now in src tz
+  // Default targets: 3 presets not equal to src
+  state.targets = PRESETS.filter(z => z !== state.src).slice(0,3);
+  renderTargets();
+  convertAndRender();
+
+  // URL params load
+  try{
+    const url = new URL(location.href);
+    const p = url.searchParams;
+    const src = p.get('src');
+    const epoch = p.get('epoch');
+    const to = p.get('to');
+    if (src && ALL_TZ.includes(src)) state.src = src;
+    if (epoch && !Number.isNaN(+epoch)) state.epoch = +epoch;
+    if (to) state.targets = to.split(',').filter(z => ALL_TZ.includes(z));
+    srcTz.value = state.src;
+    setLocalInputFromEpoch();
+    renderTargets();
+    convertAndRender();
+  }catch{}
+
+  // Handlers
+  detectBtn.addEventListener('click', ()=>{
+    state.src = Intl.DateTimeFormat().resolvedOptions().timeZone || state.src;
+    srcTz.value = state.src; setLocalInputFromEpoch(); convertAndRender();
+  });
+
+  nowBtn.addEventListener('click', ()=>{ setNowInSource(); convertAndRender(); });
+  followNow.addEventListener('change', ()=>{
+    if (followNow.checked){
+      tickLive();
+    } else { clearInterval(liveTimer); }
+  });
+
+  let liveTimer = null;
+  function tickLive(){
+    clearInterval(liveTimer);
+    liveTimer = setInterval(()=>{ state.epoch = Date.now(); setLocalInputFromEpoch(); convertAndRender(); }, 1000);
+  }
+
+  srcTz.addEventListener('change', ()=>{
+    if (!ALL_TZ.includes(srcTz.value)) { srcTz.style.boxShadow = '0 0 0 2px rgba(255,96,96,.35)'; return; }
+    srcTz.style.boxShadow = '';
+    state.src = srcTz.value; setLocalInputFromEpoch(); convertAndRender();
+  });
+
+  srcDT.addEventListener('change', ()=>{ state.epoch = epochFromLocalInput(); convertAndRender(); });
+  addBtn.addEventListener('click', ()=> addTarget(addTz.value));
+  addTz.addEventListener('keydown', (e)=>{ if (e.key==='Enter') addTarget(addTz.value); });
+
+  function addTarget(v){
+    const z = normalizeTz(v);
+    if (!z) return; if (!state.targets.includes(z) && z!==state.src){ state.targets.push(z); renderTargets(); convertAndRender(); }
+    addTz.value='';
+  }
+  presetsBtn.addEventListener('click', ()=>{
+    PRESETS.forEach(z=>{ if(!state.targets.includes(z) && z!==state.src) state.targets.push(z); });
+    renderTargets(); convertAndRender();
+  });
+
+  swapBtn.addEventListener('click', ()=>{
+    if (!state.targets.length) return;
+    const first = state.targets[0];
+    // swap src <-> first target
+    const oldSrc = state.src; state.src = first; state.targets[0] = oldSrc; srcTz.value = state.src;
+    setLocalInputFromEpoch(); convertAndRender();
+  });
+
+  copyAllBtn.addEventListener('click', async ()=>{
+    const text = buildClipboardText();
+    try{ await navigator.clipboard.writeText(text);}catch{}
+  });
+
+  shareBtn.addEventListener('click', async ()=>{
+    const u = new URL(location.href);
+    u.searchParams.set('src', state.src);
+    u.searchParams.set('epoch', String(state.epoch));
+    if (state.targets.length) u.searchParams.set('to', state.targets.join(',')); else u.searchParams.delete('to');
+    const link = u.toString();
+    try{
+      await navigator.clipboard.writeText(link);
+      shareBtn.textContent = 'Lien copié'; setTimeout(()=>shareBtn.textContent='Partager',900);
+    }catch{ alert(link); }
+  });
+
+  exportBtn.addEventListener('click', ()=>{
+    const rows = [['Source', 'Cible', 'Date/Heure', 'GMT', 'Delta (h)']];
+    for (const z of state.targets){
+      const info = formatInZone(state.epoch, z);
+      const srcInfo = formatInZone(state.epoch, state.src);
+      const delta = (info.offset - srcInfo.offset)/3600000;
+      rows.push([state.src, z, info.label, info.gmt, delta.toFixed(1)]);
+    }
+    const csv = rows.map(r=> r.map(v=> '"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'timezones.csv'; a.click();
+  });
+
+  function renderTargets(){
+    targetsWrap.innerHTML = '';
+    state.targets.forEach((z, idx)=>{
+      const chip = document.createElement('div'); chip.className='chip';
+      const b = document.createElement('b'); b.textContent = z; chip.appendChild(b);
+      const rm = document.createElement('button'); rm.textContent='✕'; rm.title='Retirer';
+      rm.addEventListener('click', ()=>{ state.targets.splice(idx,1); renderTargets(); convertAndRender(); });
+      chip.appendChild(rm);
+      chip.addEventListener('click', ()=>{ /* select for swap */ state.targets.unshift(state.targets.splice(idx,1)[0]); convertAndRender(); });
+      targetsWrap.appendChild(chip);
+    });
+  }
+
+  function convertAndRender(){
+    // DST warning heuristic: offset changes within ±3h around epoch
+    const offA = tzOffset(state.epoch - 3*3600e3, state.src);
+    const offB = tzOffset(state.epoch + 3*3600e3, state.src);
+    dstWarn.style.display = (offA !== offB) ? 'inline-flex' : 'none';
+
+    results.innerHTML = '';
+    for (const z of state.targets){
+      const info = formatInZone(state.epoch, z);
+      const srcInfo = formatInZone(state.epoch, state.src);
+      const deltaHours = (info.offset - srcInfo.offset)/3600000;
+
+      const item = document.createElement('div'); item.className='res';
+      const title = document.createElement('h3'); title.textContent = z; item.appendChild(title);
+
+      const when = document.createElement('div'); when.className='when'; when.textContent = info.label; item.appendChild(when);
+
+      const meta = document.createElement('div'); meta.className='meta';
+      meta.textContent = `${info.weekday} • ${info.gmt} • ${deltaHours>=0?'+':''}${deltaHours.toFixed(1)}h vs ${state.src}`;
+      item.appendChild(meta);
+
+      const tools = document.createElement('div'); tools.className='tools';
+      const copyBtn = document.createElement('button'); copyBtn.className='btn'; copyBtn.textContent='Copier';
+      copyBtn.addEventListener('click', async ()=>{
+        const t = `${z}: ${info.label} (${info.gmt}, ${deltaHours>=0?'+':''}${deltaHours.toFixed(1)}h vs ${state.src})`;
+        try{ await navigator.clipboard.writeText(t);}catch{}
+      });
+      tools.appendChild(copyBtn);
+      item.appendChild(tools);
+
+      results.appendChild(item);
+    }
+  }
+
+  function buildClipboardText(){
+    const srcInfo = formatInZone(state.epoch, state.src);
+    const lines = [`Source ${state.src}: ${srcInfo.label} (${srcInfo.gmt})`];
+    for (const z of state.targets){
+      const info = formatInZone(state.epoch, z);
+      const delta = (info.offset - srcInfo.offset)/3600000;
+      lines.push(`${z}: ${info.label} (${info.gmt}, ${delta>=0?'+':''}${delta.toFixed(1)}h)`);
+    }
+    return lines.join('\n');
+  }
+
+  function setNowInSource(){
+    state.epoch = Date.now();
+    setLocalInputFromEpoch();
+  }
+
+  function setLocalInputFromEpoch(){
+    // compute wall time in src
+    const p = partsInZone(state.epoch, state.src);
+    srcDT.value = `${p.y}-${p.M}-${p.D}T${p.h}:${p.m}`;
+  }
+
+  function epochFromLocalInput(){
+    const v = srcDT.value; // "YYYY-MM-DDTHH:mm"
+    if (!v) return state.epoch;
+    const [date, time] = v.split('T');
+    const [Y,M,D] = date.split('-').map(n=>+n);
+    const [h,m] = time.split(':').map(n=>+n);
+    if (hasTemporal){
+      try{
+        const zdt = Temporal.ZonedDateTime.from({ timeZone: state.src, year:Y, month:M, day:D, hour:h, minute:m, second:0, millisecond:0 });
+        return zdt.epochMilliseconds;
+      }catch{ /* fallback below */ }
+    }
+    return zonedToUtcMs(Y,M,D,h,m, state.src);
+  }
+
+  function normalizeTz(v){
+    if (!v) return null;
+    // Allow typing like "paris" or "new york"
+    const s = v.trim();
+    if (ALL_TZ.includes(s)) return s;
+    const match = ALL_TZ.find(z => z.toLowerCase().includes(s.toLowerCase().replaceAll(' ','_')));
+    return match || null;
+  }
+
+  function formatInZone(epoch, zone){
+    const p = partsInZone(epoch, zone);
+    const label = `${p.h}:${p.m} — ${p.D}/${p.M}/${String(p.y).slice(-2)}`;
+    const gmt = `GMT${p.offSign}${p.offH}:${p.offM}`;
+    return { label, gmt, offset: p.offsetMs, weekday: p.weekday };
+  }
+
+  function partsInZone(epoch, zone){
+    const dtf = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: zone,
+      year:'numeric', month:'2-digit', day:'2-digit', weekday:'short',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    });
+    const parts = Object.fromEntries(dtf.formatToParts(new Date(epoch)).map(p=>[p.type,p.value]));
+    const y = parts.year; const M = parts.month; const D = parts.day;
+    const h = parts.hour; const m = parts.minute; const s = parts.second;
+    const offset = tzOffset(epoch, zone);
+    const sign = offset >= 0 ? '+' : '-';
+    const abs = Math.abs(offset);
+    const offH = String(Math.trunc(abs/3600000)).padStart(2,'0');
+    const offM = String(Math.trunc((abs%3600000)/60000)).padStart(2,'0');
+    return {y, M, D, h, m, s, offsetMs: offset, offSign: sign, offH, offM, weekday: parts.weekday};
+  }
+
+  function tzOffset(epochMs, zone){
+    // Compute timezone offset at epoch for given zone using format trick
+    const dtf = new Intl.DateTimeFormat('en-US', {
+      timeZone: zone,
+      year:'numeric', month:'2-digit', day:'2-digit',
+      hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+    });
+    const parts = Object.fromEntries(dtf.formatToParts(new Date(epochMs)).map(p=>[p.type,p.value]));
+    const asUTC = Date.parse(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}Z`);
+    return asUTC - epochMs; // positive when zone is ahead of UTC
+  }
+
+  function zonedToUtcMs(Y,M,D,h,m, zone){
+    // initial guess assuming UTC
+    let utc = Date.UTC(Y, M-1, D, h, m, 0, 0);
+    let off1 = tzOffset(utc, zone);
+    utc -= off1;
+    const off2 = tzOffset(utc, zone);
+    if (off2 !== off1) utc -= (off2 - off1);
+    return utc;
+  }
+
+})();
+</script>
+</body>
+</html>

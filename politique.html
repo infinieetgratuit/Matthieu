@@ -1,0 +1,865 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Générateur de pages légales e-commerce</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <!-- jsPDF pour export PDF -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <style>
+    :root{
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+      --border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF; --accent2:#1B4CFF;
+      --ring:0 0 0 2px rgba(43,167,255,.35);
+      --input-bg:#0b0f1a; --input-bd:#1a2340;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:32px 20px 80px}
+
+    /* Header logo */
+    .brand{display:flex; align-items:center; gap:10px; user-select:none}
+    .brand .badge{
+      width:36px; height:36px; border-radius:999px; display:grid; place-items:center;
+      background:radial-gradient(120% 120% at 20% 20%, var(--accent1), var(--accent2));
+      box-shadow:0 0 0 1px rgba(255,255,255,0.06), 0 10px 30px rgba(33,118,255,.25) inset;
+    }
+    .brand .badge span{font-weight:800; font-size:20px; color:white; transform:translateY(-1px)}
+    .brand .word{font-weight:800; letter-spacing:.2px; font-size:16px; color:var(--text); opacity:.95}
+
+    /* Card/panel */
+    .card{
+      position:relative; background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+                          linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+                          var(--panel);
+      border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:0 15px 50px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.03) inset;
+      padding:22px; overflow:hidden;
+    }
+    .card.sheen::after{
+      content:""; position:absolute; inset:-40% -80%; transform:rotate(8deg);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+      animation:sheen 5s linear infinite;
+      pointer-events:none; /* IMPORTANT: clics jamais bloqués */
+    }
+    @keyframes sheen{0%{transform:translateX(-40%) rotate(8deg)}100%{transform:translateX(40%) rotate(8deg)}}
+
+    h1{font-size:28px; margin:8px 0 6px}
+    p.lead{color:var(--muted); margin:0 0 14px; line-height:1.6}
+
+    /* Buttons */
+    .row-actions{display:flex; gap:12px; flex-wrap:wrap}
+    .btn{
+      appearance:none; border:0; border-radius:14px; padding:12px 16px;
+      font-weight:700; color:white; cursor:pointer; transition:.2s ease transform, .2s ease box-shadow, .2s ease background;
+      display:inline-flex; align-items:center; gap:10px;
+      box-shadow:0 8px 24px rgba(0,0,0,.25);
+      will-change:transform;
+    }
+    .btn:focus{outline:none; box-shadow:0 0 0 3px rgba(43,167,255,.35)}
+    .btn:hover{transform:translateY(-1px)}
+    .btn:active{transform:translateY(0)}
+    .btn.primary{background:linear-gradient(135deg, var(--accent1), var(--accent2))}
+    .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border)}
+    .btn.small{padding:10px 12px; font-weight:600; border-radius:12px; font-size:13px}
+
+    /* Steps */
+    .stack{display:grid; gap:16px; margin-top:18px}
+    .hidden{display:none !important}
+
+    /* Info panel (collapsible) */
+    .info-wrap{overflow:hidden; transition:max-height .35s ease, opacity .35s ease; max-height:0; opacity:0}
+    .info-wrap.open{max-height:900px; opacity:1}
+    .info-grid{display:grid; gap:12px}
+    @media(min-width:760px){ .info-grid{grid-template-columns:repeat(2,1fr)} }
+    .info-item{display:flex; gap:12px; padding:12px; border:1px solid var(--border); border-radius:14px; background:rgba(12,16,28,.6)}
+    .icon{width:28px; height:28px; flex:0 0 28px}
+    .info-item h3{margin:0 0 6px; font-size:14px}
+    .info-item p{margin:0; font-size:13px; color:var(--muted)}
+    .info-item ul{margin:6px 0 0 18px; padding:0; color:#cfe7ff; font-size:13px}
+    .info-item li{margin:2px 0}
+
+    /* Form */
+    .form{display:grid; gap:18px}
+    .fieldset{border:1px dashed rgba(95,123,255,.25); border-radius:14px; padding:16px}
+    .legend{font-weight:700; font-size:13px; color:#cfe7ff; letter-spacing:.2px; text-transform:uppercase; margin-bottom:12px}
+    .grid{display:grid; gap:12px}
+    @media(min-width:760px){ .grid.cols-2{grid-template-columns:1fr 1fr} .grid.cols-3{grid-template-columns:repeat(3,1fr)} }
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    input, textarea, select{
+      width:100%; background:var(--input-bg); border:1px solid var(--input-bd);
+      color:var(--text); border-radius:12px; padding:12px 12px; font:inherit; outline:none;
+      transition:.2s ease border-color, .2s ease box-shadow, .2s ease background;
+    }
+    input:focus, textarea:focus, select:focus{box-shadow:var(--ring); border-color:#2b5cff}
+    textarea{min-height:90px; resize:vertical}
+
+    .hint{font-size:12px; color:var(--muted)}
+    .err{font-size:12px; color:#ff6b6b; margin-top:6px; display:none}
+
+    /* Generator overlay */
+    .loading{
+      display:flex; align-items:center; gap:14px; padding:14px; border-radius:12px;
+      background:rgba(21,28,46,.65); border:1px solid rgba(95,123,255,.25);
+    }
+    .spinner{
+      width:22px; height:22px; border-radius:50%;
+      border:3px solid rgba(255,255,255,.12);
+      border-top-color:transparent; position:relative;
+      animation:spin .9s linear infinite;
+    }
+    .spinner::after{
+      content:""; position:absolute; inset:-3px; border-radius:50%;
+      border:3px solid transparent;
+      border-top-color:#6bd8ff; filter:drop-shadow(0 0 8px rgba(47,227,255,.65));
+      animation:spin 1.2s linear infinite reverse;
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+
+    .stage{margin-top:14px}
+    .stage .dot{width:8px; height:8px; border-radius:999px; background:linear-gradient(135deg,var(--accent1),var(--accent2)); display:inline-block; box-shadow:0 0 12px rgba(33,118,255,.6)}
+    .stage p{margin:6px 0 0; font-size:13px; color:#cde9ff}
+
+    /* Result list */
+    .doc-list{display:grid; gap:10px; margin-top:8px}
+    .doc-item{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:12px; border:1px solid var(--border); border-radius:12px; background:rgba(12,16,28,.6)
+    }
+    .doc-title{font-weight:700}
+    .doc-actions{display:flex; gap:8px; flex-wrap:wrap}
+
+    .note{font-size:12px; color:var(--muted); margin-top:8px}
+    .footer-space{height:24px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand" aria-label="Infinie & gratuit">
+      <div class="badge"><span>∞</span></div>
+      <div class="word">Infinie & gratuit</div>
+    </header>
+
+    <main class="stack">
+      <!-- ÉTAT 1 — Bienvenue -->
+      <section id="welcome" class="card sheen">
+        <h1>Générateur de pages légales e-commerce</h1>
+        <p class="lead">
+          Crée en quelques minutes tes <strong>CGV</strong>, <strong>CGU</strong>, <strong>Mentions légales</strong> et ta page <strong>SAV</strong>, prêtes à être téléchargées en <em>.txt</em> ou <em>.pdf</em>.
+          Aucune inscription. Zéro pub. 100% local.
+        </p>
+        <div class="row-actions">
+          <button class="btn primary" id="start">➕ Créer mes pages</button>
+          <button class="btn ghost" id="seeFields" aria-expanded="false" aria-controls="infoCard">ℹ️ Voir les infos requises</button>
+        </div>
+
+        <!-- Cadre infos requises (collapsible) -->
+        <div id="infoCard" class="info-wrap" aria-hidden="true">
+          <div class="info-grid" style="margin-top:14px">
+            <!-- Identité -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-4 0-7 2-7 4v1h14v-1c0-2-3-4-7-4Z" stroke="url(#g1)" stroke-width="1.6"/>
+                <defs><linearGradient id="g1" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Identité & contacts</h3>
+                <p>Nom boutique, entité, SIREN/SIRET, RCS, capital, adresse, responsable de publication, email/téléphone, URL du site.</p>
+                <ul><li>Ex: “ATELIER SAS”, “RCS Paris”, “FR TVA …”</li></ul>
+              </div>
+            </div>
+            <!-- Hébergeur -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M4 7h16v4H4zM4 13h16v4H4zM7 9h4M7 15h4" stroke="url(#g2)" stroke-width="1.6" stroke-linecap="round"/>
+                <defs><linearGradient id="g2" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Hébergement</h3>
+                <p>Nom et adresse postale de l’hébergeur du site (obligatoire).</p>
+                <ul><li>Ex: “Hostinger International Ltd., …”</li></ul>
+              </div>
+            </div>
+            <!-- Vente & paiement -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M3 6h18v4H3zM3 10h18v8H3zM7 14h4" stroke="url(#g3)" stroke-width="1.6" stroke-linecap="round"/>
+                <defs><linearGradient id="g3" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Vente & paiement</h3>
+                <p>Moyens de paiement, lutte anti-fraude, devises, taxes, facturation.</p>
+                <ul><li>CB, Visa, Mastercard, PayPal, etc.</li></ul>
+              </div>
+            </div>
+            <!-- Livraison -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M3 16h2l2-6h9l2 6h3M7 20a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm10 0a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" stroke="url(#g4)" stroke-width="1.6" stroke-linecap="round"/>
+                <defs><linearGradient id="g4" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Livraison</h3>
+                <p>Zones desservies, délais, transporteurs, frais, suivi, transfert des risques.</p>
+              </div>
+            </div>
+            <!-- Retours & SAV -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M12 6v6l4 2M4 12a8 8 0 1 0 8-8" stroke="url(#g5)" stroke-width="1.6" stroke-linecap="round"/>
+                <defs><linearGradient id="g5" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Retours & SAV</h3>
+                <p>Droit de rétractation (jours), fenêtre de retour, adresse, procédure SAV, délais.</p>
+              </div>
+            </div>
+            <!-- Juridique / RGPD -->
+            <div class="info-item">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M12 3l7 4v5c0 5-3.5 8-7 9-3.5-1-7-4-7-9V7l7-4Z" stroke="url(#g6)" stroke-width="1.6"/>
+                <defs><linearGradient id="g6" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+              </svg>
+              <div>
+                <h3>Juridique & RGPD</h3>
+                <p>Droit applicable, tribunal compétent, contact RGPD/DPO, cookies, médiation/ODR.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ÉTAT 2 — Formulaire (identique à avant) -->
+      <section id="formCard" class="card hidden">
+        <h1>Renseigne les informations</h1>
+        <p class="lead">Nous générons des modèles conformes au cadre FR/EU (à adapter à ton activité). Champs essentiels marqués d’un *.</p>
+
+        <form class="form" id="legalForm" novalidate>
+          <!-- Identité légale -->
+          <div class="fieldset">
+            <div class="legend">Identité</div>
+            <div class="grid cols-2">
+              <div>
+                <label>Nom de la boutique *</label>
+                <input required name="shopName" placeholder="Ex: L'Atelier des Étoiles"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>URL du site *</label>
+                <input required name="siteUrl" placeholder="https://exemple.com"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Raison sociale / forme *</label>
+                <input required name="entity" placeholder="Ex: ATELIER SAS"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Capital social</label>
+                <input name="capital" placeholder="Ex: 10 000 €"/>
+              </div>
+              <div>
+                <label>SIREN / SIRET *</label>
+                <input required name="siren" placeholder="Ex: 123 456 789"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>RCS (ville) *</label>
+                <input required name="rcs" placeholder="Ex: RCS Paris"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>TVA intracommunautaire</label>
+                <input name="tva" placeholder="Ex: FR12 123456789"/>
+              </div>
+              <div>
+                <label>Siège social (Adresse) *</label>
+                <input required name="hqAddress" placeholder="N°, rue, code postal, ville, pays"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Responsable de la publication *</label>
+                <input required name="publisher" placeholder="Nom Prénom"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Email de contact *</label>
+                <input required name="email" placeholder="support@exemple.com"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Téléphone</label>
+                <input name="phone" placeholder="+33 ..."/>
+              </div>
+            </div>
+            <p class="hint">Ces infos alimentent les <em>mentions légales</em>, les CGV/CGU et la page SAV.</p>
+          </div>
+
+          <!-- Hébergeur -->
+          <div class="fieldset">
+            <div class="legend">Hébergement</div>
+            <div class="grid cols-2">
+              <div>
+                <label>Hébergeur (nom) *</label>
+                <input required name="hostName" placeholder="Ex: Hostinger International Ltd."/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Hébergeur (adresse) *</label>
+                <input required name="hostAddress" placeholder="Adresse complète"/>
+                <div class="err">Requis</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Vente & livraison -->
+          <div class="fieldset">
+            <div class="legend">Vente & Livraison</div>
+            <div class="grid cols-2">
+              <div>
+                <label>Zones de livraison</label>
+                <input name="zones" placeholder="France métropolitaine, UE, …"/>
+              </div>
+              <div>
+                <label>Délais d’expédition (indicatif)</label>
+                <input name="shippingDelay" placeholder="Ex: 24–48h ouvrées"/>
+              </div>
+              <div>
+                <label>Transporteurs</label>
+                <input name="carriers" placeholder="Ex: Colissimo, Chronopost, DHL"/>
+              </div>
+              <div>
+                <label>Frais de livraison</label>
+                <input name="fees" placeholder="Ex: offerts dès 60 €, sinon 4,90 €"/>
+              </div>
+              <div>
+                <label>Moyens de paiement acceptés</label>
+                <input name="payments" placeholder="CB, Visa, Mastercard, PayPal, Apple Pay…"/>
+              </div>
+            </div>
+          </div>
+
+          <!-- Retours & SAV -->
+          <div class="fieldset">
+            <div class="legend">Retours & SAV</div>
+            <div class="grid cols-2">
+              <div>
+                <label>Droit de rétractation (jours, EU = 14) *</label>
+                <input required name="withdrawalDays" type="number" min="1" value="14"/>
+                <div class="err">Requis</div>
+              </div>
+              <div>
+                <label>Délai de retour (si différent)</label>
+                <input name="returnWindow" placeholder="Ex: 30 jours"/>
+              </div>
+              <div>
+                <label>Adresse de retour</label>
+                <input name="returnAddress" placeholder="Adresse de retour"/>
+              </div>
+              <div>
+                <label>Horaires SAV</label>
+                <input name="savHours" placeholder="Ex: Lun–Ven, 9h–18h (CET)"/>
+              </div>
+            </div>
+            <label>Procédure SAV (optionnelle)</label>
+            <textarea name="savProcess" placeholder="Décrivez brièvement la procédure (RMA, étapes, délais, preuves nécessaires)…"></textarea>
+          </div>
+
+          <!-- Juridique -->
+          <div class="fieldset">
+            <div class="legend">Juridique</div>
+            <div class="grid cols-3">
+              <div>
+                <label>Droit applicable</label>
+                <select name="law">
+                  <option value="français" selected>Droit français</option>
+                  <option value="belge">Droit belge</option>
+                  <option value="suisse">Droit suisse</option>
+                  <option value="ue">Droit de l’Union européenne</option>
+                </select>
+              </div>
+              <div>
+                <label>Tribunal compétent</label>
+                <input name="court" placeholder="Ex: Tribunaux de Paris"/>
+              </div>
+              <div>
+                <label>Contact RGPD (si différent)</label>
+                <input name="dpo" placeholder="Email DPO / contact données"/>
+              </div>
+            </div>
+          </div>
+
+          <div class="row-actions">
+            <button type="button" class="btn ghost" id="backWelcome">← Retour</button>
+            <button type="submit" class="btn primary">Générer les 4 pages</button>
+          </div>
+          <div class="note">⚖️ Modèles fournis à titre indicatif — fais valider par un professionnel si nécessaire.</div>
+        </form>
+
+        <!-- Animation de génération -->
+        <div id="generator" class="stage hidden">
+          <div class="loading">
+            <div class="spinner" aria-hidden="true"></div>
+            <div>
+              <strong id="genStep">Analyse des informations…</strong>
+              <div class="hint">Mise en forme et insertion des mentions obligatoires (UE/FR)…</div>
+            </div>
+          </div>
+          <p class="stage"><span class="dot"></span> Merci de patienter ~ quelques secondes.</p>
+        </div>
+      </section>
+
+      <!-- ÉTAT 3 — Résultat & téléchargements (identique) -->
+      <section id="resultCard" class="card hidden">
+        <h1>Merci pour ta confiance ✨</h1>
+        <p class="lead">Tes documents sont prêts. Télécharge-les en <em>.txt</em> ou <em>.pdf</em>. Tu peux regénérer à tout moment.</p>
+
+        <div id="docList" class="doc-list"></div>
+
+        <div class="row-actions" style="margin-top:12px">
+          <button class="btn ghost" id="regen">↺ Regénérer</button>
+          <button class="btn primary" id="backToStart">🏠 Retour à l’accueil</button>
+        </div>
+        <div class="note">Dernière génération : <span id="genDate"></span></div>
+      </section>
+
+      <div class="footer-space"></div>
+    </main>
+  </div>
+
+  <script>
+    // Helpers
+    const $ = sel => document.querySelector(sel);
+    const show = (el, yes=true)=> el.classList[yes?'remove':'add']('hidden');
+    const nowFr = ()=> new Date().toLocaleString('fr-FR',{dateStyle:'long', timeStyle:'short'});
+
+    const S = {
+      welcome: $('#welcome'),
+      infoBtn: $('#seeFields'),
+      infoCard: $('#infoCard'),
+      formCard: $('#formCard'),
+      form: $('#legalForm'),
+      generator: $('#generator'),
+      genStep: $('#genStep'),
+      result: $('#resultCard'),
+      docList: $('#docList'),
+      genDate: $('#genDate'),
+      // buttons
+      start: $('#start'),
+      backWelcome: $('#backWelcome'),
+      regen: $('#regen'),
+      backToStart: $('#backToStart'),
+    };
+
+    // État initial
+    S.start.addEventListener('click', () => {
+      show(S.welcome,false); show(S.formCard,true);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+
+    // Cadre infos requis — toggle fluide
+    S.infoBtn.addEventListener('click', () => {
+      const open = !S.infoCard.classList.contains('open');
+      S.infoCard.classList.toggle('open', open);
+      S.infoBtn.setAttribute('aria-expanded', String(open));
+      S.infoCard.setAttribute('aria-hidden', String(!open));
+      // auto-scroll si on ouvre
+      if(open){
+        const y = S.infoCard.getBoundingClientRect().top + window.scrollY - 20;
+        window.scrollTo({top:y, behavior:'smooth'});
+      }
+    });
+
+    S.backWelcome.addEventListener('click', () => {
+      show(S.formCard,false); show(S.welcome,true);
+    });
+    S.backToStart.addEventListener('click', () => {
+      show(S.result,false); show(S.welcome,true);
+    });
+    S.regen.addEventListener('click', () => {
+      show(S.result,false); show(S.formCard,true);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+
+    // Validation simple
+    function validateRequired(form){
+      let ok = true;
+      form.querySelectorAll('[required]').forEach(inp=>{
+        const block = inp.closest('div');
+        const err = block?.querySelector('.err');
+        if(!inp.value.trim()){
+          ok = false;
+          err && (err.style.display='block');
+          inp.style.borderColor = '#ff6b6b';
+          inp.addEventListener('input', ()=>{
+            err && (err.style.display='none'); inp.style.borderColor = 'var(--input-bd)';
+          }, {once:true});
+        }
+      });
+      return ok;
+    }
+
+    // Génération
+    S.form.addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      if(!validateRequired(S.form)) return;
+
+      // Affiche le loader et simule des étapes
+      show(S.generator,true);
+      S.genStep.textContent = "Analyse des informations…";
+      await sleep(650);
+      S.genStep.textContent = "Rédaction des CGV & CGU…";
+      await sleep(650);
+      S.genStep.textContent = "Insertion des mentions légales & SAV…";
+      await sleep(650);
+
+      // Compose les documents (versions longues)
+      const data = getFormData(S.form);
+      const docs = buildDocuments(data);
+
+      // Remplit la carte de résultat
+      fillResults(docs);
+      S.genDate.textContent = nowFr();
+
+      // Bascule vers résultat
+      show(S.formCard,false);
+      show(S.result,true);
+      show(S.generator,false);
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+    function getFormData(form){
+      const fd = new FormData(form);
+      const obj = {};
+      for (const [k,v] of fd.entries()) obj[k] = (v||"").toString().trim();
+      obj.withdrawalDays = obj.withdrawalDays || "14";
+      obj.returnWindow = obj.returnWindow || (obj.withdrawalDays ? obj.withdrawalDays+" jours" : "14 jours");
+      return obj;
+    }
+
+    /* ====== GÉNÉRATION DES DOCUMENTS — VERSION DÉTAILLÉE ====== */
+    function buildDocuments(d){
+      const date = new Date().toLocaleDateString('fr-FR',{year:'numeric', month:'long', day:'numeric'});
+      const name = d.shopName || "Votre boutique";
+      const site = d.siteUrl || "https://exemple.com";
+      const tel = d.phone || "—";
+      const court = d.court || "les tribunaux compétents du ressort du siège de l’éditeur";
+
+      const header = (title)=> `${title}\n${"=".repeat(title.length)}\nDernière mise à jour : ${date}\nÉditeur : ${d.entity} — ${d.hqAddress}\nSite : ${site}\nEmail : ${d.email}${tel!=="—" ? " — Tél : "+tel : ""}\n\n`;
+
+      /* Mentions légales — étendues */
+      const mentions = header("Mentions légales") +
+`1) Éditeur du site
+${d.entity}${d.capital?` — Capital social : ${d.capital}`:""}${d.siren?` — SIREN/SIRET : ${d.siren}`:""} — ${d.rcs}${d.tva?` — N° TVA : ${d.tva}`:""}
+Siège social : ${d.hqAddress}
+Responsable de la publication : ${d.publisher}
+Contact : ${d.email}${tel!=="—"?` — ${tel}`:""}
+
+2) Hébergeur
+${d.hostName}
+${d.hostAddress}
+
+3) Objet du site
+Le site ${site} a pour objet la présentation et la vente de produits et/ou services proposés par ${d.entity}. 
+
+4) Propriété intellectuelle
+L’ensemble des éléments du site (textes, images, graphismes, logos, marques, vidéos, codes sources) est protégé par le droit d’auteur et/ou les droits de propriété intellectuelle. 
+Toute reproduction, représentation, adaptation ou exploitation partielle ou totale, sans autorisation écrite préalable de ${d.entity}, est interdite.
+
+5) Données personnelles
+${d.entity} collecte et traite des données à caractère personnel dans le cadre de la gestion des commandes, du support client et, le cas échéant, de l’envoi d’informations commerciales. 
+Base légale : exécution du contrat, intérêt légitime et obligations légales. 
+Durées de conservation : limitées au strict nécessaire.
+Droits des personnes (accès, rectification, effacement, limitation, opposition, portabilité) : écrire à ${d.dpo || d.email}. 
+Si besoin, réclamation auprès de l’autorité de contrôle compétente.
+
+6) Cookies
+Le site peut recourir à des cookies techniques (indispensables) et, le cas échéant, à des cookies de mesure d’audience/marketing. 
+Le bandeau d’information permet d’exprimer un consentement granulaire. Le paramétrage du navigateur permet également de les refuser.
+
+7) Responsabilité
+${d.entity} s’efforce d’assurer l’exactitude des informations publiées. Toutefois, des erreurs ou omissions peuvent survenir ; ${d.entity} ne saurait être tenue responsable des conséquences d’une indisponibilité du site, d’un bug, ou d’une inexactitude.
+
+8) Liens hypertextes
+Le site peut contenir des liens vers des sites tiers. ${d.entity} décline toute responsabilité quant à leurs contenus et pratiques.
+
+9) Droit applicable
+Les présentes mentions sont soumises au droit ${d.law || "français"} ; tout litige relève de ${court}.
+`;
+
+      /* CGV — version pro complète */
+      const cgv = header("Conditions Générales de Vente (CGV)") +
+`1) Définitions
+“Client” : toute personne physique/ morale procédant à un achat sur ${site}. 
+“Vendeur” : ${d.entity}. “Produits”/“Services” : biens et/ou prestations proposés à la vente.
+
+2) Champ d’application
+Les présentes CGV régissent, sans restriction ni réserve, l’ensemble des ventes conclues entre le Vendeur et le Client via ${site}. 
+Toute commande implique l’acceptation pleine et entière des CGV en vigueur au jour de la commande.
+
+3) Produits & disponibilité
+Les caractéristiques essentielles des Produits sont présentées sur le site. Les visuels n’ont pas de valeur contractuelle. 
+En cas d’indisponibilité après commande, le Client est informé et remboursé sans délai.
+
+4) Prix
+Les prix sont indiqués en euros, toutes taxes comprises lorsque applicable. Les éventuels frais de livraison et options sont indiqués avant validation de la commande.
+
+5) Commande
+Le Client suit le processus de commande en ligne (panier, identification, adresse, livraison, paiement). La validation finale vaut acceptation des prix, CGV et description des Produits. 
+Le Vendeur se réserve le droit de refuser toute commande anormale, frauduleuse ou de mauvaise foi.
+
+6) Paiement
+Moyens de paiement acceptés : ${d.payments || "CB, Visa, Mastercard"} (et autres moyens explicités au checkout). 
+Les paiements sont sécurisés. Toute commande est payable comptant. 
+Dans le cadre de la lutte contre la fraude, une procédure 3-D Secure ou des vérifications complémentaires peuvent être requises.
+
+7) Facturation
+Une facture est émise et disponible sur demande. Le Client s’engage à fournir des informations exactes.
+
+8) Livraison
+Zones desservies : ${d.zones || "France et UE"}.
+Délais indicatifs d’expédition : ${d.shippingDelay || "24–48h ouvrées"} via ${d.carriers || "transporteur(s) indiqué(s) lors du checkout"}.
+Frais de livraison : ${d.fees || "affichés lors de la commande ; offerts au-delà d’un certain montant le cas échéant"}.
+Le transfert des risques intervient à la remise au Client (consommateur) ou au transporteur (professionnel).
+
+9) Réception
+Le Client doit vérifier l’état du colis à la livraison et émettre toutes réserves utiles auprès du transporteur dans les délais légaux.
+
+10) Droit de rétractation (consommateurs)
+Délai : ${d.withdrawalDays || "14"} jours à compter de la réception.
+Modalités : notifier ${d.email} d’une décision de rétractation non ambiguë (modèle en fin de CGV). 
+Retour à l’adresse : ${d.returnAddress || d.hqAddress}. Les Produits doivent être intacts, complets, non utilisés, dans l’emballage d’origine.
+Exceptions : produits personnalisés, scellés ne pouvant être renvoyés pour raisons d’hygiène s’ils ont été descellés, contenus numériques fournis sur support immatériel après exécution.
+
+11) Remboursement
+Le Vendeur rembourse les sommes versées, hors frais supplémentaires de livraison express, au plus tard 14 jours à compter de la récupération des Produits ou de la preuve d’expédition.
+
+12) Garanties légales
+Le Client bénéficie des garanties légales de conformité et des vices cachés. Toute demande : ${d.email}. 
+Le Vendeur ne saurait être tenu responsable des dommages indirects.
+
+13) Responsabilité
+La responsabilité du Vendeur est limitée au montant de la commande litigieuse, sauf faute lourde ou dol.
+
+14) Force majeure
+Aucune partie n’est responsable en cas d’événement imprévisible, irrésistible et extérieur empêchant l’exécution des obligations (force majeure).
+
+15) Propriété intellectuelle
+Tous éléments du site et des Produits restent la propriété exclusive du Vendeur ou de ses ayants droit.
+
+16) Données personnelles
+Traitements réalisés aux fins d’exécuter les commandes, gérer la relation client et prévenir la fraude. Droits RGPD : contacter ${d.dpo || d.email}.
+
+17) Médiation & RLL
+En cas de litige non résolu, le Client consommateur peut recourir à un médiateur de la consommation. 
+Plateforme européenne de Règlement en Ligne des Litiges (RLL/ODR) : https://ec.europa.eu/consumers/odr/
+
+18) Droit applicable — Juridiction
+Droit ${d.law || "français"} ; juridiction : ${court}.
+
+— Modèle de formulaire de rétractation —
+(À compléter et renvoyer si vous souhaitez vous rétracter du contrat)
+À l’attention de ${d.entity}, ${d.hqAddress}, ${d.email}
+Je/Nous (*) vous notifie/notifions (*) par la présente ma/notre (*) rétractation du contrat portant sur la vente du bien (*)/pour la prestation de service (*) ci-dessous :
+Commandé le (*)/reçu le (*): …
+Nom du/ des consommateur(s): …
+Adresse du/ des consommateur(s): …
+Signature du/ des consommateur(s) (en cas de notification sur papier): …
+Date: …
+(*) Rayez la mention inutile.
+`;
+
+      /* CGU — version complète */
+      const cgu = header("Conditions Générales d’Utilisation (CGU)") +
+`1) Objet
+Les présentes CGU encadrent l’accès et l’utilisation du site ${site}.
+
+2) Acceptation
+L’utilisation du site implique l’acceptation pleine et entière des CGU en vigueur.
+
+3) Accès au site
+Le site est accessible 24/7, sauf maintenance ou événement hors contrôle. ${d.entity} ne garantit pas l’absence d’interruptions ou d’erreurs.
+
+4) Compte utilisateur (le cas échéant)
+Le cas échéant, l’utilisateur s’engage à fournir des informations exactes et à préserver la confidentialité de ses identifiants. Toute activité réalisée via le compte est réputée effectuée par lui.
+
+5) Comportements interdits
+Scraping massif, spamming, intrusion, contournement de mesures techniques, publication de contenus illicites ou portant atteinte aux droits de tiers.
+
+6) Contenus
+L’utilisateur demeure responsable des contenus qu’il publie. ${d.entity} peut retirer tout contenu contraire à la loi ou aux présentes CGU.
+
+7) Services tiers et liens externes
+Le site peut intégrer des services ou liens vers des sites tiers. ${d.entity} décline toute responsabilité quant à leur fonctionnement et contenus.
+
+8) Sécurité
+${d.entity} met en œuvre des mesures de sécurité raisonnables. L’utilisateur s’engage à signaler toute vulnérabilité présumée.
+
+9) Évolution du service
+${d.entity} peut modifier les fonctionnalités ou suspendre temporairement l’accès pour maintenance.
+
+10) Suspension — Résiliation
+En cas de manquement aux CGU, ${d.entity} peut suspendre ou résilier l’accès au site, de plein droit et sans indemnité.
+
+11) Données personnelles — Cookies
+Voir Mentions légales. Droits RGPD : ${d.dpo || d.email}. Gestion des cookies via le bandeau et le navigateur.
+
+12) Propriété intellectuelle
+Le site et ses éléments sont protégés. Toute reproduction non autorisée est interdite.
+
+13) Limitation de responsabilité
+${d.entity} ne saurait être tenue responsable des dommages indirects, perte de chance ou de données, dans les limites permises par la loi.
+
+14) Preuve — Archivage
+Les enregistrements informatiques de ${d.entity} constituent des preuves opposables, sauf preuve contraire.
+
+15) Droit applicable — Juridiction
+Droit ${d.law || "français"} ; juridiction : ${court}.
+`;
+
+      /* SAV — version détaillée */
+      const sav = header("Service Après-Vente (SAV)") +
+`1) Contact
+• Email : ${d.email}${tel!=="—"?`\n• Téléphone : ${tel}`:""}${d.savHours?`\n• Horaires : ${d.savHours}`:""} 
+
+2) Champ d’intervention
+Assistance à l’installation/usage, diagnostic des pannes, pièces de remplacement, suivi des retours et échanges.
+
+3) Procédure standard
+${d.savProcess || `• Étape 1 — Ouvrir un ticket : envoyer un email avec le numéro de commande, photos/vidéos, description précise du problème.
+• Étape 2 — Diagnostic : réponse sous 24–48h ouvrées avec, si besoin, un numéro de dossier (RMA).
+• Étape 3 — Retour : le cas échéant, instructions et étiquette de retour ; emballer soigneusement le produit complet et accessoires.`}
+
+4) Délais de traitement
+Diagnostic sous 48h ouvrées après réception de toutes les informations nécessaires. Réparation/échange/remboursement sous délai raisonnable selon disponibilité des pièces.
+
+5) Conditions de retour
+Produits incomplets, endommagés par mauvaise utilisation, hors garantie ou sans preuve d’achat peuvent être refusés.
+
+6) Frais
+Selon le cas : pris en charge par ${d.entity} en cas de défaut avéré ; à la charge du Client sinon.
+
+7) Garanties
+Application des garanties légales de conformité et vices cachés. Extension de garantie si mentionnée sur la fiche produit.
+
+8) Escalade — Médiation
+En cas de désaccord, possibilité de médiation de la consommation et RLL/ODR : https://ec.europa.eu/consumers/odr/
+
+9) Données personnelles
+Les informations communiquées au SAV sont traitées pour la gestion du dossier. Droits RGPD : ${d.dpo || d.email}.
+`;
+
+      const docs = [
+        {key:'mentions', name:'Mentions légales', text:mentions},
+        {key:'cgv', name:'CGV', text:cgv},
+        {key:'cgu', name:'CGU', text:cgu},
+        {key:'sav', name:'SAV', text:sav},
+      ];
+      return { docs, meta:{ name, site, date } };
+    }
+
+    /* ====== LISTE + TÉLÉCHARGEMENTS ====== */
+    function fillResults({docs, meta}){
+      S.docList.innerHTML = '';
+      docs.forEach(d=>{
+        const item = document.createElement('div');
+        item.className = 'doc-item';
+        item.innerHTML = `
+          <div>
+            <div class="doc-title">${d.name}</div>
+            <div class="hint">Prêt à télécharger • ${meta.date}</div>
+          </div>
+          <div class="doc-actions">
+            <button class="btn small ghost" data-action="preview">Aperçu</button>
+            <button class="btn small primary" data-action="txt">.txt</button>
+            <button class="btn small primary" data-action="pdf">.pdf</button>
+          </div>
+        `;
+        const previewBtn = item.querySelector('[data-action="preview"]');
+        const txtBtn = item.querySelector('[data-action="txt"]');
+        const pdfBtn = item.querySelector('[data-action="pdf"]');
+
+        previewBtn.addEventListener('click', ()=> openPreview(d.name, d.text));
+        txtBtn.addEventListener('click', ()=> downloadTXT(filename(meta.name, d.key, 'txt'), d.text));
+        pdfBtn.addEventListener('click', ()=> downloadPDF(filename(meta.name, d.key, 'pdf'), d.name, d.text));
+
+        S.docList.appendChild(item);
+      });
+    }
+
+    function filename(shop, key, ext){
+      const slug = (shop||'boutique').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,'');
+      return `${slug}_${key}.${ext}`;
+    }
+
+    function downloadTXT(name, text){
+      const blob = new Blob([text], {type:'text/plain;charset=utf-8'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = name; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    async function downloadPDF(name, title, text){
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({unit:'mm', format:'a4'});
+      const margin = 15, lineHeight = 6.2, maxWidth = 180;
+      doc.setFont('helvetica','bold'); doc.setFontSize(14);
+      doc.text(title, margin, 18);
+      doc.setFontSize(10);
+      doc.setTextColor(120);
+      doc.text(`Généré avec Infinie & gratuit — ${new Date().toLocaleString('fr-FR')}`, margin, 24);
+      doc.setDrawColor(180); doc.line(margin, 26, 210 - margin, 26);
+      doc.setTextColor(0); doc.setFont('helvetica','normal'); doc.setFontSize(11);
+
+      const lines = doc.splitTextToSize(text, maxWidth);
+      let y = 34, page = 1;
+      const footer = () => {
+        doc.setFontSize(9); doc.setTextColor(120);
+        doc.text(`Page ${page}`, 210 - margin, 297 - 10, {align:'right'});
+        doc.setTextColor(0);
+      };
+      lines.forEach(line=>{
+        if(y > 287){ footer(); doc.addPage(); page++; y = 18; }
+        doc.text(line, margin, y); y += lineHeight;
+      });
+      footer();
+      doc.save(name);
+    }
+
+    function openPreview(title, text){
+      const w = window.open('', '_blank', 'noopener,noreferrer');
+      const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      w.document.write(`<!doctype html><meta charset="utf-8"/>
+        <title>${title} — Aperçu</title>
+        <style>
+          body{margin:0;background:#0b0b0d;color:#e6ecf7;font-family:Inter,system-ui;padding:24px 18px}
+          .box{max-width:860px;margin:0 auto;background:#0d1120;border:1px solid rgba(95,123,255,.18);border-radius:14px;padding:20px;white-space:pre-wrap;line-height:1.55}
+          h1{font-size:20px;margin:0 0 10px}
+          .bar{height:3px;background:linear-gradient(90deg,#2FE3FF,#1B4CFF);border-radius:99px;margin:8px 0 14px;opacity:.8}
+        </style>
+        <div class="box">
+          <h1>${title}</h1>
+          <div class="bar"></div>
+          <div>${safe}</div>
+        </div>`);
+      w.document.close();
+    }
+  </script>
+</body>
+</html>

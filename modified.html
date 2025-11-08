@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Infinie &amp; gratuit</title>
+  <!-- Import Google font for the whole page -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /*
+      Variables and global styles
+
+      Throughout the design we rely on a small palette of colours and
+      recurring shapes. Defining them here as CSS custom properties
+      simplifies the rest of the stylesheet and makes it easy to tweak
+      the look consistently. The dark background and gold accents are
+      inspired by the supplied mock-ups.
+    */
+    :root {
+      /* Base colours */
+      --bg: #0A0A0B;
+      --panel-bg: rgba(255, 255, 255, 0.03);
+      --text: #F2F3F6;
+      --muted: #A5A9B3;
+      --gold-1: #D8B45A;
+      --gold-2: #F2C76C;
+      --gold-3: #BF8E2C;
+      --border: rgba(212, 172, 82, .22);
+      --radius: 16px;
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', system-ui, sans-serif;
+      overflow-x: hidden;
+      line-height: 1.4;
+      position: relative;
+      min-height: 100vh;
+    }
+
+    /* A subtle grid over the entire page to echo the mock-ups */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      pointer-events: none;
+      z-index: 0;
+      /* grid spacing reduced from 80px to 60px for a finer look */
+      background:
+        repeating-linear-gradient(0deg, rgba(242,199,108,0.05) 0 1px, transparent 1px 60px),
+        repeating-linear-gradient(90deg, rgba(242,199,108,0.05) 0 1px, transparent 1px 60px);
+    }
+
+    a {
+      color: var(--gold-2);
+      text-decoration: none;
+    }
+
+    /*
+      =============================================================
+      Section: Hero / Landing (page d'accueil)
+      Contains the top navigation, tagline, search bar and quick tools.
+    */
+    header.hero-section {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 2rem 4vw;
+      z-index: 1;
+    }
+
+    /* Top navigation bar */
+    header.hero-section nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      position: relative;
+      z-index: 10;
+    }
+
+    header.hero-section nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-weight: 600;
+      color: var(--text);
+      font-size: 1.1rem;
+    }
+
+    header.hero-section nav .logo .pill {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(120% 120% at 25% 20%, var(--gold-2), var(--gold-1) 60%, var(--gold-3));
+      box-shadow: 0 0 0 1px var(--border), 0 6px 16px #0008;
+      color: #0B0B0D;
+      font-weight: 800;
+      font-size: 20px;
+    }
+
+    header.hero-section nav .nav-links {
+      list-style: none;
+      display: flex;
+      gap: 2rem;
+    }
+    header.hero-section nav .nav-links a {
+      color: var(--text);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s ease;
+    }
+    header.hero-section nav .nav-links a:hover {
+      color: var(--gold-2);
+    }
+
+    header.hero-section nav .lang-switch {
+      padding: 0.4rem 0.9rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: border-color 0.2s ease;
+    }
+    header.hero-section nav .lang-switch:hover {
+      border-color: var(--gold-2);
+    }
+
+    /* Central hero content */
+    .hero-content {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      margin-top: 12vh;
+      z-index: 1;
+    }
+    .hero-content h1 {
+      font-size: clamp(2.5rem, 6vw, 4.8rem);
+      line-height: 1.1;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .hero-content h1 .gold {
+      color: var(--gold-2);
+    }
+    .hero-content p.subtitle {
+      color: var(--muted);
+      font-size: clamp(1rem, 2vw, 1.2rem);
+      margin-bottom: 2rem;
+    }
+
+    /* Search bar with animated gold border */
+    .search-container {
+      position: relative;
+      width: min(640px, 90%);
+      margin: 0 auto;
+    }
+    .search-container .search-wrapper {
+      position: relative;
+    }
+    .search-container input {
+      width: 100%;
+      padding: 1rem 1.25rem;
+      border-radius: 50px;
+      background: rgba(255, 255, 255, 0.05);
+      border: none;
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+      /* remove blur effect on the search tool to defocus it */
+      backdrop-filter: none;
+      transition: background 0.3s ease;
+    }
+    .search-container input::placeholder {
+      color: var(--muted);
+    }
+    .search-container .search-icon,
+    .search-container .voice-icon {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 20px;
+      height: 20px;
+      color: var(--muted);
+      pointer-events: none;
+    }
+    .search-container .search-icon { left: 1rem; }
+    .search-container .voice-icon  { right: 1rem; }
+    .search-container input { padding-left: 2.8rem; padding-right: 2.8rem; }
+    .search-container .border-animation {
+      position: absolute;
+      inset: 0;
+      border-radius: 50px;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    /* Outer thin border */
+    .search-container .border-animation::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50px;
+      border: 1px solid var(--border);
+    }
+    /* Rotating conic gradient around the search bar */
+    /*
+      Animated border effect for the search bar. We draw a thin
+      gradient around the outside of the input using a pseudo element
+      and clip it to only show the stroke. The gradient slides
+      horizontally to create a subtle looping effect.
+    */
+    .search-container .border-animation::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: 50px;
+      padding: 2px;
+      background: linear-gradient(90deg, var(--gold-2), var(--gold-3), var(--gold-2));
+      /* Use a mask so that only the border (the padding area) is visible */
+      -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      animation: move-shine 8s linear infinite;
+    }
+    @keyframes move-shine {
+      from { background-position: 0 0; }
+      to   { background-position: 200% 0; }
+    }
+
+    /* Top tools section */
+    .top-tools {
+      display: flex;
+      justify-content: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      margin-top: 4rem;
+    }
+    .top-tools .tool-card {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 1rem 1.2rem;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: var(--panel-bg);
+      min-width: 150px;
+      max-width: 200px;
+      transition: box-shadow 0.3s ease, background 0.3s ease;
+    }
+    .top-tools .tool-card:hover {
+      box-shadow: 0 0 0 1px var(--gold-2);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .top-tools .tool-card svg {
+      width: 32px;
+      height: 32px;
+      color: var(--gold-2);
+      margin-bottom: 0.6rem;
+    }
+    .top-tools .tool-card span {
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.2;
+    }
+
+    /* Solar system animation behind the hero content */
+    #solar {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 600px;
+      height: 600px;
+      pointer-events: none;
+      opacity: 0.4;
+      z-index: 0;
+    }
+    /* Each orbit is a thin ring with a tiny planet. By rotating the
+       entire orbit we get the illusion of planets revolving around
+       the centre. Durations are staggered to avoid synchronisation. */
+    .orbit {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      border-radius: 50%;
+      border: 1px solid rgba(242,199,108,0.15);
+      transform-origin: 50% 50%;
+    }
+    .orbit .planet {
+      position: absolute;
+      top: -4px;
+      left: 50%;
+      width: 8px;
+      height: 8px;
+      margin-left: -4px;
+      border-radius: 50%;
+      background: var(--gold-2);
+    }
+    /* Define sizes and animations for five orbits */
+    .orbit.o1 { width: 120px; height: 120px; margin: -60px 0 0 -60px; animation: orbit-anim 60s linear infinite; }
+    .orbit.o2 { width: 220px; height: 220px; margin: -110px 0 0 -110px; animation: orbit-anim 90s linear infinite reverse; }
+    .orbit.o3 { width: 320px; height: 320px; margin: -160px 0 0 -160px; animation: orbit-anim 120s linear infinite; }
+    .orbit.o4 { width: 430px; height: 430px; margin: -215px 0 0 -215px; animation: orbit-anim 150s linear infinite reverse; }
+    .orbit.o5 { width: 540px; height: 540px; margin: -270px 0 0 -270px; animation: orbit-anim 210s linear infinite; }
+    @keyframes orbit-anim { to { transform: rotate(360deg); } }
+
+    /*
+      =============================================================
+      Generic feature sections (section 2 and 4)
+      These styles are shared between the subtitles and remove-background
+      sections. Each feature section consists of two columns: a text
+      block on the left and a 3D phone preview on the right. When
+      scrolled into view the phone gently slides and rotates into
+      position.
+    */
+    section.feature-section {
+      position: relative;
+      padding: 8rem 4vw;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    section.feature-section .section-bg {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      background:
+        radial-gradient(1200px 1200px at 12% 10%, rgba(216, 180, 90, 0.07) 0%, transparent 55%),
+        radial-gradient(1200px 1200px at 88% 80%, rgba(191, 142, 44, 0.06) 0%, transparent 55%),
+        var(--bg);
+    }
+    section.feature-section .feature-inner {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4vmin;
+      align-items: center;
+    }
+    @media (max-width: 980px) {
+      section.feature-section .feature-inner {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    section.feature-section .text-block h2 {
+      font-size: clamp(2.4rem, 6vw, 4rem);
+      line-height: 1.1;
+      margin-bottom: 0.8rem;
+    }
+    section.feature-section .text-block h2 span {
+      color: var(--gold-2);
+      text-shadow: 0 0 28px rgba(242, 199, 108, 0.25);
+    }
+    section.feature-section .text-block p.lead {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    /* Single action button for feature sections */
+    .feature-section .action-single {
+      display: inline-block;
+      margin-bottom: 1.6rem;
+      padding: 0.95rem 1.3rem;
+      border-radius: 14px;
+      background: linear-gradient(90deg, var(--gold-1), var(--gold-2), var(--gold-3));
+      color: #0B0B0D;
+      font-weight: 700;
+      font-size: 1rem;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.05);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    .feature-section .action-single:hover {
+      filter: brightness(1.1);
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,0.4), 0 0 8px rgba(242,199,108,0.4); }
+      50% { box-shadow: 0 6px 30px rgba(0,0,0,0.6), 0 0 14px rgba(242,199,108,0.6); }
+    }
+
+    section.feature-section .bullets {
+      color: var(--muted);
+      font-size: 0.9rem;
+      list-style: none;
+      margin-left: 1rem;
+      margin-bottom: 1rem;
+    }
+    section.feature-section .bullets li {
+      margin: 0.35rem 0;
+      position: relative;
+      padding-left: 1rem;
+    }
+    section.feature-section .bullets li::before {
+      content: "•";
+      position: absolute;
+      left: 0;
+      color: var(--gold-2);
+    }
+    section.feature-section .price-tag {
+      margin-top: 1.5rem;
+      display: inline-block;
+      padding: 0.6rem 1rem;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      color: var(--gold-2);
+      background: rgba(255, 255, 255, 0.02);
+      font-size: 0.95rem;
+    }
+
+    /* 3D phone wrapper shared by feature sections */
+    .phone-wrapper {
+      perspective: 1400px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: clamp(420px, 65vh, 760px);
+    }
+    .phone {
+      position: relative;
+      width: min(360px, 60vw);
+      aspect-ratio: 9 / 19.5;
+      border-radius: 30px;
+      transform-style: preserve-3d;
+      transform: rotateX(14deg) rotateY(-16deg) rotateZ(10deg);
+      filter: drop-shadow(0 40px 80px rgba(0, 0, 0, 0.55));
+      will-change: transform, filter;
+      opacity: 0;
+    }
+    .phone.in-view {
+      animation: phoneEnter 2.3s cubic-bezier(.16, .7, .1, 1) forwards;
+    }
+    @keyframes phoneEnter {
+      0%   { transform: translateX(60%) rotateY(-50deg) scale(0.9); opacity: 0; }
+      50%  { opacity: 1; }
+      100% { transform: rotateX(14deg) rotateY(-16deg) rotateZ(10deg) translateX(0); opacity: 1; }
+    }
+    .phone .frame {
+      position: absolute;
+      inset: 0;
+      border-radius: 30px;
+      background: linear-gradient(175deg, #0e0f14, #0c0d12);
+      box-shadow: inset 0 0 0 1px #ffffff08, inset 0 0 0 2px #000, 0 12px 30px #000b;
+      /* Add a subtle golden outline so the device remains visible even
+         when the screen is dark. */
+      border: 1px solid rgba(242, 199, 108, 0.25);
+    }
+    .phone .frame::before {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: 30.5px;
+      background: linear-gradient(160deg, #0000 18%, #8a6c2a55 32%, #e8c26c22 55%, #8a6c2a44 78%, #0000 86%);
+      pointer-events: none;
+      mix-blend-mode: screen;
+      filter: blur(.3px);
+    }
+    .phone .screen {
+      position: absolute;
+      inset: 8px;
+      border-radius: 26px;
+      overflow: hidden;
+      background: #000;
+      box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #0008;
+    }
+    .phone .screen video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .phone .screen .notch {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 36%;
+      height: 22px;
+      border-radius: 0 0 16px 16px;
+      background: #0b0d12;
+    }
+
+    /*
+      Simple media preview used in sections 2 and 4.  The element slides
+      in from the right when the class "in-view" is applied.  The
+      video fills the frame and autoplays silently on loop.
+    */
+    .media {
+      overflow: hidden;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      width: min(360px, 60vw);
+      aspect-ratio: 9 / 19.5;
+      transform: translateX(60%) scale(0.9);
+      opacity: 0;
+      /* increased duration for slower, smoother entrance */
+      transition: transform 2.4s cubic-bezier(.16, .7, .1, 1), opacity 1.8s ease;
+    }
+    .media.square {
+      /* apply square ratio for background removal section */
+      aspect-ratio: 1 / 1;
+    }
+    .media.in-view {
+      transform: translateX(0) scale(1);
+      opacity: 1;
+    }
+    .media video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /*
+      =============================================================
+      Section: Tools ecosystem (section 3)
+      Displays the categories of tools radiating from an infinity symbol.
+    */
+    section.ecosystem {
+      position: relative;
+      padding: 10rem 4vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      overflow: hidden;
+    }
+    section.ecosystem h2 {
+      font-size: clamp(2.4rem, 5vw, 3.5rem);
+      margin-bottom: 2rem;
+      color: var(--gold-2);
+      letter-spacing: 0.02em;
+    }
+    /* Toggle for displaying price labels */
+    .ecosystem .toggle {
+      margin-top: 0.5rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      padding: 0.5rem 1rem;
+      border-radius: 30px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .ecosystem .toggle .switch {
+      position: relative;
+      width: 36px;
+      height: 20px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid var(--border);
+      transition: background 0.25s ease, box-shadow 0.25s ease; /* <- */
+    }
+    .ecosystem .toggle .switch::after {
+      content: "";
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--gold-2);
+      transform: translateX(0);                 /* OFF */
+      transition: transform 0.25s ease;         /* <- on anime le pouce */
+    }
+    /* ON state: halo + glissement du pouce */
+    body.show-prices .ecosystem .toggle .switch {
+      background: linear-gradient(90deg, var(--gold-1), var(--gold-2));
+      box-shadow: 0 0 0 1px var(--gold-2), 0 0 14px rgba(242,199,108,.35);
+    }
+    body.show-prices .ecosystem .toggle .switch::after {
+      transform: translateX(16px);
+    }
+
+    /* Layout for ecosystem grid */
+    .ecosystem .tools-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 1200px;
+      position: relative;
+    }
+    .ecosystem .column {
+      display: flex;
+      flex-direction: column;
+      gap: 1.8rem;
+      flex: 1;
+    }
+    .ecosystem .center {
+      position: relative;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #0f0f12 0%, #0b0c10 100%);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 2rem;
+    }
+    .ecosystem .center span {
+      display: block;
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--gold-2);
+    }
+    .ecosystem .card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 1rem 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel-bg);
+      min-width: 170px;
+      overflow: hidden;
+    }
+    .ecosystem .card svg {
+      width: 28px;
+      height: 28px;
+      color: var(--gold-2);
+      flex-shrink: 0;
+    }
+    .ecosystem .card .label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .ecosystem .card .price {
+      font-size: 0.8rem;
+      color: var(--gold-2);
+      display: none;
+    }
+    /* Connector lines: grey base with golden particles moving along */
+    .ecosystem .column.left .card::after,
+    .ecosystem .column.right .card::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 40px;
+      height: 1px;
+      background: var(--border);
+      transform: translateY(-50%);
+      overflow: hidden;
+    }
+    .ecosystem .column.left .card::after { right: -40px; }
+    .ecosystem .column.right .card::after { left: -40px; }
+    /* add golden pulse animation along connectors */
+    .ecosystem .column.left .card::before,
+    .ecosystem .column.right .card::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      width: 40px;
+      height: 1px;
+      transform: translateY(-50%);
+      background: linear-gradient(90deg, transparent, var(--gold-2), transparent);
+      animation: connectorPulse 3s linear infinite;
+      pointer-events: none;
+    }
+    .ecosystem .column.left .card::before { right: -40px; }
+    .ecosystem .column.right .card::before { left: -40px; }
+    @keyframes connectorPulse {
+      0% { background-position: -40px 0; }
+      100% { background-position: 40px 0; }
+    }
+    /* Vertical spine connecting the centre to the top and bottom */
+    .ecosystem .spine {
+      position: absolute;
+      left: 50%;
+      top: 0;
+      width: 1px;
+      height: 100%;
+      background: var(--border);
+      transform: translateX(-0.5px);
+      z-index: -1;
+    }
+    @media (max-width: 900px) {
+      .ecosystem .tools-wrapper {
+        flex-direction: column;
+        align-items: center;
+      }
+      .ecosystem .column {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin: 0.5rem 0;
+      }
+      .ecosystem .column.left .card::after,
+      .ecosystem .column.right .card::after,
+      .ecosystem .column.left .card::before,
+      .ecosystem .column.right .card::before {
+        display: none;
+      }
+      .ecosystem .spine { display: none; }
+    }
+
+    /*
+      =============================================================
+      Section: Creator / À propos (section 5)
+      Introduces the founder with portrait and key values.
+    */
+    section.creator-section {
+      position: relative;
+      padding: 8rem 4vw;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    section.creator-section .container {
+      width: 100%;
+      max-width: 1200px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4vmin;
+      align-items: center;
+    }
+    @media (max-width: 900px) {
+      section.creator-section .container {
+        grid-template-columns: 1fr;
+        text-align: center;
+      }
+      section.creator-section .features {
+        justify-content: center;
+      }
+    }
+    section.creator-section h3 {
+      font-size: clamp(0.9rem, 2.5vw, 1.3rem);
+      color: var(--gold-2);
+      margin-bottom: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    section.creator-section h2 {
+      font-size: clamp(2rem, 5vw, 3rem);
+      line-height: 1.2;
+      margin-bottom: 1.5rem;
+      font-weight: 600;
+    }
+    section.creator-section h2 .highlight {
+      color: var(--gold-2);
+    }
+    section.creator-section p.author {
+      color: var(--muted);
+      margin-bottom: 2rem;
+      font-size: 1rem;
+    }
+    section.creator-section .features {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem;
+    }
+    .feature-box {
+      flex: 1 1 200px;
+      padding: 1rem 1.2rem;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: var(--panel-bg);
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+    .feature-box h4 {
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--gold-2);
+      font-weight: 600;
+    }
+    .feature-box p {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .feature-box .button {
+      margin-top: 0.5rem;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--gold-2);
+      font-size: 0.9rem;
+      display: inline-block;
+      text-align: center;
+      transition: background 0.2s ease;
+    }
+    .feature-box .button:hover {
+      background: rgba(255, 255, 255, 0.04);
+    }
+    section.creator-section img {
+      width: 100%;
+      height: auto;
+      border-radius: 12px;
+      display: block;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+    }
+  </style>
+</head>
+<body>
+  <!-- Hero Section with navigation, tagline, search and top tools -->
+  <header class="hero-section">
+    <nav>
+      <a href="#" class="logo">
+        <span class="pill"><span>∞</span></span>
+        <span>Infinie &amp; gratuit</span>
+      </a>
+      <ul class="nav-links">
+        <li><a href="#">Outils</a></li>
+        <li><a href="#">Templates</a></li>
+        <li><a href="#">Open-source</a></li>
+        <li><a href="#">Blog</a></li>
+        <li><a href="#">À propos</a></li>
+      </ul>
+      <a href="#" class="lang-switch">FR</a>
+    </nav>
+    <div class="hero-content">
+      <h1>Des outils IA, <span class="gold">infinis</span>.<br/>Gratuit. Open-source.</h1>
+      <p class="subtitle">Sans compte&nbsp;· Usage illimité&nbsp;· 100&nbsp;% front-end</p>
+      <div class="search-container">
+        <div class="search-wrapper">
+          <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input type="text" placeholder="Rechercher un outil (ex&nbsp;: Supprimer backround)" />
+          <svg class="voice-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 18v3m0-5a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v7a3 3 0 0 0 3 3Z" />
+          </svg>
+          <div class="border-animation"></div>
+        </div>
+      </div>
+      <!-- Quick access cards for top tools -->
+      <div class="top-tools">
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 3h18v18H3V3Z" fill="none" />
+            <path d="M5 5l14 14" stroke-linecap="round" />
+          </svg>
+          <span>Supprimer background</span>
+        </div>
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="5" width="18" height="14" rx="2" />
+            <path d="M8 5v14M16 5v14" />
+          </svg>
+          <span>Compresser image</span>
+        </div>
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="14" rx="2" />
+            <path d="M8 7h8M8 11h5M8 15h8" />
+          </svg>
+          <span>Sous-titres vidéo</span>
+        </div>
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
+            <path d="M9 3v18" />
+          </svg>
+          <span>PDF&nbsp;Locker</span>
+        </div>
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M4 4h16v16H4V4Z" />
+            <path d="M8 16l4-4-4-4" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Diagrammes</span>
+        </div>
+        <div class="tool-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M3 7h18M3 12h18M3 17h18" />
+          </svg>
+          <span>Générateur de prod</span>
+        </div>
+      </div>
+    </div>
+    <!-- Solar system animation container -->
+    <div id="solar" aria-hidden="true">
+      <div class="orbit o1"><div class="planet"></div></div>
+      <div class="orbit o2"><div class="planet"></div></div>
+      <div class="orbit o3"><div class="planet"></div></div>
+      <div class="orbit o4"><div class="planet"></div></div>
+      <div class="orbit o5"><div class="planet"></div></div>
+    </div>
+  </header>
+
+  <!-- Section 2: Sous-titres automatiques (feature) -->
+  <section class="feature-section" id="subtitles">
+    <div class="section-bg" aria-hidden="true"></div>
+    <div class="feature-inner">
+      <!-- Text content -->
+      <div class="text-block">
+        <h2>Sous-titres <span>automatiques</span></h2>
+        <p class="lead">Shorts&nbsp;• Reels&nbsp;• TikTok — format vertical 9:16</p>
+        <!-- single call-to-action button instead of multiple actions -->
+        <a class="action-single" href="bouton.html" aria-label="Essayer l’outil">Essayer l’outil</a>
+        <ul class="bullets" role="list">
+          <li>Transcription locale (Whisper WASM)</li>
+          <li>Styles&nbsp;: karaoké&nbsp;/ outline&nbsp;/ barres noires</li>
+          <li>Export .srt&nbsp;/ .mp4</li>
+        </ul>
+        <span class="price-tag">Comparer prix habituels&nbsp;9,99€ → gratuit</span>
+      </div>
+      <!-- Media preview: a simple framed video slides into view -->
+      <div class="media" aria-label="Aperçu sous-titres">
+        <video src="video.mp4" muted playsinline loop preload="auto" aria-label="Aperçu vidéo 9:16"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Écosystème d'outils -->
+  <section class="ecosystem" id="ecosystem">
+    <h2>ÉCOSYSTÈME D’OUTILS</h2>
+    <div class="toggle" id="priceToggle">
+      Afficher prix habituels
+      <div class="switch" aria-hidden="true"></div>
+    </div>
+    <div class="tools-wrapper">
+      <div class="column left">
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8l8 0l0 8l-8 0l0-8Z"/></svg>
+          <div>
+            <div class="label">Image</div>
+            <div class="price"><span class="price-value">9,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="4" y="3" width="16" height="18" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="15" x2="16" y2="15"/></svg>
+          <div>
+            <div class="label">PDF</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+          <div>
+            <div class="label">Texte</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 15h10v4H7z"/><path d="M7 5h10v4H7z"/></svg>
+          <div>
+            <div class="label">Calculs</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="center"><span>∞</span></div>
+      <div class="column right">
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 5v14l11-7z"/></svg>
+          <div>
+            <div class="label">Vidéo</div>
+            <div class="price"><span class="price-value">9,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 7h14M5 12h14M5 17h14"/><path d="M9 3v18"/></svg>
+          <div>
+            <div class="label">Audio</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 6h16v12H4z"/><path d="M9 9v6M15 9v6"/></svg>
+          <div>
+            <div class="label">Dev</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+        <div class="card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v3m0 12v3M3 12h3m12 0h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M5.5 18.5l2.1-2.1M16.4 7.6l2.1-2.1"/></svg>
+          <div>
+            <div class="label">IA</div>
+            <div class="price"><span class="price-value">0,99€</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="spine" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- Section 4: Supprimer l'arrière-plan (feature) -->
+  <section class="feature-section" id="remover">
+    <div class="section-bg" aria-hidden="true"></div>
+    <div class="feature-inner">
+      <!-- Text content -->
+      <div class="text-block">
+        <h2>Supprimer <span>l’arrière-plan</span></h2>
+        <p class="lead">Photos produits, portraits, logos — PNG transparent en 1 clic</p>
+        <!-- single call-to-action button instead of multiple actions -->
+        <a class="action-single" href="bouton.html" aria-label="Essayer l’outil">Essayer l’outil</a>
+        <ul class="bullets" role="list">
+          <li>Traitement local (WASM)</li>
+          <li>Aucun upload</li>
+          <li>Bords nets (cheveux)</li>
+          <li>Export .png /.webp</li>
+        </ul>
+        <span class="price-tag">Comparer prix habituels&nbsp;9,99€ → gratuit</span>
+      </div>
+      <!-- Media preview for remover feature -->
+      <div class="media square" aria-label="Aperçu arrière-plan">
+        <video src="videobg.mp4" muted playsinline loop preload="auto" aria-label="Aperçu vidéo détourage"></video>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 5: À propos / Le créateur -->
+  <section class="creator-section" id="creator">
+    <div class="container">
+      <!-- Left column: text -->
+      <div class="text">
+        <h3>Le créateur</h3>
+        <h2>J’ai arrêté de louer des outils — <span class="highlight">je les construis pour tous</span>.</h2>
+        <p class="author">Oscar, fondateur d’Infinie &amp; gratuit</p>
+        <div class="features">
+          <div class="feature-box">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M3 3h18v18H3V3Z"/><path d="M9 9v6M15 9v6"/></svg>
+              Open-source
+            </h4>
+            <p>Code public sur&nbsp;GitHub.</p>
+            <!-- new GitHub button replicating pourboire style -->
+            <a href="bouton.html" class="button">Voir sur GitHub</a>
+          </div>
+          <div class="feature-box">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+              Illimité
+            </h4>
+            <p>Aucun quota, pas de compte.</p>
+          </div>
+          <div class="feature-box">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M3 12h18M12 3v18"/></svg>
+              Gratuit à vie
+            </h4>
+            <p>Zéro paywall. Zéro essai.</p>
+          </div>
+          <div class="feature-box">
+            <h4>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="20" height="20"><path d="M3 3h18v18H3V3Z"/><path d="M7 10h10v7H7v-7Z"/></svg>
+              Pourboire
+            </h4>
+            <p>Soutenir le projet</p>
+            <a href="bouton.html" class="button">Laisser un pourboire</a>
+          </div>
+        </div>
+      </div>
+      <!-- Right column: founder photo -->
+      <div class="photo">
+        <img src="oscar.png" alt="Oscar, fondateur d’Infinie &amp; gratuit" />
+      </div>
+    </div>
+  </section>
+
+  <script>
+    /*
+      Intersection observers trigger the entrance animation on the
+      media elements when their respective sections are mostly in view.
+      The threshold values correspond to 80% of the section being visible,
+      creating suspense as the animation only starts when the user has
+      nearly reached the end of the section. Once triggered the
+      observer disconnects itself.
+    */
+    document.addEventListener('DOMContentLoaded', function() {
+      // Intersection observer for media previews
+      const mediaElements = document.querySelectorAll('.media');
+      const observerOptions = { threshold: 0.8 };
+      const mediaObserver = new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('in-view');
+            const vid = entry.target.querySelector('video');
+            if (vid) {
+              try { vid.play(); } catch (e) {}
+            }
+            mediaObserver.unobserve(entry.target);
+          }
+        });
+      }, observerOptions);
+      mediaElements.forEach(el => mediaObserver.observe(el));
+
+      // Intersection observer for phone elements (if used later) -- reuse same threshold
+      const phones = document.querySelectorAll('.phone');
+      if (phones.length) {
+        const phoneObserver = new IntersectionObserver(entries => {
+          entries.forEach(entry => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add('in-view');
+              phoneObserver.unobserve(entry.target);
+            }
+          });
+        }, { threshold: 0.8 });
+        phones.forEach(ph => phoneObserver.observe(ph));
+      }
+
+      // Price toggle functionality (identique visuellement, logique CSS)
+      const toggle = document.getElementById('priceToggle');
+      toggle.addEventListener('click', () => {
+        const showing = document.body.classList.toggle('show-prices');
+        // show/hide price elements
+        document.querySelectorAll('.ecosystem .price').forEach(p => {
+          p.style.display = showing ? 'block' : 'none';
+        });
+        // NB: plus de transform JS sur le switch; l'animation est gérée en CSS (pouce + halo)
+      });
+    });
+  </script>
+</body>
+</html>

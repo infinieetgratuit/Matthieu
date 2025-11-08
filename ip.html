@@ -1,0 +1,477 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Mon IP (1-clic) + PDF certifié</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet"/>
+  <!-- PDF libs (download direct) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.3/dist/jspdf.plugin.autotable.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD; --border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+      min-height:100%;
+    }
+    .wrap{max-width:900px; margin:0 auto; padding:28px 16px 72px}
+
+    /* Brand */
+    .brand{display:flex; align-items:center; gap:12px; margin-bottom:22px;}
+    .badge{
+      width:36px; height:36px; border-radius:999px; display:grid; place-items:center; position:relative;
+      box-shadow:0 8px 40px rgba(27,76,255,.2), inset 0 0 0 1px rgba(255,255,255,.06);
+      background: radial-gradient(120% 120% at 20% 15%, var(--accent1), var(--accent2));
+    }
+    .badge::after{content:"∞"; font-weight:800; color:#fff; font-size:20px; line-height:1}
+    .wordmark{font-weight:800; letter-spacing:.2px}
+    .status{
+      margin-left:auto; display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px;
+      border:1px solid var(--border); background:#0b0f1a; font-size:12px; color:var(--muted);
+    }
+    .dot{width:8px;height:8px;border-radius:50%}
+    .dot.ready{background:#18e3a1; box-shadow:0 0 0 6px rgba(24,227,161,.15)}
+    .dot.busy{background:#7aa0ff; animation:pulse .9s ease-in-out infinite alternate}
+    @keyframes pulse{to{box-shadow:0 0 0 8px rgba(122,160,255,.14)}}
+
+    /* Surfaces & buttons */
+    .surface{
+      background:
+        linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+        linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+        var(--panel);
+      border:1px solid var(--border); border-radius:22px;
+      box-shadow:0 10px 40px rgba(10,14,22,.35);
+    }
+    .btn{
+      appearance:none; border:0; cursor:pointer; color:#fff; font-weight:700; border-radius:14px; padding:14px 18px;
+      background:linear-gradient(90deg, var(--accent1), var(--accent2)); box-shadow:0 10px 30px rgba(27,76,255,.25);
+      transition:transform .06s ease, box-shadow .2s ease;
+    }
+    .btn:focus{outline:none; box-shadow:var(--ring), 0 10px 30px rgba(27,76,255,.25)}
+    .btn:active{transform:translateY(1px)}
+    .ghost{background:transparent; color:var(--text); border:1px solid var(--border); box-shadow:none}
+
+    /* Intro */
+    .hero{padding:28px; display:flex; gap:12px; align-items:center; justify-content:center; flex-wrap:wrap}
+    .hint{font-size:12px; color:var(--muted); margin-top:8px; text-align:center}
+
+    /* Loader */
+    .loader{padding:32px; display:grid; place-items:center; gap:14px; text-align:center}
+    .spinner{
+      width:64px;height:64px;border-radius:50%;
+      background:conic-gradient(from 0deg, var(--accent1), var(--accent2));
+      animation:spin 1.8s linear infinite;
+      mask: radial-gradient(closest-side, transparent 52%, #000 53%);
+    }
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .line{min-height:22px;font-weight:600}
+
+    /* Results */
+    .results{padding:22px 18px}
+    .ipBox{
+      display:flex; align-items:center; justify-content:space-between; gap:12px;
+      padding:16px 18px; border-radius:16px; border:1px solid var(--border); background:#0b0f1a;
+    }
+    .big{font-size:28px; font-weight:800; letter-spacing:.2px}
+    .sub{font-size:14px; color:var(--muted)}
+    .grid{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px}
+    @media(min-width:820px){ .grid{grid-template-columns:1fr 1fr} }
+    .card{padding:16px; border-radius:18px; border:1px solid var(--border); background:linear-gradient(180deg, rgba(47,227,255,0.04), transparent 40%), var(--panel)}
+    .card h3{margin:0 0 8px; font-size:15px; letter-spacing:.2px}
+    .kv{display:grid; grid-template-columns:180px 1fr; gap:8px; margin:8px 0}
+    .readable{font-size:15px; line-height:1.6; font-weight:600; letter-spacing:.1px}
+
+    /* Typewriter */
+    [data-typewriter]{white-space:pre-wrap; overflow:hidden; border-right:1px solid rgba(230,236,247,.28)}
+    .tw-done{border-right-color:transparent}
+
+    .fade{opacity:0; transform:translateY(6px); animation:fade .45s ease forwards}
+    @keyframes fade{to{opacity:1; transform:none}}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="badge" aria-hidden="true"></div>
+      <div class="wordmark">Infinie & gratuit</div>
+      <div id="iaStatus" class="status"><span class="dot ready"></span><span>IA : Prête</span></div>
+    </div>
+
+    <!-- Step 1 -->
+    <section id="step-hero" class="surface hero fade" style="animation-delay:.05s">
+      <button id="go" class="btn">Afficher mon IP et mes infos</button>
+      <button id="export" class="btn ghost" disabled>Télécharger le PDF certifié</button>
+      <div class="hint">100% local • IP via ipify, infos réseau via ipwho.is. Le PDF respecte ta DA et inclut un tampon “Certifié”.</div>
+    </section>
+
+    <!-- Step 2 -->
+    <section id="step-loader" class="surface loader fade" hidden>
+      <div class="spinner" aria-hidden="true"></div>
+      <div id="loader" class="line">Récupération de votre IP…</div>
+      <div class="sub">Aucune donnée n’est envoyée à un serveur Infinie.</div>
+    </section>
+
+    <!-- Step 3 -->
+    <section id="step-results" class="surface results fade" hidden>
+      <div class="ipBox">
+        <div>
+          <div class="sub">Votre adresse IP publique</div>
+          <div id="ipMain" class="big" data-typewriter></div>
+          <div class="sub" id="ipAlt"></div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center">
+          <button id="copyIp" class="btn">Copier l’IP</button>
+          <button id="again" class="btn ghost">Rafraîchir</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card fade" style="animation-delay:.06s">
+          <h3>Réseau & localisation (approx.)</h3>
+          <div class="kv readable"><div>Pays / Région</div><div id="geoCountry" data-typewriter></div></div>
+          <div class="kv readable"><div>Ville</div><div id="geoCity" data-typewriter></div></div>
+          <div class="kv readable"><div>Coordonnées</div><div id="geoLatLng" data-typewriter></div></div>
+          <div class="kv readable"><div>Fournisseur (ISP)</div><div id="geoISP" data-typewriter></div></div>
+          <div class="kv readable"><div>ASN / Org</div><div id="geoASN" data-typewriter></div></div>
+          <div class="kv readable"><div>Fuseau horaire</div><div id="geoTZ" data-typewriter></div></div>
+        </div>
+
+        <div class="card fade" style="animation-delay:.09s">
+          <h3>Système & navigateur</h3>
+          <div class="kv readable"><div>Agent utilisateur</div><div id="ua" data-typewriter></div></div>
+          <div class="kv readable"><div>Plateforme</div><div id="plat" data-typewriter></div></div>
+          <div class="kv readable"><div>Langue</div><div id="lang" data-typewriter></div></div>
+          <div class="kv readable"><div>Fuseau (local)</div><div id="tz" data-typewriter></div></div>
+          <div class="kv readable"><div>Écran / Viewport</div><div id="screen" data-typewriter></div></div>
+          <div class="kv readable"><div>CPU / RAM</div><div id="hw" data-typewriter></div></div>
+        </div>
+
+        <div class="card fade" style="animation-delay:.12s">
+          <h3>Connexion (navigateur)</h3>
+          <div class="kv readable"><div>Type effectif</div><div id="netType" data-typewriter></div></div>
+          <div class="kv readable"><div>Débit estimé</div><div id="netDown" data-typewriter></div></div>
+          <div class="kv readable"><div>Latence estimée</div><div id="netRTT" data-typewriter></div></div>
+          <div class="kv readable"><div>Économie de données</div><div id="netSave" data-typewriter></div></div>
+        </div>
+      </div>
+
+      <div class="sub" style="margin-top:10px">La géolocalisation par IP est approximative. IPv6 s’affiche si disponible.</div>
+    </section>
+  </div>
+
+  <script>
+    const $ = (s, r=document)=>r.querySelector(s);
+    const setStatus = (state,text)=>{
+      const box = $('#iaStatus'), dot = box.querySelector('.dot');
+      box.lastElementChild.textContent = 'IA : ' + text;
+      dot.className = 'dot ' + (state==='busy' ? 'busy' : 'ready');
+    };
+    const clip = (s, n=240) => (s||'').replace(/\s+/g,' ').trim().slice(0,n) + ((s||'').length>n?'…':'');
+    const nowStr = () => new Intl.DateTimeFormat('fr-FR',{dateStyle:'medium',timeStyle:'short'}).format(new Date());
+
+    // Typewriter
+    async function typewriter(el, text, speed=10){
+      el.textContent=''; const min=6, max=16;
+      for(let i=0;i<text.length;i++){
+        el.textContent += text[i];
+        await new Promise(r=>setTimeout(r, speed + Math.random()*(max-min)+min));
+      }
+      el.classList.add('tw-done');
+    }
+
+    function show(el){ el.hidden=false; } function hide(el){ el.hidden=true; }
+
+    // IP providers (with fallbacks)
+    async function getIP(){
+      try{ const r = await fetch('https://api64.ipify.org?format=json',{mode:'cors'}); if(r.ok){ const j=await r.json(); return j.ip; } }catch(e){}
+      const r2 = await fetch('https://api.ipify.org?format=json',{mode:'cors'}); const j2 = await r2.json(); return j2.ip;
+    }
+    async function getIPAlt(){
+      try{ const r = await fetch('https://api.ipify.org?format=json',{mode:'cors'}); if(r.ok){ const j=await r.json(); return j.ip; } }catch(e){}
+      try{ const r = await fetch('https://api64.ipify.org?format=json',{mode:'cors'}); if(r.ok){ const j=await r.json(); return j.ip; } }catch(e){}
+      return null;
+    }
+    async function getGeo(ip){
+      try{ const r = await fetch('https://ipwho.is/' + encodeURIComponent(ip), {mode:'cors'}); if(r.ok){ const j=await r.json(); if(j && j.success!==false) return j; } }catch(e){}
+      try{
+        const r = await fetch('https://ipapi.co/json/', {mode:'cors'}); if(!r.ok) throw 0;
+        const j = await r.json();
+        return {ip:j.ip, success:true, country:j.country_name, region:j.region, city:j.city,
+          latitude:j.latitude, longitude:j.longitude, connection:{asn:j.asn||'', org:j.org||'', isp:j.org||''}, timezone:{id:j.timezone}, asn:j.asn};
+      }catch(e){}
+      return null;
+    }
+    function navInfo(){
+      const nav = navigator;
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '—';
+      const mem = (nav.deviceMemory? `${nav.deviceMemory} Go` : '—');
+      const cores = (nav.hardwareConcurrency? `${nav.hardwareConcurrency}` : '—');
+      const ua = (nav.userAgent || '—');
+      const plat = (nav.userAgentData && nav.userAgentData.platform) ? nav.userAgentData.platform : (nav.platform || '—');
+      const lang = (nav.languages && nav.languages.length ? nav.languages.join(', ') : (nav.language || '—'));
+      const scr = `${window.screen.width}×${window.screen.height} @${window.devicePixelRatio}x`;
+      const vp = `${window.innerWidth}×${window.innerHeight}`;
+      const con = (nav.connection || nav.webkitConnection || {});
+      const netType = con.effectiveType ? con.effectiveType : '—';
+      const down = con.downlink ? con.downlink + ' Mb/s' : '—';
+      const rtt = con.rtt ? con.rtt + ' ms' : '—';
+      const save = con.saveData ? 'Activée' : 'Non';
+      return {tz, mem, cores, ua, plat, lang, scr, vp, netType, down, rtt, save};
+    }
+
+    // UI flow
+    async function run(){
+      hide($('#step-hero')); show($('#step-loader'));
+      setStatus('busy','Analyse…');
+      $('#loader').textContent = 'Récupération de votre IP…';
+
+      let ip = '—', ipAlt=null, geo=null;
+      try{
+        ip = await getIP();
+        ipAlt = await getIPAlt();
+        $('#loader').textContent = 'Lecture des infos réseau…';
+        geo = await getGeo(ip);
+      }catch(e){}
+
+      const n = navInfo();
+
+      // Fill results
+      hide($('#step-loader')); show($('#step-results'));
+      const pairs = [];
+      pairs.push([$('#ipMain'), ip || '—']);
+      const altDisplay = (ipAlt && ipAlt !== ip) ? `Autre (famille IP) : ${ipAlt}` : (ipAlt ? `Même IP sur v4/v6 : ${ipAlt}` : 'IPv6 non détectée');
+      $('#ipAlt').textContent = altDisplay;
+
+      // Réseau & géo (sûr & lisible)
+      const country = geo ? `${geo.country || '—'}${geo.region? ' — ' + geo.region : ''}` : '—';
+      const city = geo ? (geo.city || '—') : '—';
+      const latlng = geo ? ((geo.latitude!=null && geo.longitude!=null) ? `${geo.latitude}, ${geo.longitude}` : '—') : '—';
+      const isp = geo ? ((geo.connection && (geo.connection.isp || geo.connection.org)) || geo.isp || geo.org || '—') : '—';
+      const asn = geo ? ((geo.connection && geo.connection.asn) || geo.asn || '—') : '—';
+      const tzone = geo ? (geo.timezone && (geo.timezone.id || geo.timezone) || '—') : '—';
+
+      pairs.push([$('#geoCountry'), country]);
+      pairs.push([$('#geoCity'), city]);
+      pairs.push([$('#geoLatLng'), latlng]);
+      pairs.push([$('#geoISP'), isp]);
+      pairs.push([$('#geoASN'), asn]);
+      pairs.push([$('#geoTZ'), tzone]);
+
+      // Système
+      pairs.push([$('#ua'), n.ua]);
+      pairs.push([$('#plat'), n.plat]);
+      pairs.push([$('#lang'), n.lang]);
+      pairs.push([$('#tz'), n.tz]);
+      pairs.push([$('#screen'), `${n.scr} • VP ${n.vp}`]);
+      pairs.push([$('#hw'), `Cœurs: ${n.cores} • RAM approx: ${n.mem}`]);
+
+      // Connexion
+      pairs.push([$('#netType'), n.netType]);
+      pairs.push([$('#netDown'), n.down]);
+      pairs.push([$('#netRTT'), n.rtt]);
+      pairs.push([$('#netSave'), n.save]);
+
+      for(const [el, text] of pairs){ await typewriter(el, String(text)); }
+
+      setStatus('ready','Prête');
+      $('#export').disabled = false; // activer le PDF
+      lastReport = { ip, ipAlt, geo, n, generatedAt: nowStr() };
+    }
+
+    // EVENTS
+    $('#go').addEventListener('click', run);
+    $('#again').addEventListener('click', run);
+    $('#copyIp').addEventListener('click', async ()=>{
+      const ip = $('#ipMain').textContent.trim();
+      try{ await navigator.clipboard.writeText(ip);
+        const btn = $('#copyIp'); const t = btn.textContent; btn.textContent = 'Copié ✓'; setTimeout(()=>btn.textContent=t, 900);
+      }catch(e){}
+    });
+
+    // ---------------------- PDF INCROYABLE ----------------------
+    let lastReport = null;
+
+    function makeSealCanvas(textTop="CERTIFIÉ", textBottom="INFINIE & GRATUIT"){
+      // Tampon dessiné en Canvas → dataURL
+      const size = 220, r = size/2;
+      const c = document.createElement('canvas'); c.width = size; c.height = size;
+      const ctx = c.getContext('2d');
+
+      // gradient circle
+      const g = ctx.createRadialGradient(r*0.6, r*0.5, r*0.2, r, r, r);
+      g.addColorStop(0, 'rgba(47,227,255,0.95)');
+      g.addColorStop(1, 'rgba(27,76,255,0.95)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(r, r, r-4, 0, Math.PI*2); ctx.fill();
+
+      // inner ring
+      ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+      ctx.beginPath(); ctx.arc(r, r, r-10, 0, Math.PI*2); ctx.stroke();
+
+      // middle ring
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.beginPath(); ctx.arc(r, r, r-26, 0, Math.PI*2); ctx.stroke();
+
+      // check mark
+      ctx.lineWidth = 10; ctx.lineCap='round'; ctx.strokeStyle='#0B0B0D';
+      ctx.beginPath(); ctx.moveTo(r-36, r+6); ctx.lineTo(r-6, r+36); ctx.lineTo(r+44, r-18); ctx.stroke();
+
+      // text (top/bottom)
+      ctx.fillStyle='#0B0B0D'; ctx.font='bold 20px Inter, Arial, sans-serif'; ctx.textAlign='center';
+      ctx.fillText(textTop, r, r-52);
+      ctx.fillText(textBottom, r, r+56);
+
+      // micro caption
+      ctx.fillStyle='rgba(0,0,0,.6)'; ctx.font='bold 14px Inter, Arial, sans-serif';
+      ctx.fillText('Données validées', r, r+80);
+
+      return c.toDataURL('image/png');
+    }
+
+    async function exportPDF(){
+      if(!lastReport){ alert('Clique d’abord sur “Afficher mon IP et mes infos”.'); return; }
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({unit:'pt', format:'a4'}); // 595×842
+
+      const A4W = 595.28, A4H = 841.89, M = 32;
+
+      // ---- Couverture style DA
+      // fond bloc
+      doc.setFillColor(14,17,32);
+      doc.roundedRect(M, M, A4W-2*M, 140, 12, 12, 'F');
+
+      // halos (simulé par cercles translucides)
+      doc.setDrawColor(255,255,255);
+      doc.setFillColor(47,227,255); doc.circle(M+120, M+76, 55, 'F');
+      doc.setFillColor(27,76,255); doc.circle(A4W-M-120, M+96, 70, 'F');
+      // voile
+      doc.setFillColor(20,26,48); doc.roundedRect(M, M, A4W-2*M, 140, 12, 12, 'F');
+
+      // logo
+      doc.setTextColor(255,255,255);
+      doc.setFont('helvetica','bold'); doc.setFontSize(26);
+      doc.text('∞', M+18, M+54);
+      doc.setFontSize(18); doc.text('Infinie & gratuit — Rapport IP certifié', M+56, M+48);
+      doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(220);
+      doc.text(`Date : ${lastReport.generatedAt}`, M+56, M+72);
+      doc.text(`Cible : cette machine (navigateur)`, M+56, M+90);
+
+      // grand affichage IP
+      doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(22);
+      doc.text('Adresse IP publique', M+56, M+122);
+      doc.setFontSize(28); doc.text(String(lastReport.ip||'—'), M+56, M+152);
+
+      // tampon pro (canvas → image)
+      const seal = makeSealCanvas('CERTIFIÉ', 'INFINIE & GRATUIT');
+      doc.addImage(seal, 'PNG', A4W- M - 140, M+12, 128, 128);
+
+      // ---- Résumé
+      doc.setFont('helvetica','bold'); doc.setTextColor(20); doc.setFontSize(13);
+      doc.text('Résumé', M, 200);
+      doc.setFont('helvetica','normal'); doc.setTextColor(40); doc.setFontSize(11);
+      const alt = lastReport.ipAlt ? (lastReport.ipAlt===lastReport.ip ? 'Même IP sur IPv4/IPv6' : `Autre famille IP : ${lastReport.ipAlt}`) : 'IPv6 non détectée';
+      const geo = lastReport.geo || {};
+      let sum = `IP principale : ${lastReport.ip || '—'}  •  ${alt}
+Fournisseur (ISP) : ${(geo.connection && (geo.connection.isp || geo.connection.org)) || geo.isp || geo.org || '—'}
+Localisation approx. : ${(geo.city||'—')}, ${(geo.country||'—')} ${geo.region?('— '+geo.region):''}
+Coordonnées : ${(geo.latitude!=null && geo.longitude!=null)? geo.latitude+', '+geo.longitude : '—'}
+Fuseau horaire : ${(geo.timezone && (geo.timezone.id || geo.timezone)) || '—'}`;
+      doc.text(sum, M, 220, {maxWidth:A4W-2*M});
+
+      // helper: table section
+      const sec = (title, rows) => {
+        // header band
+        doc.setFillColor(20,26,48);
+        doc.roundedRect(M, (doc.lastAutoTable ? doc.lastAutoTable.finalY + 18 : 260), A4W-2*M, 24, 6, 6, 'F');
+        doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+        doc.text(title, M+12, (doc.lastAutoTable ? doc.lastAutoTable.finalY + 36 : 278));
+        // table
+        doc.autoTable({
+          startY: (doc.lastAutoTable ? doc.lastAutoTable.finalY + 42 : 292),
+          margin: {left: M, right: M},
+          styles:{fontSize:10, cellPadding:6, lineWidth:0.2, lineColor:[220,225,255]},
+          headStyles:{fillColor:[43,167,255], textColor:255},
+          bodyStyles:{fillColor:[247,248,255]},
+          head:[['Élément','Valeur']],
+          body: rows.map(([k,v])=>[k, v]),
+          theme:'grid',
+          didDrawPage: (d)=>{
+            // Footer (pagination + marque)
+            const p = doc.internal.getNumberOfPages();
+            doc.setFontSize(9); doc.setTextColor(120);
+            doc.text(`Infinie & gratuit — Rapport IP certifié`, M, A4H-20);
+            doc.text(String(d.pageNumber)+' / '+String(p), A4W-M-30, A4H-20);
+          }
+        });
+      };
+
+      const n = lastReport.n;
+      const g = lastReport.geo || {};
+      sec('Réseau & localisation (approx.)', [
+        ['IP principale', lastReport.ip || '—'],
+        ['Autre IP (famille)', lastReport.ipAlt ? (lastReport.ipAlt===lastReport.ip ? 'Même IP sur IPv4/IPv6' : lastReport.ipAlt) : '—'],
+        ['Pays / Région', `${g.country||'—'}${g.region? ' — '+g.region : ''}`],
+        ['Ville', g.city || '—'],
+        ['Coordonnées', (g.latitude!=null && g.longitude!=null)? `${g.latitude}, ${g.longitude}` : '—'],
+        ['Fournisseur (ISP)', (g.connection && (g.connection.isp || g.connection.org)) || g.isp || g.org || '—'],
+        ['ASN / Org', (g.connection && g.connection.asn) || g.asn || '—'],
+        ['Fuseau', (g.timezone && (g.timezone.id || g.timezone)) || '—'],
+        ['Exactitude', 'La géolocalisation IP est indicative.']
+      ]);
+
+      sec('Système & navigateur', [
+        ['Agent utilisateur', clip(n.ua, 600)],
+        ['Plateforme', n.plat],
+        ['Langues', n.lang],
+        ['Fuseau local', n.tz],
+        ['Écran / Viewport', `${n.scr} • VP ${n.vp}`],
+        ['CPU / RAM', `Cœurs : ${n.cores} • RAM approx : ${n.mem}`],
+      ]);
+
+      sec('Connexion (navigateur)', [
+        ['Type effectif', n.netType],
+        ['Débit estimé', n.down],
+        ['Latence estimée', n.rtt],
+        ['Économie de données', n.save],
+      ]);
+
+      // Bandeau “Garantie”
+      const y = doc.lastAutoTable ? doc.lastAutoTable.finalY + 24 : 760;
+      if(y < A4H - 80){
+        doc.setFillColor(20,26,48); doc.roundedRect(M, y, A4W-2*M, 58, 10, 10, 'F');
+        doc.setTextColor(255); doc.setFont('helvetica','bold'); doc.setFontSize(12);
+        doc.text('GARANTIE DE VALIDATION', M+16, y+22);
+        doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.setTextColor(230);
+        doc.text('Ce rapport est généré côté navigateur et certifié par Infinie & gratuit au moment indiqué ci-dessus. Les données de géolocalisation IP sont approximatives par nature.', M+16, y+40, {maxWidth:A4W-2*M-32});
+      }
+
+      // numéro de rapport (hash simple)
+      const id = (lastReport.ip || 'x') + '|' + lastReport.generatedAt;
+      const hash = Array.from(new TextEncoder().encode(id)).reduce((a,b)=>((a*31 + b)>>>0),0).toString(16);
+      doc.setFontSize(9); doc.setTextColor(120);
+      doc.text('Rapport #'+hash, A4W-M-120, y+40);
+
+      // Save
+      const safe = (lastReport.ip || 'IP').replace(/[^\w.:_-]/g,'_');
+      doc.save(`Infinie_MonIP_${safe}.pdf`);
+    }
+
+    $('#export').addEventListener('click', exportPDF);
+  </script>
+</body>
+</html>

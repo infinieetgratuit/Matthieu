@@ -1,0 +1,651 @@
+
+<!DOCTYPE html>
+<html lang="fr" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Infinie - Tous les outils. Vraiment gratuits.</title>
+    
+    <!-- PREMIUM UI - Fonts & Perf -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- PREMIUM UI - Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- PREMIUM UI - Custom Styles & Animations -->
+    <style>
+        :root {
+            --bg: #0B0B0D;
+            --panel: #0E1224;
+            --border: rgba(56, 71, 128, 0.3); /* #384780 at 30% opacity */
+            --text-primary: #F5F7FF;
+            --text-secondary: #A8B0C3;
+            --accent-start: #2FE3FF;
+            --accent-end: #1B4CFF;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        ::selection {
+            background-color: var(--accent-end);
+            color: white;
+        }
+
+        /* PREMIUM UI - Focus visible state for accessibility */
+        :focus-visible {
+            outline: 2px solid var(--accent-start);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        /* PREMIUM UI - Animations with respect for user preferences */
+        @media (prefers-reduced-motion: no-preference) {
+            @keyframes shimmer {
+                0% { background-position: -200% center; }
+                100% { background-position: 200% center; }
+            }
+            .animate-shimmer {
+                animation: shimmer 2s linear infinite;
+            }
+        }
+
+        /* System Critical Styles (DO NOT CHANGE) */
+        .mindmap-node {
+            transition: background-color .2s, box-shadow .2s, border-color .2s;
+            will-change: transform;
+            backface-visibility: hidden;
+            contain: paint;
+            transform: translateZ(0);
+        }
+        .mindmap-node[data-draggable="true"] {
+            touch-action: none;
+            cursor: grab;
+        }
+        .mindmap-node.dragging {
+            cursor: grabbing;
+            transition: none;
+        }
+        #mindmap-container .mindmap-node,
+        #mindmap-container .mindmap-node * {
+          user-select: none;
+          -webkit-user-select: none;
+        }
+        #mindmap-container.is-dragging .mindmap-node[data-draggable="true"] {
+            cursor: grabbing;
+        }
+        /* End System Critical Styles */
+    </style>
+</head>
+<body class="bg-[#0B0B0D] text-[#F5F7FF] font-sans overflow-x-hidden">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    
+    <div class="relative min-h-screen">
+        <!-- PREMIUM UI - Background decorative gradient -->
+        <div class="absolute inset-0 -z-10 overflow-hidden">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[150vw] h-[50vh] bg-[radial-gradient(circle_at_top,_rgba(29,78,216,0.15),_transparent_40%)]"></div>
+        </div>
+
+        <!-- PREMIUM UI - Header -->
+        <header class="sticky top-0 z-40 w-full bg-[#0B0B0D]/80 backdrop-blur-lg border-b border-[rgba(56,71,128,0.3)]">
+            <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex h-16 justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <span class="inline-block font-extrabold tracking-tight bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] bg-clip-text text-transparent text-4xl" aria-label="infinie">∞</span>
+                        <span class="text-2xl font-bold tracking-wide">infinie</span>
+                    </div>
+                    <nav class="hidden md:flex items-center gap-8">
+                        <a href="#" class="text-sm font-medium text-[#A8B0C3] hover:text-white transition-colors duration-200">Outils</a>
+                        <a href="#" class="text-sm font-medium text-[#A8B0C3] hover:text-white transition-colors duration-200">Fiches</a>
+                        <a href="#" class="text-sm font-medium text-[#A8B0C3] hover:text-white transition-colors duration-200">Open Source</a>
+                        <a href="#" class="text-sm font-medium text-[#A8B0C3] hover:text-white transition-colors duration-200">À propos</a>
+                    </nav>
+                    <div class="md:hidden">
+                        <button id="menu-toggle-button" aria-label="Open menu" class="p-2 -mr-2">
+                            <svg id="menu-icon-open" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                            <svg id="menu-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <!-- Mobile Menu Panel -->
+            <div id="mobile-menu" class="hidden md:hidden absolute top-full left-0 w-full bg-[#0B0B0D] border-b border-[rgba(56,71,128,0.3)]">
+                <nav class="flex flex-col items-center gap-4 p-6">
+                    <a href="#" class="text-lg font-medium text-[#A8B0C3] hover:text-white transition-colors">Outils</a>
+                    <a href="#" class="text-lg font-medium text-[#A8B0C3] hover:text-white transition-colors">Fiches</a>
+                    <a href="#" class="text-lg font-medium text-[#A8B0C3] hover:text-white transition-colors">Open Source</a>
+                    <a href="#" class="text-lg font-medium text-[#A8B0C3] hover:text-white transition-colors">À propos</a>
+                </nav>
+            </div>
+        </header>
+
+        <main class="relative z-10">
+
+            <!-- PREMIUM UI - Hero Section -->
+            <section class="py-24 sm:py-32 text-center">
+                <div class="container mx-auto px-4 max-w-3xl">
+                    <h1 class="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-tight">
+                        Tous les outils.
+                        <br />
+                        <span class="bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] bg-clip-text text-transparent">Vraiment gratuits.</span>
+                    </h1>
+                    <div class="mt-10 max-w-xl mx-auto relative">
+                        <div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-5">
+                            <svg class="w-5 h-5 text-[#A8B0C3]" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        </div>
+                        <input type="text" placeholder="Rechercher un outil..." class="w-full bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-full py-4 pl-14 pr-6 text-white placeholder-[#A8B0C3] transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-[#2FE3FF]" />
+                    </div>
+                    <div class="mt-6 flex flex-wrap justify-center gap-3">
+                        <button class="px-4 py-1.5 bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-full text-sm text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white transition-colors duration-200">Vidéo</button>
+                        <button class="px-4 py-1.5 bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-full text-sm text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white transition-colors duration-200">Image</button>
+                        <button class="px-4 py-1.5 bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-full text-sm text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white transition-colors duration-200">Audio</button>
+                        <button class="px-4 py-1.5 bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-full text-sm text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white transition-colors duration-200">PDF</button>
+                        <button class="px-4 py-1.5 bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-full text-sm text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white transition-colors duration-200">Crypto & Finance</button>
+                    </div>
+                    <div class="mt-10 flex flex-wrap justify-center gap-4">
+                        <button class="px-8 py-3 font-semibold rounded-lg transition-all duration-300 bg-gradient-to-r from-[#1B4CFF] to-[#2FE3FF] text-white shadow-[0_4px_20px_rgba(47,227,255,0.2)] hover:shadow-[0_4px_30px_rgba(47,227,255,0.3)] hover:scale-105">Découvrir</button>
+                        <button class="px-8 py-3 font-semibold rounded-lg transition-all duration-300 bg-transparent border border-[rgba(56,71,128,0.4)] text-[#A8B0C3] hover:bg-[#0E1224] hover:text-white">Commencer</button>
+                    </div>
+                </div>
+                
+                <!-- PREMIUM UI - Top Tools Grid -->
+                <div class="container mx-auto px-4 mt-32 max-w-6xl">
+                    <h2 class="text-3xl font-bold text-left mb-8">Top outils</h2>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4 sm:gap-6">
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"></path><path d="m15 9-6 6"></path><path d="m9 9 6 6"></path></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Remove BG</span>
+                       </div>
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.33 2h7.34l4.33 4.33v7.34l-4.33 4.33H8.33L4 15.67V6.33L8.33 2z"></path><path d="m12 16-3-3 3-3 3 3-3 3z"></path></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Ajout de sous titres</span>
+                       </div>
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 13 5.223 3.482a.5.5 0 0 1 0 .836L16 21V13Z"></path><path d="M2 3h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path><path d="m7 8-4 4 4 4"></path><path d="m11 8 4 4-4 4"></path></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Convertisseur video</span>
+                       </div>
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect><line x1="12" x2="12" y1="8" y2="16"></line><line x1="8" x2="16" y1="12" y2="12"></line></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Calculateur image</span>
+                       </div>
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Électricité</span>
+                       </div>
+                       <div class="group bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-4 flex flex-col items-center justify-center gap-4 text-center cursor-pointer transition-all duration-300 hover:border-[#2FE3FF]/50 hover:-translate-y-2">
+                           <div class="w-10 h-10 text-blue-400 group-hover:text-[#2FE3FF] transition-colors duration-300"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg></div>
+                           <span class="text-sm font-medium text-[#A8B0C3] group-hover:text-white transition-colors duration-300">Électricité</span>
+                       </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PREMIUM UI - Ecosystem Section -->
+            <section class="py-24 relative">
+                <div class="container mx-auto px-4 text-center max-w-5xl">
+                    <h2 class="text-4xl sm:text-5xl font-bold tracking-tight">Écosystème d'outils reliés</h2>
+                    <div class="mt-8 flex justify-center items-center gap-4">
+                        <span class="text-[#A8B0C3] text-sm">Afficher le prix habituel</span>
+                        <label for="price-toggle" class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="price-toggle" class="sr-only peer">
+                            <div class="w-11 h-6 bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                        </label>
+                    </div>
+                </div>
+                <div id="mindmap-container" class="container mx-auto mt-12 h-[600px] relative rounded-3xl bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] p-4 touch-none overflow-hidden max-w-5xl shadow-2xl shadow-black/20">
+                    <canvas id="mindmap-canvas" class="absolute inset-0 pointer-events-none"></canvas>
+                    <div id="total-counter-container" class="absolute left-1/2 -translate-x-1/2 w-full flex justify-center" style="top: calc(50% + 65px + 12px); z-index: 20;"></div>
+                </div>
+            </section>
+
+            <!-- PREMIUM UI - Subtitles Section -->
+            <section class="py-24">
+                <div class="container mx-auto px-4 max-w-5xl">
+                    <h2 class="text-center text-4xl sm:text-5xl font-bold tracking-tight">Sous-titres automatiques</h2>
+                    <div class="mt-16 flex flex-col md:flex-row items-center justify-center gap-8 lg:gap-16 relative">
+                        <div class="flex flex-col items-center gap-4 w-full md:w-auto">
+                            <div class="w-52 h-[440px] bg-[#0E1224] border-2 border-[rgba(56,71,128,0.3)] rounded-3xl overflow-hidden shadow-xl shadow-black/20 p-2">
+                                <video src="./avanttitre.mp4" autoplay loop muted playsinline class="w-full h-full object-cover rounded-[20px]" loading="lazy"></video>
+                            </div>
+                            <p class="font-medium text-[#A8B0C3]">Sans sous-titres</p>
+                        </div>
+                        <div class="hidden md:flex flex-col items-center justify-center p-4 bg-[#0E1224] border border-[rgba(56,71,128,0.4)] rounded-2xl shadow-lg">
+                            <div class="p-3 bg-blue-900/50 rounded-lg text-center">
+                               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 4C7.58172 4 4 7.58172 4 12C4 16.4183 7.58172 20 12 20C16.4183 20 20 16.4183 20 12C20 7.58172 16.4183 4 12 4Z" fill="url(#paint0_linear_sub)"></path><path d="M8.5 12C8.5 13.933 10.067 15.5 12 15.5C13.933 15.5 15.5 13.933 15.5 12C15.5 10.067 13.933 8.5 12 8.5C10.067 8.5 8.5 10.067 8.5 12Z" fill="url(#paint1_linear_sub)"></path><defs><linearGradient id="paint0_linear_sub" x1="12" y1="2" x2="12" y2="22" gradientUnits="userSpaceOnUse"><stop stop-color="#2FE3FF"></stop><stop offset="1" stop-color="#1B4CFF"></stop></linearGradient><linearGradient id="paint1_linear_sub" x1="12" y1="8.5" x2="12" y2="15.5" gradientUnits="userSpaceOnUse"><stop stop-color="#2FE3FF"></stop><stop offset="1" stop-color="#1B4CFF"></stop></linearGradient></defs></svg>
+                               <p class="text-xs mt-2 font-semibold">Sous-titres IA</p>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-center gap-4 w-full md:w-auto">
+                            <div class="w-52 h-[440px] bg-[#0E1224] border-2 border-[rgba(56,71,128,0.3)] rounded-3xl overflow-hidden shadow-xl shadow-black/20 p-2">
+                                <video src="./aprestitre.mp4" autoplay loop muted playsinline class="w-full h-full object-cover rounded-[20px]" loading="lazy"></video>
+                            </div>
+                            <p class="font-medium text-white">Avec sous-titres (IA)</p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-20">
+                        <button class="px-8 py-3 font-semibold rounded-lg transition-all duration-300 bg-gradient-to-r from-[#1B4CFF] to-[#2FE3FF] text-white shadow-[0_4px_20px_rgba(47,227,255,0.2)] hover:shadow-[0_4px_30px_rgba(47,227,255,0.3)] hover:scale-105">
+                            Créer un short
+                        </button>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PREMIUM UI - Background Removal Section -->
+            <section class="py-24">
+                <div class="container mx-auto px-4 max-w-6xl">
+                    <h2 class="text-center text-4xl sm:text-5xl font-bold tracking-tight">Supprimer l'arrière-plan (IA)</h2>
+                    <div class="mt-16 relative bg-[#0E1224]/50 border border-[rgba(56,71,128,0.3)] rounded-3xl px-6 py-12 md:py-20 overflow-hidden isolate shadow-2xl shadow-black/20">
+                        <div class="relative flex flex-col md:grid md:grid-cols-2 gap-y-12 gap-x-16 items-center h-auto">
+                            
+                            <div class="relative flex flex-col items-center justify-center gap-4 z-10">
+                                <div class="aspect-square w-full max-w-sm rounded-2xl overflow-hidden shadow-lg">
+                                    <img src="./avant.png" alt="Portrait d'un homme avant la suppression de l'arrière-plan" class="w-full h-full object-cover" loading="lazy" width="400" height="400">
+                                </div>
+                                <p class="text-lg font-semibold mt-1">Avant</p>
+                            </div>
+                            
+                            <div class="absolute inset-0 hidden md:flex items-center justify-center pointer-events-none z-0" aria-hidden="true">
+                                <div class="relative w-full max-w-xs lg:max-w-sm xl:max-w-md">
+                                    <img src="./ia.gif" alt="Animation de traitement par intelligence artificielle" class="w-full h-auto select-none" width="448" height="252">
+                                    <span class="absolute left-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] shadow-[0_0_8px_rgba(47,227,255,0.7)]"></span>
+                                    <span class="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] shadow-[0_0_8px_rgba(27,76,255,0.7)]"></span>
+                                </div>
+                            </div>
+
+                            <div class="w-48 mx-auto md:hidden pointer-events-none z-0 my-4" aria-hidden="true">
+                                <img src="./ia.gif" alt="" class="w-full h-auto select-none" loading="lazy" width="200" height="112">
+                            </div>
+                            
+                            <div class="relative flex flex-col items-center justify-center gap-4 z-10">
+                                <div class="aspect-square w-full max-w-sm rounded-2xl overflow-hidden shadow-lg" style="background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMCIgaGVpZ2h0PSIyMCI+PHJlY3Qgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJyZ2IoMTgsIDIyLCAzOSkiPjwvcmVjdD48cmVjdCB4PSIxMCIgeT0iMTAiIHdpZHRoPSIxMCIgaGVpZ2h0PSIxMCIgZmlsbPSJyZ2IoMTgsIDIyLCAzOSkiPjwvcmVjdD48cmVjdCB4PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJyZ2IoMjgsIDMyLCA0OSkiPjwvcmVjdD48cmVjdCB5PSIxMCIgd2lkdGg9IjEwIiBoZWlnaHQ9IjEwIiBmaWxsPSJyZ2IoMjgsIDMyLCA0OSkiPjwvcmVjdD48L3N2Zz4=');">
+                                    <video src="./apres.mp4" autoplay loop muted playsinline class="w-full h-full object-cover" loading="lazy"></video>
+                                </div>
+                                <p class="text-lg font-semibold mt-1">Après (IA)</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-16">
+                        <a href="remove.html" class="inline-block px-8 py-3 font-semibold rounded-lg transition-all duration-300 bg-gradient-to-r from-[#1B4CFF] to-[#2FE3FF] text-white shadow-[0_4px_20px_rgba(47,227,255,0.2)] hover:shadow-[0_4px_30px_rgba(47,227,255,0.3)] hover:scale-105">
+                            Essayer maintenant
+                        </a>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- PREMIUM UI - Features Section -->
+            <section class="py-24 text-center">
+                <div class="container mx-auto px-4 max-w-6xl">
+                    <h2 class="text-4xl sm:text-5xl font-bold tracking-tight">Gratuit. Open-source. Illimité.</h2>
+                    <p class="mt-4 text-lg text-[#A8B0C3] max-w-2xl mx-auto">Des outils puissants, sans pubs, sans inscription, sans limites. Conçus pour tous.</p>
+                    <div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+                        <div class="bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-8 flex flex-col items-center text-center">
+                            <h3 class="text-2xl font-bold mb-4">Gratuit</h3>
+                            <span class="inline-block font-extrabold tracking-tight bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] bg-clip-text text-transparent text-5xl mb-4" aria-hidden="true">∞</span>
+                            <p class="text-white font-medium mb-2">0 € pour tous</p>
+                            <p class="text-sm text-[#A8B0C3]">Tous nos outils sont entièrement gratuits, sans frais cachés ni fonctionnalités premium payantes.</p>
+                        </div>
+                        <div class="bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-8 flex flex-col items-center text-center">
+                            <h3 class="text-2xl font-bold mb-4">Open-source</h3>
+                            <svg class="w-16 h-16 text-[#A8B0C3] mb-4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            <p class="text-white font-medium mb-2">Code public, contributions bienvenues</p>
+                            <p class="text-sm text-[#A8B0C3]">Notre code est ouvert à tous. Contribuez, auditez ou inspirez-vous sur notre GitHub.</p>
+                        </div>
+                        <div class="bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-2xl p-8 flex flex-col items-center text-center">
+                            <h3 class="text-2xl font-bold mb-4">Illimité</h3>
+                            <span class="inline-block font-extrabold tracking-tight bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] bg-clip-text text-transparent text-5xl mb-4" aria-hidden="true">∞</span>
+                            <p class="text-white font-medium mb-2">Sans crédits ni limites</p>
+                            <p class="text-sm text-[#A8B0C3]">Utilisez nos outils autant que vous le souhaitez, sans aucune restriction d'usage.</p>
+                        </div>
+                    </div>
+                    <div class="mt-20">
+                        <button class="group w-full max-w-sm mx-auto flex items-center justify-center gap-3 py-4 px-6 bg-[#0E1224] border border-[rgba(56,71,128,0.4)] rounded-lg text-[#A8B0C3] font-semibold cursor-pointer transition-all hover:bg-[#0E1224]/80 hover:border-blue-600/70">
+                            <span>Laisser un pourboire</span>
+                            <svg class="group-hover:text-pink-400 group-hover:fill-pink-400/20 transition-colors" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"></path></svg>
+                        </button>
+                        <p class="mt-4 text-sm text-gray-500">Pour soutenir le développement de nouveaux outils</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- PREMIUM UI - Secret Modal -->
+    <div id="secret-modal" role="dialog" aria-modal="true" aria-labelledby="secret-modal-title" class="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden">
+        <div class="relative max-w-md w-full bg-[#0E1224] rounded-2xl shadow-2xl border border-[rgba(56,71,128,0.3)] p-8 text-center overflow-hidden">
+            <div class="absolute -inset-px rounded-2xl bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] opacity-30 -z-10 animate-pulse"></div>
+            <h2 id="secret-modal-title" class="text-2xl font-bold mb-3 text-white">Page secrète débloquée 🎮</h2>
+            <p class="text-[#A8B0C3] mb-8">Vous avez trouvé la combinaison. Accéder à la console ?</p>
+            <div class="flex justify-center gap-4">
+                <button id="secret-modal-close-button" class="px-6 py-2 font-semibold rounded-lg transition-all bg-transparent border border-[rgba(56,71,128,0.4)] text-[#A8B0C3] hover:bg-[#0B0B0D] hover:text-white">Plus tard</button>
+                <button id="secret-modal-open-button" class="px-6 py-2 font-semibold rounded-lg transition-all bg-gradient-to-r from-[#1B4CFF] to-[#2FE3FF] text-white shadow-[0_4px_20px_rgba(47,227,255,0.2)] hover:shadow-lg hover:shadow-[#2FE3FF]/20">Ouvrir la console</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- SYSTEM SCRIPT - DO NOT MODIFY LOGIC -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Header Mobile Menu ---
+            const menuToggleButton = document.getElementById('menu-toggle-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const menuIconOpen = document.getElementById('menu-icon-open');
+            const menuIconClose = document.getElementById('menu-icon-close');
+
+            menuToggleButton.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                menuIconOpen.classList.toggle('hidden');
+                menuIconClose.classList.toggle('hidden');
+            });
+            
+            // --- Ecosystem Section ---
+            const ecosystemTools = [
+                { id: 'infinie-hub', name: 'infinie.io', icon: '<span class="text-5xl leading-none text-white">∞</span><span class="font-semibold text-gray-300 text-base mt-1">infinie.io</span>', isDraggable: false },
+                { id: 'subtitles', name: 'Sous-titres automatiques', price: 60, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>', initialPosition: { top: '5%', left: '10%' }, isDraggable: true },
+                { id: 'bg-remover', name: 'Supprimer l\'arrière-plan', price: 20, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>', initialPosition: { top: '25%', left: '0%' }, isDraggable: true },
+                { id: 'pdf-compression', name: 'Compression PDF', price: 15, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>', initialPosition: { top: '60%', left: '0%' }, isDraggable: true },
+                { id: 'mining-calculator', name: 'Calculateur minning', price: 5, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M15 13.5c0 .8-.5 1.7-1.4 2.2s-2 .8-3.1.8-2.2-.3-3.1-.8S6 14.3 6 13.5s.5-1.7 1.4-2.2S9.6 10.5 12 10.5s2.2.3 3.1.8 1.4 1.4 1.4 2.2z"></path><path d="M2 13.5C2 17.6 6.5 21 12 21s10-3.4 10-7.5"></path><path d="m2 13.5 1.7-5.1c.2-.6.8-1 1.4-1h13.8c.6 0 1.2.4 1.4 1L22 13.5"></path><path d="M12 10.5V2.7c0-.4-.3-.8-.8-.8H12c-.4 0-.8.3-.8.8v7.8"></path><path d="M12 21v-5.5"></path></svg>', initialPosition: { top: '85%', left: '15%' }, isDraggable: true },
+                { id: 'qr-creator', name: 'Créateur de QR code', price: 10, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><rect width="5" height="5" x="3" y="3" rx="1"></rect><rect width="5" height="5" x="16" y="3" rx="1"></rect><rect width="5" height="5" x="3" y="16" rx="1"></rect><path d="M21 16h-3a2 2 0 0 0-2 2v3"></path><path d="M21 21v.01"></path><path d="M12 7v3a2 2 0 0 1-2 2H7"></path><path d="M3 12h.01"></path><path d="M12 3h.01"></path><path d="M12 16h.01"></path><path d="M16 12h.01"></path><path d="M21 12h.01"></path></svg>', initialPosition: { top: '10%', left: '80%' }, isDraggable: true },
+                { id: 'palette', name: 'Palette couleurs', price: 10, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"></path></svg>', initialPosition: { top: '40%', left: '85%' }, isDraggable: true },
+                { id: 'video-converter', name: 'Convertisseur video', price: 25, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="m16 13 5.223 3.482a.5.5 0 0 1 0 .836L16 21V13Z"></path><path d="M2 3h12a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"></path><path d="m7 8-4 4 4 4"></path><path d="m11 8 4 4-4 4"></path></svg>', initialPosition: { top: '70%', left: '80%' }, isDraggable: true },
+                { id: 'electricity', name: 'Électricité', price: 5, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"></path></svg>', initialPosition: { top: '90%', left: '55%' }, isDraggable: true },
+                { id: 'audio-compressor', name: 'Compresseur audio', price: 30, icon: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5 text-blue-400"><path d="M10 17a2 2 0 1 0-4 0"></path><path d="M12 5v12"></path><path d="M4 11v2"></path><path d="M8 8v2"></path><path d="M12 11v2"></path><path d="M16 8v2"></path><path d="M20 11v2"></path><path d="M16 17a2 2 0 1 0 4 0"></path></svg>', initialPosition: { top: '95%', left: '30%' }, isDraggable: true },
+            ];
+
+            const priceFormatter = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' });
+            const container = document.getElementById('mindmap-container');
+            const canvas = document.getElementById('mindmap-canvas');
+            const ctx = canvas.getContext('2d');
+            const priceToggle = document.getElementById('price-toggle');
+            const totalCounterContainer = document.getElementById('total-counter-container');
+            const nodes = new Map();
+            let hubCenter = { x: 0, y: 0 };
+            
+            const drag = { 
+                active: false, id: null, lastPointer: {x:0, y:0}, startPointer: {x:0, y:0}, startNode: {x:0, y:0},
+                nodeW: 0, nodeH: 0, halfW: 0, halfH: 0, minX: 0, maxX: 0, minY: 0, maxY: 0 
+            };
+            let ticking = false;
+            
+            const secretModal = document.getElementById('secret-modal');
+            const openConsoleButton = document.getElementById('secret-modal-open-button');
+            const closeModalButton = document.getElementById('secret-modal-close-button');
+            let debounceTimeout;
+
+            const handleEscKey = (e) => {
+                if (e.key === 'Escape') closeSecretModal();
+            };
+
+            const openSecretModal = () => {
+                if (sessionStorage.getItem('infinie_secret_unlocked') === '1' || !secretModal) return;
+                
+                sessionStorage.setItem('infinie_secret_unlocked', '1');
+                secretModal.classList.remove('hidden');
+                openConsoleButton.focus();
+                document.addEventListener('keydown', handleEscKey);
+            };
+
+            const closeSecretModal = () => {
+                if (!secretModal) return;
+                secretModal.classList.add('hidden');
+                document.removeEventListener('keydown', handleEscKey);
+            };
+
+            const checkSecretCombo = () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    if (!container) return;
+                    const pad = 12;
+                    const containerWidth = container.clientWidth;
+                    const containerHeight = container.clientHeight;
+                    const zoneWidth = containerWidth * 0.32;
+                    const zoneHeight = containerHeight * 0.34;
+                    const zone = {
+                        x1: pad, y1: containerHeight - pad - zoneHeight,
+                        x2: pad + zoneWidth, y2: containerHeight - pad,
+                    };
+                    const draggableNodes = Array.from(nodes.values()).filter(n => n.toolData.isDraggable);
+                    if (draggableNodes.length === 0) return;
+                    const allInZone = draggableNodes.every(node => {
+                        const centerX = node.x + node.halfW;
+                        const centerY = node.y + node.halfH;
+                        return centerX >= zone.x1 && centerX <= zone.x2 && centerY >= zone.y1 && centerY <= zone.y2;
+                    });
+                    if (allInZone) openSecretModal();
+                }, 200);
+            };
+
+            const createMindmapNodes = () => {
+                ecosystemTools.forEach(tool => {
+                    const nodeEl = document.createElement('div');
+                    nodeEl.id = tool.id;
+                    
+                    if (tool.id === 'infinie-hub') {
+                        nodeEl.className = "absolute w-[130px] h-[130px] rounded-full bg-[#0E1224] flex flex-col items-center justify-center cursor-pointer shadow-[0_0_20px_rgba(27,76,255,0.4),_0_0_40px_rgba(47,227,255,0.2)]";
+                        nodeEl.style.cssText = "border: 2px solid transparent; background-clip: padding-box; top: 50%; left: 50%; transform: translate(-50%, -50%);";
+                        nodeEl.innerHTML = `<div class="absolute -inset-1 rounded-full bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] -z-10"></div>${tool.icon}`;
+                    } else {
+                        nodeEl.className = "mindmap-node absolute flex items-center gap-3 bg-[#0E1224] border border-[rgba(56,71,128,0.3)] rounded-xl shadow-lg p-3 px-4";
+                        nodeEl.dataset.draggable = tool.isDraggable;
+
+                        if (tool.isDraggable) {
+                            nodeEl.addEventListener('pointerdown', onPointerDown, { passive: false });
+                        }
+                        nodeEl.innerHTML = `${tool.icon}<span class="name font-medium text-sm text-[#A8B0C3]">${tool.name}</span><span class="tool-price text-sm text-yellow-400 font-semibold opacity-0 transition-opacity duration-300">${priceFormatter.format(tool.price)}</span>`;
+                    }
+                    container.appendChild(nodeEl);
+                    nodes.set(tool.id, { el: nodeEl, toolData: tool, x: 0, y: 0, w: 0, h: 0, halfW: 0, halfH: 0 });
+                });
+            };
+
+            const drawAllCurvesOnCanvas = () => {
+                if (!ctx || !container) return;
+                ctx.clearRect(0, 0, container.clientWidth, container.clientHeight);
+
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = 'rgba(59, 130, 246, 0.35)';
+                ctx.lineCap = 'round';
+
+                for (const nodeData of nodes.values()) {
+                    if (nodeData.toolData.id === 'infinie-hub') continue;
+                    const sx = hubCenter.x, sy = hubCenter.y;
+                    const ex = nodeData.x + nodeData.halfW, ey = nodeData.y + nodeData.halfH;
+                    const dx = (ex - sx) * 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(sx, sy);
+                    ctx.bezierCurveTo(sx + dx, sy, ex - dx, ey, ex, ey);
+                    ctx.stroke();
+                }
+            };
+            
+            const setupMindmapLayout = () => {
+                if (!container || !canvas) return;
+                const containerRect = container.getBoundingClientRect();
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = containerRect.width * dpr;
+                canvas.height = containerRect.height * dpr;
+                canvas.style.width = `${containerRect.width}px`;
+                canvas.style.height = `${containerRect.height}px`;
+                ctx.scale(dpr, dpr);
+
+                const hubEntry = nodes.get('infinie-hub');
+                if (hubEntry) {
+                    hubCenter = { x: container.clientWidth / 2, y: container.clientHeight / 2 };
+                    totalCounterContainer.style.top = `${hubCenter.y + hubEntry.el.clientHeight / 2 + 12}px`;
+                }
+
+                nodes.forEach((nodeData, id) => {
+                    const { el, toolData } = nodeData;
+                    const elW = el.offsetWidth;
+                    const elH = el.offsetHeight;
+                    nodeData.w = elW; nodeData.h = elH;
+                    nodeData.halfW = elW / 2; nodeData.halfH = elH / 2;
+
+                    if (id === 'infinie-hub') {
+                        nodeData.x = (container.clientWidth - elW) / 2;
+                        nodeData.y = (container.clientHeight - elH) / 2;
+                        return;
+                    }
+                    
+                    const topPercent = parseFloat(toolData.initialPosition.top);
+                    const leftPercent = parseFloat(toolData.initialPosition.left);
+                    const x = (leftPercent / 100 * containerRect.width) - nodeData.halfW;
+                    const y = (topPercent / 100 * containerRect.height) - nodeData.halfH;
+                    const pad = 8;
+                    const clampedX = Math.max(pad, Math.min(x, containerRect.width - elW - pad));
+                    const clampedY = Math.max(pad, Math.min(y, containerRect.height - elH - pad));
+
+                    el.style.transform = `translate3d(${clampedX}px, ${clampedY}px, 0)`;
+                    nodeData.x = clampedX;
+                    nodeData.y = clampedY;
+                });
+                
+                drawAllCurvesOnCanvas();
+            };
+
+            const tick = () => {
+                if (!ticking) return;
+                if (drag.active) {
+                    const dx = drag.lastPointer.x - drag.startPointer.x;
+                    const dy = drag.lastPointer.y - drag.startPointer.y;
+                    let x = Math.max(drag.minX, Math.min(drag.startNode.x + dx, drag.maxX));
+                    let y = Math.max(drag.minY, Math.min(drag.startNode.y + dy, drag.maxY));
+
+                    const node = nodes.get(drag.id);
+                    if (node) {
+                        node.x = x; node.y = y;
+                        node.el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+                    }
+                }
+                drawAllCurvesOnCanvas();
+                requestAnimationFrame(tick);
+            };
+
+            const startTicker = () => {
+                if (!ticking) {
+                    ticking = true;
+                    requestAnimationFrame(tick);
+                }
+            };
+            
+            const onPointerDown = (event) => {
+                event.preventDefault();
+                if (event.button !== 0) return;
+                const el = event.currentTarget;
+                if (!el || !container) return;
+                
+                container.classList.add('is-dragging');
+                const nodeData = nodes.get(el.id);
+                if (!nodeData) return;
+                
+                drag.active = true;
+                drag.id = nodeData.toolData.id;
+                drag.nodeW = nodeData.w; drag.nodeH = nodeData.h;
+                drag.startNode = { x: nodeData.x, y: nodeData.y };
+                drag.startPointer = { x: event.clientX, y: event.clientY };
+                drag.lastPointer = { ...drag.startPointer };
+
+                const pad = 8;
+                drag.minX = pad; drag.minY = pad;
+                drag.maxX = container.clientWidth - drag.nodeW - pad;
+                drag.maxY = container.clientHeight - drag.nodeH - pad;
+                
+                el.setPointerCapture(event.pointerId);
+                el.classList.add('dragging');
+                el.style.zIndex = '50';
+                startTicker();
+            };
+
+            const onPointerMove = (event) => {
+                if (!drag.active) return;
+                drag.lastPointer = { x: event.clientX, y: event.clientY };
+            };
+
+            const onPointerUp = (event) => {
+                if (!drag.active) return;
+                container.classList.remove('is-dragging');
+                const node = nodes.get(drag.id);
+                if (node && node.el) {
+                    node.el.releasePointerCapture(event.pointerId);
+                    node.el.classList.remove('dragging');
+                    node.el.style.zIndex = '';
+                }
+                checkSecretCombo();
+                drag.active = false;
+                drag.id = null;
+            };
+
+            const animateTotalCounter = (targetValue) => {
+                // PREMIUM UI - Updated counter HTML
+                totalCounterContainer.innerHTML = `
+                    <div class="bg-[#0E1224]/80 backdrop-blur-md p-3 px-6 rounded-xl border border-[rgba(56,71,128,0.3)] text-center flex items-center justify-center pointer-events-none">
+                        <div class="flex items-center gap-4 text-2xl font-bold" aria-live="polite">
+                            <span class="relative inline-block text-[#A8B0C3]">
+                                <span id="counter-value">€0,00</span>
+                                <span id="counter-strikethrough" class="absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-[#2FE3FF] to-[#1B4CFF] transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)] origin-left scale-x-0"></span>
+                            </span>
+                            <span id="counter-free-text" class="font-semibold uppercase tracking-wider bg-gradient-to-r from-[#2FE3FF] via-[#2FE3FF] to-[#1B4CFF] bg-clip-text text-transparent transition-opacity duration-300 ease-in animate-shimmer bg-[200%_auto] opacity-0">
+                                GRATUIT À VIE
+                            </span>
+                        </div>
+                    </div>`;
+
+                const valueEl = document.getElementById('counter-value');
+                const strikeEl = document.getElementById('counter-strikethrough');
+                const freeTextEl = document.getElementById('counter-free-text');
+                
+                let startTimestamp = null;
+                const duration = 2800;
+                const easeOutCubic = t => 1 - Math.pow(1 - t, 3);
+                
+                const step = (timestamp) => {
+                    if (!startTimestamp) startTimestamp = timestamp;
+                    const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                    const currentValue = Math.floor(easeOutCubic(progress) * targetValue);
+                    valueEl.textContent = priceFormatter.format(currentValue);
+                    if (progress < 1) {
+                        requestAnimationFrame(step);
+                    } else {
+                        setTimeout(() => {
+                           valueEl.classList.remove('text-[#A8B0C3]');
+                           valueEl.classList.add('text-gray-600');
+                           strikeEl.classList.add('scale-x-100');
+                           freeTextEl.classList.add('opacity-100');
+                        }, 500);
+                    }
+                };
+                requestAnimationFrame(step);
+            };
+
+            priceToggle.addEventListener('change', (e) => {
+                const showPrice = e.target.checked;
+                document.querySelectorAll('.tool-price').forEach(p => p.style.opacity = showPrice ? '1' : '0');
+                if (showPrice) {
+                    const total = ecosystemTools.reduce((sum, tool) => sum + (tool.price || 0), 0);
+                    animateTotalCounter(total);
+                } else {
+                    totalCounterContainer.innerHTML = '';
+                }
+            });
+
+            createMindmapNodes();
+            setupMindmapLayout();
+            
+            if (openConsoleButton && closeModalButton) {
+                openConsoleButton.addEventListener('click', () => { window.location.href = 'jeux/console.html'; });
+                closeModalButton.addEventListener('click', closeSecretModal);
+            }
+
+            window.addEventListener('pointermove', onPointerMove, { passive: true });
+            window.addEventListener('pointerup', onPointerUp, { passive: true });
+            window.addEventListener('resize', setupMindmapLayout);
+        });
+    </script>
+</body>
+</html>

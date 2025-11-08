@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Calculette (ultra design)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* === Design Tokens (INVARIABLES — garder identiques sur tous les outils) === */
+      --bg:#0B0B0D;           /* fond global */
+      --panel:#0d1120;        /* cartes/panneaux */
+      --text:#E6ECF7;         /* texte principal */
+      --muted:#A4ADBD;        /* texte secondaire */
+      --border:rgba(95,123,255,0.18); /* bordures subtiles */
+      --accent1:#2FE3FF;      /* cyan néon */
+      --accent2:#1B4CFF;      /* bleu électrique */
+      --ring:0 0 0 2px rgba(43,167,255,.35); /* focus/hover */
+      /* Fonds secondaires */
+      --secondary:#0b0f1a;    /* Inputs / fonds secondaires */
+      --secondary-border:#1a2340;
+
+      --radius-xl:20px;
+      --radius-2xl:24px;
+      --shadow-soft:0 10px 30px rgba(0,0,0,.35);
+      --shadow-press:0 6px 18px rgba(0,0,0,.45);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+    }
+    a{color:inherit}
+
+    /* Header / Logo */
+    .shell{min-height:100%; display:grid; grid-template-rows:auto 1fr auto}
+    header{
+      position:sticky; top:0; z-index:20;
+      backdrop-filter:saturate(1.2) blur(8px);
+      background:linear-gradient(180deg, rgba(0,0,0,.35), transparent);
+      border-bottom:1px solid rgba(255,255,255,.04);
+    }
+    .bar{max-width:980px; margin:0 auto; padding:16px 20px; display:flex; align-items:center; gap:12px}
+    .pastille{width:36px; height:36px; border-radius:999px; display:grid; place-items:center; font-weight:800; letter-spacing:.4px;
+      background:radial-gradient(120% 120% at 22% 28%, var(--accent1), var(--accent2));
+      color:#fff; box-shadow:inset 0 1px 0 rgba(255,255,255,.25), 0 4px 16px rgba(27,76,255,.35)}
+    .wordmark{font-weight:800; letter-spacing:.2px}
+    .spacer{flex:1}
+    .ghost{opacity:.8; font-size:12px; color:var(--muted)}
+
+    /* Card */
+    .wrap{display:grid; place-items:center; padding:28px}
+    .card{width:100%; max-width:520px; border:1px solid var(--border); border-radius:var(--radius-2xl);
+      background:
+        linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+        linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+        var(--panel);
+      box-shadow:var(--shadow-soft);
+      overflow:hidden
+    }
+
+    /* Display */
+    .display{padding:22px 22px 12px; border-bottom:1px solid rgba(255,255,255,.04); background:linear-gradient(180deg, rgba(255,255,255,.02), transparent)}
+    .expr{min-height:26px; color:var(--muted); font-size:14px; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+    .result-row{display:flex; align-items:baseline; gap:10px; margin-top:6px}
+    .result{font-size:42px; font-weight:800; line-height:1.05; letter-spacing:.2px; word-break:break-all}
+    .copy{
+      margin-left:auto; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; color:var(--text);
+      background:var(--secondary); display:inline-flex; align-items:center; gap:8px; cursor:pointer; transition:.18s ease;
+    }
+    .copy:hover{box-shadow:var(--ring)}
+
+    /* Keypad */
+    .pad{padding:18px; display:grid; gap:12px; grid-template-columns:repeat(4, 1fr)}
+    .btn{
+      user-select:none; -webkit-tap-highlight-color:transparent; cursor:pointer;
+      background:var(--secondary); border:1px solid var(--secondary-border); color:var(--text);
+      border-radius:16px; padding:16px 0; font-size:18px; font-weight:700; text-align:center;
+      box-shadow:var(--shadow-soft); transition:transform .06s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease;
+    }
+    .btn:hover{box-shadow:var(--ring)}
+    .btn:active{transform:translateY(1px); box-shadow:var(--shadow-press)}
+    .btn[data-kind="op"], .btn[data-kind="fn"]{color:#d7e4ff}
+    .btn[data-kind="op"]{background:linear-gradient(180deg, rgba(65,90,210,.18), rgba(18,22,40,.2)); border-color:#24305b}
+    .btn[data-kind="eq"]{
+      background:linear-gradient(135deg, var(--accent1), var(--accent2)); color:#0b0f1a; border:none; text-shadow:0 1px 0 rgba(255,255,255,.3)
+    }
+    .btn[data-kind="eq"]:hover{box-shadow:0 0 0 2px rgba(255,255,255,.08), 0 10px 26px rgba(27,76,255,.45)}
+    .span-2{grid-column:span 2}
+
+    /* Footer */
+    footer{max-width:980px; margin:0 auto; padding:14px 20px 30px; color:var(--muted); font-size:12px}
+
+    /* History drawer */
+    .drawer{position:fixed; right:20px; bottom:20px; width:320px; max-height:60vh; overflow:auto; border:1px solid var(--border);
+      background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent), linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+      border-radius:18px; box-shadow:var(--shadow-soft); transform:translateY(8px); opacity:0; pointer-events:none; transition:.2s ease}
+    .drawer.open{transform:translateY(0); opacity:1; pointer-events:auto}
+    .drawer h4{margin:12px 14px 6px; font-size:12px; font-weight:800; color:#cfe3ff; letter-spacing:.2px}
+    .history{list-style:none; margin:0; padding:10px}
+    .history li{display:flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:12px; margin-bottom:10px; background:rgba(8,12,22,.6)}
+    .history li:hover{box-shadow:var(--ring); cursor:pointer}
+    .history .h-expr{font-size:12px; color:var(--muted)}
+    .history .h-res{margin-left:auto; font-weight:800; font-size:14px}
+
+    .utils{display:flex; gap:10px; margin:10px 18px 0}
+    .pill{padding:8px 12px; border:1px solid var(--secondary-border); background:var(--secondary); border-radius:999px; font-size:12px; color:var(--muted); cursor:pointer}
+    .pill:hover{box-shadow:var(--ring); color:var(--text)}
+
+    /* Tooltips (lightweight) */
+    .tip{position:relative}
+    .tip:hover::after{content:attr(data-tip); position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+      background:#0a0e18; border:1px solid var(--secondary-border); padding:6px 8px; border-radius:8px; color:#cfe3ff; font-size:11px; white-space:nowrap}
+
+    /* Reduce motion preference */
+    @media (prefers-reduced-motion:reduce){.btn{transition:none}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="bar">
+        <div class="pastille" aria-hidden="true">∞</div>
+        <div class="wordmark">Infinie & gratuit</div>
+        <div class="spacer"></div>
+        <button id="toggleHistory" class="pill tip" data-tip="Historique (H)">Historique</button>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="card" aria-label="Calculette">
+        <div class="display">
+          <div id="expr" class="expr" aria-live="polite"></div>
+          <div class="result-row">
+            <div id="result" class="result" aria-live="polite">0</div>
+            <button id="copyBtn" class="copy tip" data-tip="Copier le résultat">Copier</button>
+          </div>
+          <div class="utils">
+            <button class="pill tip" id="localeBtn" data-tip="Basculer point/virgule">Décimale : ,</button>
+            <button class="pill tip" id="mcBtn" data-tip="Effacer la mémoire (MC)">MC</button>
+            <button class="pill tip" id="mrBtn" data-tip="Rappeler la mémoire (MR)">MR</button>
+            <button class="pill tip" id="mPlusBtn" data-tip="Ajouter à la mémoire (M+)">M+</button>
+            <button class="pill tip" id="mMinusBtn" data-tip="Retirer de la mémoire (M-)">M-</button>
+          </div>
+        </div>
+
+        <div class="pad" role="group" aria-label="Touches de calcul">
+          <div class="btn" data-kind="fn" data-key="AC">AC</div>
+          <div class="btn" data-kind="fn" data-key="±">±</div>
+          <div class="btn" data-kind="fn" data-key="%">%</div>
+          <div class="btn" data-kind="op" data-key="÷">÷</div>
+
+          <div class="btn" data-key="7">7</div>
+          <div class="btn" data-key="8">8</div>
+          <div class="btn" data-key="9">9</div>
+          <div class="btn" data-kind="op" data-key="×">×</div>
+
+          <div class="btn" data-key="4">4</div>
+          <div class="btn" data-key="5">5</div>
+          <div class="btn" data-key="6">6</div>
+          <div class="btn" data-kind="op" data-key="-">−</div>
+
+          <div class="btn" data-key="1">1</div>
+          <div class="btn" data-key="2">2</div>
+          <div class="btn" data-key="3">3</div>
+          <div class="btn" data-kind="op" data-key="+">+</div>
+
+          <div class="btn" data-key="(">(</div>
+          <div class="btn" data-key=")">)</div>
+          <div class="btn" data-key="," id="dotBtn">,</div>
+          <div class="btn" data-kind="fn" data-key="⌫">⌫</div>
+
+          <div class="btn span-2" data-key="0">0</div>
+          <div class="btn span-2" data-kind="eq" data-key="=">=</div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Astuces : clavier pris en charge (0‑9, + − × ÷, (, ), Backspace=⌫, Entrée= =, Échap=AC, point/virgule pour décimale, %). Cliquez sur « Historique » pour réutiliser un calcul.
+    </footer>
+  </div>
+
+  <!-- Historique -->
+  <aside id="drawer" class="drawer" aria-label="Historique">
+    <h4>Historique</h4>
+    <ul id="history" class="history"></ul>
+  </aside>
+
+<script>
+(() => {
+  const exprEl = document.getElementById('expr');
+  const resEl  = document.getElementById('result');
+  const copyBtn = document.getElementById('copyBtn');
+  const historyList = document.getElementById('history');
+  const drawer = document.getElementById('drawer');
+  const toggleHistory = document.getElementById('toggleHistory');
+
+  const mcBtn = document.getElementById('mcBtn');
+  const mrBtn = document.getElementById('mrBtn');
+  const mPlusBtn = document.getElementById('mPlusBtn');
+  const mMinusBtn = document.getElementById('mMinusBtn');
+  const localeBtn = document.getElementById('localeBtn');
+
+  // State
+  let input = '';          // nombre en cours de saisie (string)
+  let tape = '';           // expression construite (string)
+  let mem = 0;             // mémoire
+  let useComma = true;     // affichage décimal FR
+
+  const nf = () => new Intl.NumberFormat('fr-FR', {maximumFractionDigits: 12});
+
+  const OPERATORS = ['+','-','×','÷'];
+
+  function updateUI(){
+    exprEl.textContent = (tape + (input ? input : '')).trim();
+    let toShow = input || lastComputed || '0';
+    // Montre joliment les nombres isolés
+    if (/^[-+]?\d+[\.,]?\d*$/.test(toShow)) {
+      const num = parseFloat(toShow.replace(',', '.'));
+      if (!Number.isNaN(num)) toShow = formatNumber(num);
+    }
+    resEl.textContent = toShow || '0';
+  }
+
+  function formatNumber(n){
+    const s = nf().format(n);
+    return s;
+  }
+
+  function sanitizeForEval(s){
+    // Remplacements d'opérateurs & décimales
+    let exp = s.replaceAll('×','*').replaceAll('÷','/').replaceAll(',','.');
+    // Pourcent → (x/100)
+    exp = exp.replace(/(\d+(?:\.\d+)?)%/g, '($1/100)');
+    // Validation stricte
+    if (!/^[-+/*().%\d\s]*$/.test(exp)) return null;
+    return exp;
+  }
+
+  function evalNow(){
+    const full = (tape + (input || '')).trim();
+    if (!full) return '0';
+    const safe = sanitizeForEval(full);
+    if (safe == null) return 'Erreur';
+    try{
+      const val = Function('"use strict"; return (' + safe + ')')();
+      if (typeof val !== 'number' || !Number.isFinite(val)) return 'Erreur';
+      lastComputed = String(val);
+      pushHistory(full, val);
+      input = String(val).replace('.', useComma ? ',' : '.');
+      tape = '';
+      updateUI();
+      return val;
+    }catch(e){
+      return 'Erreur';
+    }
+  }
+
+  function appendDigit(d){
+    if (input === '0') input = '';
+    input += d;
+    updateUI();
+  }
+
+  function appendDot(){
+    const dot = useComma ? ',' : '.';
+    if (input.includes('.') || input.includes(',')) return;
+    input = input || '0';
+    input += dot;
+    updateUI();
+  }
+
+  function appendOp(op){
+    // Si rien en entrée mais déjà opérateur, on remplace l'opérateur précédent
+    if (!input && tape && OPERATORS.includes(tape.trim().slice(-1))) {
+      tape = tape.trim().slice(0, -1) + op + ' ';
+      updateUI();
+      return;
+    }
+    // Colle le nombre courant
+    if (input){
+      tape += input + ' ';
+      input = '';
+    }
+    // Ajoute l'opérateur
+    if (!tape) tape = '0 ';
+    tape += op + ' ';
+    updateUI();
+  }
+
+  function addParen(p){
+    // Ajoute parenthèse brute en concaténant intelligemment
+    if (p === '('){
+      // Si un nombre est en cours, on insère un op de multiplication implicite
+      if (input) { tape += input + ' × '; input = ''; }
+      tape += '(';
+    } else {
+      // Ferme côté input d'abord
+      if (input){ tape += input; input=''; }
+      tape += ')';
+    }
+    updateUI();
+  }
+
+  function clearAll(){ input=''; tape=''; updateUI(); }
+
+  function backspace(){
+    if (input){ input = input.slice(0,-1); }
+    else if (tape){ tape = tape.trimEnd().slice(0,-1); }
+    updateUI();
+  }
+
+  function toggleSign(){
+    if (input){
+      input = input.startsWith('-') ? input.slice(1) : '-' + input;
+    } else {
+      // Cherche le dernier nombre dans tape
+      const m = /(.*?)([-+]?\d+[\.,]?\d*)\s*$/.exec(tape);
+      if (m){
+        const before = m[1];
+        const num = m[2];
+        const flipped = num.startsWith('-') ? num.slice(1) : ('-' + num);
+        tape = before + flipped + ' ';
+      }
+    }
+    updateUI();
+  }
+
+  function percent(){
+    if (input){
+      const v = parseFloat(input.replace(',','.'));
+      if (!Number.isNaN(v)) input = String(v/100).replace('.', useComma ? ',' : '.');
+    } else {
+      const m = /(.*?)(\d+[\.,]?\d*)\s*$/.exec(tape);
+      if (m){
+        const before = m[1];
+        const num = parseFloat(m[2].replace(',','.'));
+        tape = before + String(num/100).replace('.', useComma ? ',' : '.') + ' ';
+      }
+    }
+    updateUI();
+  }
+
+  function pushHistory(exp, val){
+    const li = document.createElement('li');
+    const x = document.createElement('div'); x.className='h-expr'; x.textContent = exp;
+    const r = document.createElement('div'); r.className='h-res'; r.textContent = formatNumber(val);
+    li.appendChild(x); li.appendChild(r);
+    li.addEventListener('click', ()=>{ input = String(val).replace('.', useComma ? ',' : '.'); tape=''; updateUI(); });
+    historyList.prepend(li);
+  }
+
+  let lastComputed = '';
+
+  // Events — mouse/touch
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('click', () => handleKey(btn.dataset.key));
+  });
+
+  // Keyboard
+  window.addEventListener('keydown', (e) => {
+    const k = e.key;
+    const map = { '*':'×', '/':'÷', 'Enter':'=', 'Backspace':'⌫', 'Escape':'AC'};
+    if (k in map){ e.preventDefault(); handleKey(map[k]); return; }
+    if (k.match(/[0-9+\-()%]/)){ e.preventDefault(); handleKey(k); return; }
+    if (k === '.' || k === ','){ e.preventDefault(); handleKey(','); return; }
+    if (k.toLowerCase()==='h'){ e.preventDefault(); drawer.classList.toggle('open'); return; }
+  });
+
+  function handleKey(k){
+    if (!k) return;
+    if (k === '=') { evalNow(); return; }
+    if (k === 'AC') { clearAll(); return; }
+    if (k === '⌫') { backspace(); return; }
+    if (k === '±') { toggleSign(); return; }
+    if (k === '%') { percent(); return; }
+    if (k === '(' || k === ')'){ addParen(k); return; }
+    if (k === ',' ) { appendDot(); return; }
+    if (OPERATORS.includes(k)) { appendOp(k); return; }
+    if (/^\d$/.test(k)) { appendDigit(k); return; }
+    // Fallback: + - from keyboard may come as '−'
+    if (k==='−') { appendOp('-'); return; }
+  }
+
+  // Copy
+  copyBtn.addEventListener('click', async () => {
+    const raw = resEl.textContent.replace(/\s/g,'');
+    try{ await navigator.clipboard.writeText(raw); copyBtn.textContent = 'Copié'; setTimeout(()=>copyBtn.textContent='Copier',900); }catch{}
+  });
+
+  // Memory buttons
+  mcBtn.addEventListener('click', ()=>{ mem = 0; mcBtn.textContent='MC'; setTimeout(()=>mcBtn.textContent='MC',500); });
+  mrBtn.addEventListener('click', ()=>{ if (mem !== 0){ input = String(mem).replace('.', useComma ? ',' : '.'); updateUI(); }});
+  mPlusBtn.addEventListener('click', ()=>{ const v = currentValue(); if (!Number.isNaN(v)){ mem += v; pulse(mPlusBtn); }});
+  mMinusBtn.addEventListener('click', ()=>{ const v = currentValue(); if (!Number.isNaN(v)){ mem -= v; pulse(mMinusBtn); }});
+
+  function currentValue(){
+    const s = (input || lastComputed || '0').replace(',','.');
+    return parseFloat(s);
+  }
+  function pulse(el){ el.style.boxShadow='0 0 0 2px rgba(43,167,255,.35)'; setTimeout(()=>el.style.boxShadow='',250); }
+
+  // Locale toggle
+  localeBtn.addEventListener('click', ()=>{
+    useComma = !useComma;
+    localeBtn.textContent = 'Décimale : ' + (useComma ? ',' : '.');
+    // Convert input
+    if (input) input = useComma ? input.replace('.',',') : input.replace(',', '.');
+    updateUI();
+  });
+
+  // History drawer
+  toggleHistory.addEventListener('click', ()=> drawer.classList.toggle('open'));
+
+  // Initial paint
+  updateUI();
+})();
+</script>
+</body>
+</html>

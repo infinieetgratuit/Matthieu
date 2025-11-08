@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Infinie Editor — Automatic Pages + PDF Export</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --bg: #000000; /* Pure black for max contrast */
+        --gold: #FFD700; /* A classic, bright gold */
+        --gold-glow: rgba(255, 215, 0, 0.2);
+        --text-color: #e0e0e0;
+      }
+      @keyframes scroll-grid {
+        0% { background-position: 0 0; }
+        100% { background-position: 160px -160px; } /* New diagonal direction */
+      }
+      @keyframes pulse-glow {
+        0%, 100% { opacity: 0.7; transform: scale(0.95); }
+        50% { opacity: 1; transform: scale(1.05); }
+      }
+      html {
+        background-color: var(--bg);
+      }
+      body {
+        background-color: transparent;
+        color: var(--text-color);
+        position: relative;
+        overflow-x: hidden;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        z-index: -1;
+        background-image: 
+          linear-gradient(to right, var(--gold) 1px, transparent 1px),
+          linear-gradient(to bottom, var(--gold) 1px, transparent 1px);
+        background-size: 80px 80px;
+        opacity: 0.2;
+        animation: scroll-grid 20s linear infinite;
+      }
+      body::after {
+        content: '';
+        position: fixed;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: -2;
+        width: 70vmax;
+        height: 70vmax;
+        background: radial-gradient(ellipse at center, var(--gold-glow) 0%, transparent 70%);
+        animation: pulse-glow 12s ease-in-out infinite;
+      }
+      main {
+        transition: padding-bottom 0.3s ease-out;
+      }
+      .image-container.selected {
+        outline: 2px dashed var(--gold) !important;
+      }
+      .image-container .resizer {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background-color: var(--gold);
+        border: 1px solid #fff;
+        border-radius: 50%;
+        z-index: 10;
+        display: none;
+      }
+      .image-container.selected .resizer {
+        display: block;
+      }
+      .resizer.top-left { top: -5px; left: -5px; cursor: nwse-resize; }
+      .resizer.top-right { top: -5px; right: -5px; cursor: nesw-resize; }
+      .resizer.bottom-left { bottom: -5px; left: -5px; cursor: nesw-resize; }
+      .resizer.bottom-right { bottom: -5px; right: -5px; cursor: nwse-resize; }
+      .content {
+          position: relative;
+          padding: 80px;
+          width: 100%;
+          height: 100%;
+          overflow: hidden;
+          outline: none;
+          transition: all 0.3s ease;
+      }
+      .content:focus {
+          box-shadow: 0 0 20px rgba(242, 199, 108, 0.5);
+          outline: 2px solid #F2C76C;
+          outline-offset: -2px;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "jspdf": "https://aistudiocdn.com/jspdf@^3.0.3",
+    "html2canvas": "https://aistudiocdn.com/html2canvas@^1.4.1"
+  }
+}
+</script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="module">
+      import jsPDF from 'jspdf';
+      import html2canvas from 'html2canvas';
+
+      (function() {
+        const rootElement = document.getElementById('root');
+        if (!rootElement) return;
+
+        // --- STATE MANAGEMENT ---
+        let state = {
+            pages: ['<p>Commencez à écrire ici...</p>'],
+            activePageIndex: 0,
+        };
+        const contentRefs = [];
+        let paginationCheckQueued = false;
+
+        // --- PDF EXPORTER ---
+        const exportToPDF = async (pages) => {
+          if (!pages || pages.length === 0) {
+            alert('Aucune page à exporter.');
+            return;
+          }
+          const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: 'a4', putOnlyUsedFonts: true, floatPrecision: 16 });
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          for (let i = 0; i < pages.length; i++) {
+            if (i > 0) pdf.addPage();
+            try {
+              const canvas = await html2canvas(pages[i], { scale: 2, useCORS: true, logging: false, width: pages[i].offsetWidth, height: pages[i].offsetHeight, scrollX: -window.scrollX, scrollY: -window.scrollY, windowWidth: document.documentElement.offsetWidth, windowHeight: document.documentElement.offsetHeight });
+              pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            } catch (error) {
+              console.error(`Error exporting page ${i + 1} to PDF:`, error);
+              alert(`Une erreur est survenue lors de l'export de la page ${i + 1}.`);
+            }
+          }
+          pdf.save('document.pdf');
+        };
+
+        // --- CORE APP LOGIC ---
+        const handleSave = () => {
+          try {
+            localStorage.setItem('infinie-editor-pages', JSON.stringify(state.pages));
+          } catch (error) {
+            console.error("Failed to save pages to localStorage", error);
+          }
+        };
+
+        let saveTimeout;
+        const debouncedSave = () => {
+          clearTimeout(saveTimeout);
+          saveTimeout = setTimeout(handleSave, 1000);
+        };
+
+        const handleContentChange = (index, newHtml) => {
+            if (state.pages[index] === newHtml) return;
+            state.pages[index] = newHtml;
+            debouncedSave();
+            queuePaginationCheck();
+        };
+        
+        const setActivePageIndex = (index) => {
+            state.activePageIndex = index;
+        };
+        
+        const queuePaginationCheck = () => {
+            if (!paginationCheckQueued) {
+                paginationCheckQueued = true;
+                // Defer to allow DOM to update
+                setTimeout(() => {
+                    checkPagination();
+                    paginationCheckQueued = false;
+                }, 0);
+            }
+        };
+
+        const checkPagination = () => {
+            const updatedPages = [...state.pages];
+            let stateWasModified = false;
+
+            // Pass 1: Fix Overflows
+            for (let i = 0; i < updatedPages.length; i++) {
+                const pageElement = contentRefs[i];
+                if (!pageElement || pageElement.scrollHeight <= pageElement.clientHeight) continue;
+                
+                const children = Array.from(pageElement.childNodes);
+                const overflowNodes = [];
+                for (let j = children.length - 1; j >= 0; j--) {
+                    const child = children[j];
+                    if (child.getBoundingClientRect) {
+                        if (child.getBoundingClientRect().bottom > pageElement.getBoundingClientRect().bottom) {
+                            overflowNodes.unshift(child);
+                        } else break;
+                    }
+                }
+
+                if (overflowNodes.length > 0) {
+                    const overflowHtml = overflowNodes.map(node => node.outerHTML || node.textContent).join('');
+                    overflowNodes.forEach(node => node.remove());
+                    updatedPages[i] = pageElement.innerHTML;
+                    if (i + 1 >= updatedPages.length) {
+                        updatedPages.push(overflowHtml);
+                    } else {
+                        updatedPages[i + 1] = overflowHtml + updatedPages[i + 1];
+                    }
+                    state.pages = updatedPages;
+                    render();
+                    return; // Exit and re-run after render
+                }
+            }
+
+            // Pass 2: Fix Underflows
+            for (let i = 0; i < updatedPages.length - 1; i++) {
+                const pageElement = contentRefs[i];
+                const nextHtml = updatedPages[i + 1].trim();
+                if (pageElement && pageElement.scrollHeight < pageElement.clientHeight && nextHtml && nextHtml !== '<p><br></p>') {
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = updatedPages[i+1];
+                    const firstChildOfNext = tempDiv.firstElementChild;
+                    if (firstChildOfNext) {
+                        updatedPages[i] += firstChildOfNext.outerHTML;
+                        firstChildOfNext.remove();
+                        updatedPages[i+1] = tempDiv.innerHTML;
+                        state.pages = updatedPages;
+                        render();
+                        return; // Exit and re-run
+                    }
+                }
+            }
+            
+            // Pass 3: Cleanup empty pages
+            let pagesRemoved = false;
+            for (let i = updatedPages.length - 1; i > 0; i--) {
+                const pageHtml = updatedPages[i].trim();
+                if (pageHtml === '' || pageHtml === '<p><br></p>' || pageHtml === '<p></p>') {
+                   updatedPages.splice(i, 1);
+                   pagesRemoved = true;
+                }
+            }
+            if (pagesRemoved) {
+                 state.pages = updatedPages;
+                 render();
+            }
+        };
+        
+        // --- IMAGE MANIPULATION LOGIC (from Page.tsx) ---
+        const attachImageManipulationListeners = (editor, index) => {
+            let selectedElement = null, action = null, startX = 0, startY = 0, startLeft = 0, startTop = 0, startWidth = 0, startHeight = 0, resizerDirection = null;
+            const deselectAllImages = (except) => {
+                editor.querySelectorAll('.image-container.selected').forEach(el => {
+                    if (el !== except) el.classList.remove('selected');
+                });
+                selectedElement = except || null;
+            };
+            const onMouseDown = (e) => {
+                const container = e.target.closest('.image-container');
+                if (!container) { deselectAllImages(); return; }
+                if (selectedElement !== container) {
+                    deselectAllImages(container);
+                    container.classList.add('selected');
+                }
+                e.preventDefault(); e.stopPropagation();
+                startX = e.clientX; startY = e.clientY;
+                startLeft = container.offsetLeft; startTop = container.offsetTop;
+                startWidth = container.offsetWidth; startHeight = container.offsetHeight;
+                if (e.target.classList.contains('resizer')) {
+                    action = 'resize';
+                    resizerDirection = Array.from(e.target.classList).find(c => c !== 'resizer') || '';
+                } else {
+                    action = 'move';
+                }
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            };
+            const onMouseMove = (e) => {
+                if (!action || !selectedElement) return;
+                const dx = e.clientX - startX; const dy = e.clientY - startY;
+                if (action === 'move') {
+                    selectedElement.style.left = `${startLeft + dx}px`;
+                    selectedElement.style.top = `${startTop + dy}px`;
+                } else if (action === 'resize') {
+                    let newWidth = startWidth, newHeight = startHeight, newLeft = startLeft, newTop = startTop;
+                    if (resizerDirection.includes('bottom')) newHeight = startHeight + dy;
+                    if (resizerDirection.includes('right')) newWidth = startWidth + dx;
+                    if (resizerDirection.includes('top')) { newHeight = startHeight - dy; newTop = startTop + dy; }
+                    if (resizerDirection.includes('left')) { newWidth = startWidth - dx; newLeft = startLeft + dx; }
+                    selectedElement.style.width = `${Math.max(20, newWidth)}px`;
+                    selectedElement.style.height = `${Math.max(20, newHeight)}px`;
+                    selectedElement.style.left = `${newLeft}px`;
+                    selectedElement.style.top = `${newTop}px`;
+                }
+            };
+            const onMouseUp = () => {
+                if (action) handleContentChange(index, editor.innerHTML);
+                action = null; resizerDirection = null;
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+            };
+            editor.addEventListener('mousedown', onMouseDown);
+        };
+        
+        // --- RENDERING ---
+        const render = () => {
+            rootElement.innerHTML = `
+              <header class="sticky top-0 z-10 flex flex-wrap gap-2 items-center p-2.5 bg-black/30 backdrop-blur-lg border-b border-[#F2C76C]/30 shadow-lg">
+                <div class="brand flex items-center gap-2.5 mr-2">
+                  <div class="inline-flex gap-2 items-center px-3 py-1.5 rounded-full text-[#F2C76C] font-bold text-lg">∞ Infinie Editor</div>
+                </div>
+                <select id="fontName" class="tool appearance-none bg-black/40 border border-white/10 text-gray-300 px-2.5 py-1.5 rounded-md cursor-pointer transition-all duration-300 hover:text-white hover:border-[#F2C76C] hover:shadow-[0_0_15px_rgba(242,199,108,0.3)]" title="Police">
+                  <option value="inherit">Police par défaut</option><option value="Arial, Helvetica, sans-serif">Arial</option><option value="'Times New Roman', Times, serif">Times New Roman</option><option value="Georgia, serif">Georgia</option><option value="'Segoe UI', Roboto, Arial, sans-serif">Segoe UI</option><option value="Monaco, 'Courier New', monospace">Monospace</option>
+                </select>
+                <select id="fontSize" class="tool appearance-none bg-black/40 border border-white/10 text-gray-300 px-2.5 py-1.5 rounded-md cursor-pointer transition-all duration-300 hover:text-white hover:border-[#F2C76C] hover:shadow-[0_0_15px_rgba(242,199,108,0.3)]" title="Taille">
+                  <option value="3">16 (Normal)</option><option value="1">8</option><option value="2">12</option><option value="4">18</option><option value="5">24</option><option value="6">32</option><option value="7">48</option>
+                </select>
+                <button class="tool" data-cmd="bold" title="Gras (Ctrl+B)"><b class="text-gray-300">G</b></button>
+                <button class="tool" data-cmd="italic" title="Italique (Ctrl+I)"><i class="text-gray-300">I</i></button>
+                <button class="tool" data-cmd="underline" title="Souligner (Ctrl+U)"><u class="text-gray-300">U</u></button>
+                <div class="sep w-px h-7 bg-[#F2C76C]/30 mx-0.5"></div>
+                <button class="tool" data-cmd="justifyLeft" title="Aligner à gauche">⯇</button>
+                <button class="tool" data-cmd="justifyCenter" title="Centrer">≡</button>
+                <button class="tool" data-cmd="justifyRight" title="Aligner à droite">⯈</button>
+                <div class="sep w-px h-7 bg-[#F2C76C]/30 mx-0.5"></div>
+                <button class="tool" data-cmd="insertUnorderedList" title="Liste à puces">• Liste</button>
+                <button class="tool" data-cmd="insertOrderedList" title="Liste numérotée">1.2.3</button>
+                <button id="insertTable" class="tool" title="Insérer un tableau">Tableau</button>
+                <button id="insertImage" class="tool" title="Insérer une image">Image</button>
+                <div class="sep w-px h-7 bg-[#F2C76C]/30 mx-0.5"></div>
+                <label class="tool flex items-center gap-2" title="Couleur du texte"><span class="text-gray-300">Tx</span><input id="foreColor" type="color" class="bg-transparent border-none w-6 h-6 p-0 cursor-pointer" value="#FFFFFF"></label>
+                <label class="tool flex items-center gap-2" title="Couleur de surlignage"><span class="text-gray-300">HL</span><input id="hiliteColor" type="color" class="bg-transparent border-none w-6 h-6 p-0 cursor-pointer" value="#F2C76C"></label>
+                <div class="sep w-px h-7 bg-[#F2C76C]/30 mx-0.5"></div>
+                <button id="exportPdf" class="tool bg-[#F2C76C] text-black font-bold hover:bg-yellow-400 hover:text-black">Export PDF</button>
+                <input type="file" id="imageUpload" accept="image/*" style="display: none;" />
+              </header>
+              <main class="p-8 flex flex-col items-center gap-8"></main>
+            `;
+
+            const mainElement = rootElement.querySelector('main');
+            contentRefs.length = 0; // Clear refs array
+
+            state.pages.forEach((htmlContent, index) => {
+                const pageContainer = document.createElement('div');
+                pageContainer.className = "page-container bg-white text-black shadow-xl w-[8.5in] h-[11in]";
+                pageContainer.onclick = () => setActivePageIndex(index);
+
+                const pageContent = document.createElement('div');
+                pageContent.className = "content";
+                pageContent.contentEditable = true;
+                pageContent.spellcheck = false;
+                pageContent.innerHTML = htmlContent;
+                
+                contentRefs[index] = pageContent;
+                
+                pageContent.addEventListener('focus', () => setActivePageIndex(index));
+                pageContent.addEventListener('input', (e) => handleContentChange(index, e.currentTarget.innerHTML));
+                pageContent.addEventListener('paste', (e) => {
+                    e.preventDefault();
+                    document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
+                });
+                
+                attachImageManipulationListeners(pageContent, index);
+
+                pageContainer.appendChild(pageContent);
+                mainElement.appendChild(pageContainer);
+            });
+            
+            attachToolbarListeners();
+            queuePaginationCheck();
+        };
+
+        const attachToolbarListeners = () => {
+            const handleCommand = (cmd, val) => {
+                document.execCommand(cmd, false, val);
+                const activeEditor = contentRefs[state.activePageIndex];
+                if(activeEditor) handleContentChange(state.activePageIndex, activeEditor.innerHTML);
+            };
+
+            rootElement.querySelectorAll('button[data-cmd]').forEach(btn => {
+                btn.addEventListener('mousedown', e => e.preventDefault());
+                btn.addEventListener('click', () => handleCommand(btn.dataset.cmd));
+            });
+            
+            rootElement.querySelector('#fontName').addEventListener('change', e => handleCommand('fontName', e.target.value));
+            rootElement.querySelector('#fontSize').addEventListener('change', e => handleCommand('fontSize', e.target.value));
+            rootElement.querySelector('#foreColor').addEventListener('input', e => handleCommand('foreColor', e.target.value));
+            rootElement.querySelector('#hiliteColor').addEventListener('input', e => handleCommand('hiliteColor', e.target.value));
+
+            rootElement.querySelector('#exportPdf').addEventListener('click', () => exportToPDF(contentRefs));
+
+            rootElement.querySelector('#insertTable').addEventListener('click', () => {
+                const rows = parseInt(prompt('Nombre de lignes ?', '3') || '0', 10);
+                const cols = parseInt(prompt('Nombre de colonnes ?', '3') || '0', 10);
+                if (!rows || !cols) return;
+                let tableHtml = '<table class="w-full border-collapse">';
+                for (let i = 0; i < rows; i++) {
+                    tableHtml += '<tr>';
+                    for (let j = 0; j < cols; j++) tableHtml += '<td class="border border-gray-300 p-2">&nbsp;</td>';
+                    tableHtml += '</tr>';
+                }
+                tableHtml += '</table>';
+                handleCommand('insertHTML', tableHtml);
+            });
+
+            const imageUploadInput = rootElement.querySelector('#imageUpload');
+            rootElement.querySelector('#insertImage').addEventListener('click', () => {
+                const activeEditor = contentRefs[state.activePageIndex] ?? contentRefs[0];
+                if(activeEditor) activeEditor.focus();
+                else { alert("Veuillez cliquer dans une page pour la sélectionner."); return; }
+                imageUploadInput.click();
+            });
+
+            imageUploadInput.addEventListener('change', (event) => {
+                const file = event.target.files?.[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const imageHtml = `<div class="image-container" style="position: absolute; top: 100px; left: 100px; width: 300px; border: 1px solid transparent;" contenteditable="false"><img src="${e.target?.result}" alt="${file.name}" style="width: 100%; height: 100%; display: block; pointer-events: none;" /><div class="resizer top-left"></div><div class="resizer top-right"></div><div class="resizer bottom-left"></div><div class="resizer bottom-right"></div></div><p><br></p>`;
+                    handleCommand('insertHTML', imageHtml);
+                };
+                reader.readAsDataURL(file);
+                event.target.value = '';
+            });
+
+            // Add base styles for editing
+            try {
+                document.execCommand('styleWithCSS', false, 'true');
+                document.execCommand('defaultParagraphSeparator', false, 'p');
+            } catch(e) { console.warn("execCommand not supported for setup.", e); }
+        };
+
+        // --- INITIALIZATION ---
+        try {
+          const savedPages = localStorage.getItem('infinie-editor-pages');
+          if (savedPages) {
+            const parsedPages = JSON.parse(savedPages);
+            if (Array.isArray(parsedPages) && parsedPages.every(p => typeof p === 'string')) {
+                state.pages = parsedPages;
+            }
+          }
+        } catch (error) {
+            console.error("Failed to load pages from localStorage", error);
+        }
+        
+        render(); // Initial render
+      })();
+    </script>
+</body>
+</html>

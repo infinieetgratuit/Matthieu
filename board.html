@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Infinie & gratuit — Tableau blanc infini</title>
+<meta name="color-scheme" content="dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+<style>
+:root{
+  --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+  --border:rgba(95,123,255,0.18); --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+  --ink:#9fb4ff;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+  background:
+    radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.08), transparent 60%),
+    radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.06), transparent 55%),
+    var(--bg);
+  color:var(--text); overflow:hidden;
+}
+
+/* Top bar */
+.nav{
+  position:fixed; inset:16px 16px auto 16px; z-index:30;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  padding:10px 12px; background:
+    linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+    linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+  border:1px solid var(--border); border-radius:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.2px}
+.logo{width:28px;height:28px;border-radius:999px;background:radial-gradient(circle at 30% 30%,var(--accent1),var(--accent2));display:grid;place-items:center;color:#fff;font-weight:800}
+.badge{padding:6px 10px;font-size:12px;border-radius:999px;background:#0f1420;color:#9fb4ff;border:1px solid #1a2340}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{
+  background:#0b0f1a;border:1px solid #1a2340;color:var(--text);
+  border-radius:10px;padding:9px 12px;font-size:13px;cursor:pointer;font-weight:700;display:inline-flex;align-items:center;gap:8px
+}
+.btn:hover{ box-shadow:var(--ring); border-color:#3a63ff }
+.btn.primary{ background: linear-gradient(90deg, var(--accent1), var(--accent2)); border:none; color:white }
+.btn.ghost{ background:transparent;border-color:var(--border) }
+.btn.tog.active{ outline:2px solid rgba(60,120,255,.5); background:#0f1628 }
+.sep{width:1px;height:28px;background:#1a2340;margin:0 4px}
+
+/* Pen palette */
+.palette{display:flex;gap:6px;align-items:center}
+.swatch{width:18px;height:18px;border-radius:50%;border:1px solid #1a2340;cursor:pointer}
+.range{accent-color:#6ea8ff}
+
+/* Sidebar */
+.sidebar{
+  position:fixed; left:16px; bottom:16px; top:76px; width:300px; z-index:20;
+  background:
+    linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+    linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%), var(--panel);
+  border:1px solid var(--border); border-radius:14px; padding:12px;
+  display:flex; flex-direction:column; gap:10px; overflow:auto;
+}
+.sidebar h4{margin:4px 6px 6px;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+.panel{border:1px solid var(--border);border-radius:12px;padding:10px;background:#0b0f1a}
+.row{display:flex;gap:8px}
+.input{flex:1;background:#0c1220;border:1px solid #1a2340;border-radius:10px;padding:10px;color:var(--text);font:inherit}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px;max-height:240px;overflow:auto}
+.thumb{width:100%;aspect-ratio:1;border-radius:10px;object-fit:cover;border:1px solid rgba(255,255,255,.08);cursor:pointer}
+.info{font-size:12px;color:var(--muted);line-height:1.4;padding:6px 8px;background:#0b0f1a;border:1px solid #1a2340;border-radius:10px}
+
+/* Workspace */
+.workspace{
+  position:fixed; inset:76px 16px 16px 332px; border:1px solid var(--border);
+  border-radius:16px; overflow:hidden;
+  background:#fff; /* FOND BLANC demandé */
+  box-shadow:0 20px 60px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.03);
+  color:#0b0b0d;
+}
+.view{position:absolute; inset:0; cursor:grab}
+.view.panning{cursor:grabbing}
+.world{ position:absolute; left:0; top:0; transform-origin:0 0; width:12000px; height:12000px; }
+.gridBG{ position:absolute; inset:0; pointer-events:none; opacity:.35;
+  background-image:
+    linear-gradient(#e5e7eb 1px, transparent 1px),
+    linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+  background-size:32px 32px, 32px 32px; /* grille plus dense */
+}
+svg#draw{position:absolute; inset:0; overflow:visible; pointer-events:none}
+/* permettre le pan quand on clique dans le vide (items cliquables) */
+.layer-items{ position:absolute; inset:0; pointer-events:none }
+.item{ position:absolute; transform:translate(-50%,-50%); user-select:none; pointer-events:auto }
+.item.selected .box{ outline:2px dashed rgba(80,110,240,.9); outline-offset:2px; border-radius:12px }
+.box{ display:block; border-radius:12px; border:1px solid rgba(0,0,0,.08) }
+
+.floating{ position:fixed; right:24px; bottom:24px; z-index:25; display:flex; gap:8px }
+.small{font-size:12px;color:var(--muted)}
+.hidden{display:none!important}
+
+/* Selection HUD */
+.hud{position:fixed; z-index:35; background:#0c1220; border:1px solid #1a2340; border-radius:10px; padding:6px; display:flex; gap:10px; align-items:center}
+.hud input[type="range"]{width:110px}
+.hud .label{font-size:12px;color:#c9d4ff}
+</style>
+</head>
+<body>
+  <!-- Top bar -->
+  <div class="nav">
+    <div class="brand"><div class="logo">∞</div> Infinie & gratuit</div>
+    <span class="badge">Tableau blanc — 100% local</span>
+    <div class="toolbar">
+      <button class="btn tog active" id="tool-move">Sélection</button>
+      <button class="btn tog" id="tool-pen">Stylo</button>
+      <button class="btn tog" id="tool-high">Surligneur</button>
+      <button class="btn tog" id="tool-text">Texte</button>
+      <div class="palette" id="penUI">
+        <div class="swatch" data-c="#111827" style="background:#111827"></div>
+        <div class="swatch" data-c="#2563eb" style="background:#2563eb"></div>
+        <div class="swatch" data-c="#0ea5e9" style="background:#0ea5e9"></div>
+        <div class="swatch" data-c="#16a34a" style="background:#16a34a"></div>
+        <div class="swatch" data-c="#f59e0b" style="background:#f59e0b"></div>
+        <div class="swatch" data-c="#ef4444" style="background:#ef4444"></div>
+        <input type="range" class="range" id="penSize" min="1" max="32" value="4" title="Taille"/>
+      </div>
+      <div class="sep"></div>
+      <button class="btn" id="btn-import">Importer image</button>
+      <input type="file" id="fileInput" accept="image/*" class="hidden"/>
+      <div class="sep"></div>
+      <button class="btn ghost" id="center">Recentrer</button>
+      <div class="sep"></div>
+      <button class="btn primary" id="exportPNG">Exporter PNG</button>
+      <button class="btn primary" id="exportPDF">Exporter PDF</button>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h4>Pexels</h4>
+    <div class="panel">
+      <div class="row">
+        <input class="input" id="pxQuery" placeholder="Rechercher (ex: voiture)"/>
+        <button class="btn" id="pxSearch">OK</button>
+      </div>
+      <div class="grid" id="pxResults"></div>
+      <div class="small" id="pxHint">Astuce: cliquez sur une vignette puis cliquez dans la zone pour la placer.</div>
+    </div>
+
+    <h4>Stickers (GitHub)</h4>
+    <div class="panel">
+      <div class="row">
+        <button class="btn" id="ghLoad">Charger</button>
+        <button class="btn ghost" id="ghMore">+ Plus</button>
+      </div>
+      <div class="grid" id="ghResults"></div>
+      <div class="small">Source: infinieetgratuit/stickers.</div>
+    </div>
+
+    <h4>Raccourcis</h4>
+    <div class="info">Glisser sur fond = déplacer · Suppr = supprimer · Double-clic: éditer le texte.</div>
+  </aside>
+
+  <!-- Workspace -->
+  <section class="workspace" id="workspace">
+    <div class="view" id="view">
+      <div class="world" id="world">
+        <div class="gridBG"></div>
+        <svg id="draw"></svg>
+        <div class="layer-items" id="items"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Selection HUD -->
+  <div class="hud hidden" id="hud">
+    <button class="btn" id="hudDel">Supprimer</button>
+    <span class="label">Taille</span>
+    <input type="range" id="hudScale" min="20" max="640" value="240">
+    <span class="label" id="txLabel">Texte</span>
+    <input type="range" id="hudFont" min="10" max="64" value="16">
+    <span class="label">Opacité</span>
+    <input type="range" id="hudOpacity" min="20" max="100" value="100">
+  </div>
+
+  <div class="floating small" id="status">Prêt</div>
+
+<script>
+window.addEventListener('DOMContentLoaded', () => {
+/* ================== Constantes ================== */
+const WORLD=12000, HALF=WORLD/2; // Zoom retiré => échelle fixe 1
+const PEXELS_KEY = 'GckQdbK9Nh5aBvlnM6hnyGIs1aUZtPImGJTEKzpPb1VoXnRhk1tjtxvY';
+const GH_OWNER='infinieetgratuit', GH_REPO='stickers';
+
+/* ================== État ================== */
+const state = {
+  origin:{x:HALF, y:HALF}, // pas d'échelle
+  tool:'move', // 'move'|'pen'|'high'|'text'
+  items:new Map(), // id -> {id,type:'img'|'text', x,y,w,h,opacity,src,text,fontSize}
+  selected:null,
+  pendingAsset:null,
+  pen:{color:'#2563eb', size:4},
+  gh:{list:[], index:0, branch:'main'}
+};
+
+/* ================== Eléments DOM ================== */
+const view = document.getElementById('view');
+const world = document.getElementById('world');
+const drawSvg = document.getElementById('draw');
+const itemsLayer = document.getElementById('items');
+const statusEl = document.getElementById('status');
+const hud = document.getElementById('hud');
+const hudScale = document.getElementById('hudScale');
+const hudOpacity = document.getElementById('hudOpacity');
+const hudFont = document.getElementById('hudFont');
+
+/* ================== Utilitaires ================== */
+const uid = () => Math.random().toString(36).slice(2,9);
+const setStatus = t => { statusEl.textContent = t; };
+const applyTransform = () => world.style.transform = `translate(${-state.origin.x}px, ${-state.origin.y}px)`;
+const clampOrigin = () => {
+  const r = view.getBoundingClientRect();
+  const maxX = Math.max(0, WORLD - r.width);
+  const maxY = Math.max(0, WORLD - r.height);
+  state.origin.x = Math.max(0, Math.min(maxX, state.origin.x));
+  state.origin.y = Math.max(0, Math.min(maxY, state.origin.y));
+};
+function screenToWorld(px, py){
+  const r = view.getBoundingClientRect();
+  const vx = px - r.left, vy = py - r.top;
+  return { x: state.origin.x + vx, y: state.origin.y + vy };
+}
+const centerOn = (x=HALF,y=HALF)=>{
+  const r = view.getBoundingClientRect();
+  state.origin.x = x - (r.width/2);
+  state.origin.y = y - (r.height/2);
+  clampOrigin(); applyTransform();
+};
+
+/* ================== Outils ================== */
+function setTool(tool){
+  state.tool = tool;
+  document.querySelectorAll('.btn.tog').forEach(b=> b.classList.remove('active'));
+  document.getElementById(`tool-${tool}`).classList.add('active');
+  document.getElementById('penUI').style.display = (tool==='pen'||tool==='high')?'flex':'none';
+  setStatus(tool==='move'?'Sélection active': tool==='pen'?'Stylo: dessinez':'Surligneur: dessinez');
+}
+['move','pen','high','text'].forEach(t=>{
+  document.getElementById(`tool-${t}`).addEventListener('click',()=> setTool(t));
+});
+Array.from(document.querySelectorAll('.swatch')).forEach(s=> s.addEventListener('click',()=>{ state.pen.color=s.dataset.c; }));
+document.getElementById('penSize').addEventListener('input', e=> state.pen.size = Number(e.target.value));
+
+/* ================== Items ================== */
+function renderItem(it){
+  let el = itemsLayer.querySelector(`.item[data-id="${it.id}"]`);
+  if(!el){
+    el = document.createElement('div'); el.className='item'; el.dataset.id=it.id; itemsLayer.appendChild(el);
+    el.addEventListener('mousedown', (e)=>{ if(e.button!==0) return; selectItem(it.id); startDragItem(e,it.id); e.stopPropagation(); });
+    el.addEventListener('dblclick', ()=>{ if(it.type==='text'){ editText(it.id); } });
+  }
+  el.style.left = it.x+'px'; el.style.top = it.y+'px';
+  el.style.opacity = (it.opacity??1);
+  el.innerHTML = '';
+  if(it.type==='img'){
+    const img=document.createElement('img'); img.className='box'; img.draggable=false; img.decoding='async'; img.loading='lazy';
+    img.crossOrigin='anonymous'; img.src=it.src; img.style.width=(it.w||240)+'px'; img.style.height='auto';
+    el.appendChild(img);
+  } else if(it.type==='text'){
+    const box=document.createElement('div'); box.className='box';
+    box.contentEditable=false; box.style.minWidth='120px'; box.style.maxWidth='420px';
+    box.style.padding='10px 12px'; box.style.background='#ffffff'; box.style.border='1px solid #e5e7eb'; box.style.borderRadius='12px';
+    box.style.fontWeight='800'; box.style.letterSpacing='.2px'; box.style.whiteSpace='pre-wrap'; box.style.lineHeight='1.2'; box.style.color='#0b0b0d';
+    box.style.fontSize=(it.fontSize||16)+'px';
+    box.textContent=it.text||'Double-clic pour éditer'; el.appendChild(box);
+  }
+  itemsLayer.appendChild(el);
+}
+function addImageAt(x,y,src,w=240){
+  const id=uid(); const it={id,type:'img',x,y,src,w,opacity:1}; state.items.set(id,it); renderItem(it); selectItem(id); return id;
+}
+function addTextAt(x,y){
+  const id=uid(); const it={id,type:'text',x,y,text:'Texte',opacity:1,fontSize:16}; state.items.set(id,it); renderItem(it); selectItem(id); editText(id); return id;
+}
+function selectItem(id){
+  state.selected=id; itemsLayer.querySelectorAll('.item').forEach(n=> n.classList.toggle('selected', n.dataset.id===id));
+  updateHUD();
+}
+function removeSelected(){
+  if(!state.selected) return; const el=itemsLayer.querySelector(`.item[data-id="${state.selected}"]`); el?.remove(); state.items.delete(state.selected); state.selected=null; updateHUD();
+}
+function editText(id){
+  const it=state.items.get(id); if(!it||it.type!=='text') return;
+  const el=itemsLayer.querySelector(`.item[data-id="${id}"] .box`);
+  el.contentEditable=true; el.focus();
+  const stop=()=>{ el.contentEditable=false; it.text=el.textContent.trim()||'Texte'; };
+  el.addEventListener('blur', stop, {once:true});
+}
+function updateHUD(){
+  if(!state.selected){ hud.classList.add('hidden'); return; }
+  const it=state.items.get(state.selected); if(!it){ hud.classList.add('hidden'); return; }
+  hud.classList.remove('hidden');
+  const rect = itemsLayer.querySelector(`.item[data-id="${it.id}"]`).getBoundingClientRect();
+  hud.style.left = Math.max(12, rect.left) + 'px';
+  hud.style.top = Math.max(76, rect.top-56) + 'px';
+  hudScale.value = Math.round((it.w||240));
+  hudOpacity.value = Math.round((it.opacity||1)*100);
+  hudFont.value = Math.round(it.fontSize||16);
+  document.getElementById('txLabel').style.display = (it.type==='text')?'inline':'none';
+  hudFont.style.display = (it.type==='text')?'inline':'none';
+}
+
+document.getElementById('hudDel').onclick = removeSelected;
+hudScale.oninput = ()=>{ if(!state.selected) return; const it=state.items.get(state.selected); if(it?.type==='img'){ it.w=Number(hudScale.value); renderItem(it); updateHUD(); }};
+hudOpacity.oninput = ()=>{ if(!state.selected) return; const it=state.items.get(state.selected); it.opacity = Number(hudOpacity.value)/100; renderItem(it); updateHUD(); };
+hudFont.oninput = ()=>{ if(!state.selected) return; const it=state.items.get(state.selected); if(it?.type==='text'){ it.fontSize=Number(hudFont.value); renderItem(it); updateHUD(); }};
+
+/* ================== Drag items ================== */
+let dragId=null, dragStart=null, itemStart=null;
+function startDragItem(e,id){
+  dragId=id; dragStart={x:e.clientX,y:e.clientY}; const it=state.items.get(id); itemStart={x:it.x,y:it.y};
+  window.addEventListener('mousemove', dragMove);
+  window.addEventListener('mouseup', dragEnd, {once:true});
+}
+function dragMove(e){
+  if(!dragId) return; const dx=(e.clientX-dragStart.x), dy=(e.clientY-dragStart.y); const it=state.items.get(dragId);
+  it.x=itemStart.x+dx; it.y=itemStart.y+dy; renderItem(it); updateHUD();
+}
+function dragEnd(){ dragId=null; window.removeEventListener('mousemove', dragMove); }
+
+/* ================== Dessin libre (SVG) ================== */
+let drawing=null;
+function startStroke(pt,type){
+  const p=document.createElementNS('http://www.w3.org/2000/svg','path');
+  p.setAttribute('fill','none');
+  const sw = (type==='high')? Math.max(8, state.pen.size*4) : state.pen.size;
+  const op = (type==='high')? 0.28 : 1;
+  p.setAttribute('stroke', state.pen.color);
+  p.setAttribute('stroke-opacity', op);
+  p.setAttribute('stroke-width', sw);
+  p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round');
+  p.setAttribute('d', `M ${pt.x} ${pt.y}`);
+  drawSvg.appendChild(p); drawing={pathEl:p};
+}
+function addPoint(pt){ if(!drawing) return; const d=drawing.pathEl.getAttribute('d'); drawing.pathEl.setAttribute('d', d+` L ${pt.x} ${pt.y}`); }
+function endStroke(){ drawing=null; }
+
+/* ================== Pan (déplacement) ================== */
+let panning=false, panStart={x:0,y:0}, originStart={x:0,y:0};
+view.addEventListener('mousedown', e=>{
+  if(state.pendingAsset){ const pt = screenToWorld(e.clientX,e.clientY); addImageAt(pt.x,pt.y,state.pendingAsset.src, Math.min(360, state.pendingAsset.w||240)); state.pendingAsset=null; setStatus('Image placée'); return; }
+  if(e.button===0){
+    if(state.tool==='pen' || state.tool==='high'){ const pt=screenToWorld(e.clientX,e.clientY); startStroke(pt,state.tool); return; }
+    if(state.tool==='text'){ const pt=screenToWorld(e.clientX,e.clientY); addTextAt(pt.x,pt.y); return; }
+  }
+  // en mode Sélection, clic sur le board = désélection + HUD cachée
+  if(state.tool==='move'){ selectItem(null); }
+  // déplacement du canevas si clic sur le fond
+  if(!(e.target===view || e.target===world || e.target===drawSvg)) return;
+  panning=true; panStart={x:e.clientX,y:e.clientY}; originStart={...state.origin}; view.classList.add('panning');
+});
+window.addEventListener('mousemove', e=>{
+  if(drawing){ addPoint(screenToWorld(e.clientX,e.clientY)); return; }
+  if(!panning) return; const dx=(e.clientX-panStart.x), dy=(e.clientY-panStart.y); state.origin={x:originStart.x-dx, y:originStart.y-dy}; clampOrigin(); applyTransform();
+});
+window.addEventListener('mouseup', ()=>{ if(drawing) endStroke(); panning=false; view.classList.remove('panning'); });
+
+// Recentrer
+document.getElementById('center').onclick = ()=> centerOn(HALF,HALF);
+
+// clavier
+window.addEventListener('keydown', e=>{ if((e.key==='Delete'||e.key==='Backspace') && document.activeElement?.contentEditable!=='true') removeSelected(); });
+
+/* ================== Import image (fichier) ================== */
+const fileInput = document.getElementById('fileInput');
+document.getElementById('btn-import').onclick = ()=> fileInput.click();
+fileInput.addEventListener('change', async e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const url = URL.createObjectURL(f);
+  const r = view.getBoundingClientRect();
+  const center = screenToWorld(r.left+r.width/2, r.top+r.height/2);
+  addImageAt(center.x, center.y, url, 320); setStatus('Image importée'); e.target.value = '';
+});
+
+/* ================== Pexels ================== */
+const pxResults = document.getElementById('pxResults');
+async function searchPexels(q){
+  pxResults.innerHTML = '<div class="small">Recherche…</div>';
+  try{
+    const r = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(q)}&per_page=24&page=1`,{ headers:{ Authorization: PEXELS_KEY }});
+    const j = await r.json();
+    const arr = j.photos||[]; if(!arr.length){ pxResults.innerHTML='<div class="small">Aucun résultat.</div>'; return; }
+    pxResults.innerHTML='';
+    arr.forEach(p=>{
+      const src = p.src.medium || p.src.large || p.src.original;
+      const img=document.createElement('img'); img.className='thumb'; img.src=src; img.crossOrigin='anonymous'; img.title=`${p.photographer}`;
+      img.onclick=()=>{ state.pendingAsset={src, w:p.width}; setStatus('Cliquez dans la zone blanche pour placer l\'image'); };
+      pxResults.appendChild(img);
+    });
+  }catch(err){ pxResults.innerHTML = '<div class="small">Erreur Pexels (clé/API?).</div>'; }
+}
+document.getElementById('pxSearch').onclick = ()=>{ const q=document.getElementById('pxQuery').value.trim()||'abstract'; searchPexels(q); };
+document.getElementById('pxQuery').addEventListener('keydown', e=>{ if(e.key==='Enter'){ searchPexels(e.target.value.trim()||'abstract'); }});
+
+/* ================== GitHub Stickers ================== */
+const ghResults = document.getElementById('ghResults');
+async function loadGhStickers(){
+  ghResults.innerHTML='<div class="small">Chargement…</div>';
+  try{
+    const info = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}`).then(r=>r.json());
+    state.gh.branch = info.default_branch || 'main';
+    const tree = await fetch(`https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/git/trees/${state.gh.branch}?recursive=1`).then(r=>r.json());
+    const exts = ['.png','.jpg','.jpeg','.webp','.gif','.svg'];
+    state.gh.list = (tree.tree||[]).filter(t=> t.type==='blob' && exts.some(x=> t.path.toLowerCase().endsWith(x)) ).map(t=> ({
+      path:t.path,
+      url:`https://raw.githubusercontent.com/${GH_OWNER}/${GH_REPO}/${state.gh.branch}/${t.path}`
+    }));
+    state.gh.index=0; ghResults.innerHTML=''; renderMoreGh();
+  }catch(e){ ghResults.innerHTML='<div class="small">Erreur GitHub (limite API?).</div>'; }
+}
+function renderMoreGh(n=24){
+  const slice = state.gh.list.slice(state.gh.index, state.gh.index+n); state.gh.index += slice.length;
+  slice.forEach(f=>{
+    const img=document.createElement('img'); img.className='thumb'; img.loading='lazy'; img.crossOrigin='anonymous'; img.src=f.url; img.title=f.path.split('/').pop();
+    img.onclick=()=>{ state.pendingAsset={src:f.url, w:240}; setStatus('Cliquez dans la zone blanche pour placer le sticker'); };
+    ghResults.appendChild(img);
+  });
+}
+document.getElementById('ghLoad').onclick = loadGhStickers;
+document.getElementById('ghMore').onclick = ()=> renderMoreGh(24);
+
+/* ================== Export ================== */
+function computeBounds(){
+  const svgBBox = drawSvg.getBBox();
+  let hasSVG = (isFinite(svgBBox.width) && svgBBox.width>0) || (isFinite(svgBBox.height) && svgBBox.height>0);
+  let minX = hasSVG ? svgBBox.x : Infinity;
+  let minY = hasSVG ? svgBBox.y : Infinity;
+  let maxX = hasSVG ? svgBBox.x+svgBBox.width : -Infinity;
+  let maxY = hasSVG ? svgBBox.y+svgBBox.height : -Infinity;
+  state.items.forEach(it=>{
+    const w=(it.w||240), h = it.type==='img' ? (w*0.66) : (Math.max(40, it.fontSize? it.fontSize*2 : 60));
+    const left = it.x - w/2, right = it.x + w/2, top = it.y - h/2, bottom = it.y + h/2;
+    minX=Math.min(minX,left); minY=Math.min(minY,top); maxX=Math.max(maxX,right); maxY=Math.max(maxY,bottom);
+  });
+  if(minX===Infinity){ minX=HALF-500; minY=HALF-350; maxX=HALF+500; maxY=HALF+350; }
+  const M=120;
+  return {x:minX-M, y:minY-M, w:(maxX-minX)+2*M, h:(maxY-minY)+2*M};
+}
+async function waitImagesLoaded(scope){
+  const imgs = Array.from(scope.querySelectorAll('img')).filter(i=>!i.complete);
+  if(!imgs.length) return; await Promise.race([
+    Promise.all(imgs.map(i=> new Promise(res=>{ i.onload=()=>res(); i.onerror=()=>res(); }))),
+    new Promise(res=> setTimeout(res, 1200))
+  ]);
+}
+function buildExportFrame(){
+  const box=computeBounds();
+  const frame=document.createElement('div');
+  frame.style.position='fixed'; frame.style.left='-99999px'; frame.style.top='-99999px';
+  frame.style.width=box.w+'px'; frame.style.height=box.h+'px';
+  frame.style.background='#ffffff';
+  document.body.appendChild(frame);
+
+  // grille
+  const bg=document.createElement('div'); bg.style.position='absolute'; bg.style.inset='0'; bg.style.opacity='.35';
+  bg.style.backgroundImage = 'linear-gradient(#e5e7eb 1px, transparent 1px), linear-gradient(90deg, #e5e7eb 1px, transparent 1px)';
+  bg.style.backgroundSize='32px 32px,32px 32px'; frame.appendChild(bg);
+
+  // ✅ SVG EXPORT : vrai namespace + group translate
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(SVG_NS,'svg');
+  svg.setAttribute('xmlns', SVG_NS);
+  svg.setAttribute('width', box.w);
+  svg.setAttribute('height', box.h);
+  svg.setAttribute('viewBox', `0 0 ${box.w} ${box.h}`);
+  svg.style.position='absolute'; svg.style.left='0'; svg.style.top='0';
+  const g = document.createElementNS(SVG_NS,'g');
+  g.setAttribute('transform', `translate(${-box.x}, ${-box.y})`);
+  svg.appendChild(g);
+  // clone des paths existants (stylo + surligneur)
+  drawSvg.querySelectorAll('path').forEach(p0=>{
+    g.appendChild(p0.cloneNode(true));
+  });
+  frame.appendChild(svg);
+
+  // items (images + textes)
+  state.items.forEach(it=>{
+    const el=document.createElement('div'); el.style.position='absolute'; el.style.left=(it.x-box.x)+'px'; el.style.top=(it.y-box.y)+'px'; el.style.transform='translate(-50%,-50%)'; el.style.opacity=it.opacity||1;
+    if(it.type==='img'){
+      const img=document.createElement('img'); img.crossOrigin='anonymous'; img.src=it.src; img.style.width=(it.w||240)+'px'; img.style.borderRadius='12px'; img.style.border='1px solid #e5e7eb'; el.appendChild(img);
+    } else if(it.type==='text'){
+      const boxEl=document.createElement('div'); boxEl.textContent=it.text||'Texte'; boxEl.style.padding='10px 12px'; boxEl.style.background='#ffffff'; boxEl.style.border='1px solid #e5e7eb'; boxEl.style.borderRadius='12px'; boxEl.style.fontWeight='800'; boxEl.style.letterSpacing='.2px'; boxEl.style.color='#0b0b0d'; boxEl.style.fontSize=(it.fontSize||16)+'px'; el.appendChild(boxEl);
+    }
+    frame.appendChild(el);
+  });
+  return {frame};
+}
+async function exportPNG(){
+  const {frame} = buildExportFrame();
+  await waitImagesLoaded(frame);
+  const canvas = await html2canvas(frame,{backgroundColor:'#ffffff',scale:2,useCORS:true});
+  frame.remove();
+  const a=document.createElement('a'); a.href=canvas.toDataURL('image/png'); a.download='whiteboard.png'; a.click();
+}
+async function exportPDF(){
+  const { jsPDF } = window.jspdf; const {frame} = buildExportFrame();
+  await waitImagesLoaded(frame);
+  const canvas = await html2canvas(frame,{backgroundColor:'#ffffff',scale:2,useCORS:true});
+  frame.remove();
+  const img = canvas.toDataURL('image/png');
+  const landscape = canvas.width>=canvas.height;
+  const pdf = new jsPDF({orientation:landscape?'landscape':'portrait',unit:'pt',format:'a4'});
+  const W=pdf.internal.pageSize.getWidth(), H=pdf.internal.pageSize.getHeight();
+  const r=Math.min(W/canvas.width,H/canvas.height), w=canvas.width*r, h=canvas.height*r, x=(W-w)/2, y=(H-h)/2;
+  pdf.addImage(img,'PNG',x,y,w,h); pdf.save('whiteboard.pdf');
+}
+document.getElementById('exportPNG').onclick = exportPNG;
+document.getElementById('exportPDF').onclick = exportPDF;
+
+/* ================== Init ================== */
+function init(){
+  applyTransform();
+  centerOn(HALF,HALF);
+  setTool('move');
+  document.getElementById('penUI').style.display='none';
+  setStatus('Déplacez le canevas (glisser) · Importer/Pexels/Stickers pour ajouter des images');
+}
+init();
+
+window.addEventListener('resize', ()=>{ clampOrigin(); applyTransform(); updateHUD(); });
+});
+</script>
+</body>
+</html>

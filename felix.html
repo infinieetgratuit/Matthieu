@@ -1,0 +1,553 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Infinie & gratuit — Scanner & Prix (US • Europe)</title>
+<meta name="color-scheme" content="dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0B0B0D;--panel:#0d1120;--text:#E6ECF7;--muted:#A4ADBD;--border:rgba(95,123,255,0.18);
+    --accent1:#2FE3FF;--accent2:#1B4CFF;--ring:0 0 0 2px rgba(43,167,255,.35);
+    --surface:#0b0f1a;--surfaceBorder:#1a2340;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--text);
+    background:
+      radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+      radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+      var(--bg);
+  }
+  .wrap{max-width:1200px;margin:0 auto;padding:28px}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+  .pill{width:40px;height:40px;border-radius:999px;display:grid;place-items:center;
+    background:radial-gradient(120% 120% at 20% 15%,var(--accent1),var(--accent2));
+    box-shadow:0 6px 20px rgba(43,167,255,.18);
+  }
+  .pill span{font-weight:800;color:#fff;font-size:20px}
+  .wordmark{font-weight:800;letter-spacing:.2px}
+  .sub{color:var(--muted);font-weight:600;font-size:13px}
+
+  .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+  @media(max-width:980px){.grid{grid-template-columns:1fr;}}
+
+  .card{background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+                    linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+                    var(--panel);
+    border:1px solid var(--border); border-radius:18px; box-shadow:0 8px 30px rgba(0,0,0,.25);
+  }
+  .cardHeader{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--border)}
+  .cardTitle{font-weight:700}
+  .cardBody{padding:16px}
+
+  .zone{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){.zone{grid-template-columns:1fr}}
+
+  .drop{border:1px dashed var(--surfaceBorder);background:var(--surface);border-radius:16px;min-height:220px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:10px;padding:16px;text-align:center}
+  .drop.drag{outline:var(--ring)}
+  .drop input{display:none}
+
+  .btn{appearance:none;border:0;padding:10px 14px;border-radius:12px;color:#fff;font-weight:700;cursor:pointer;transition:transform .06s ease, box-shadow .06s ease}
+  .btn:active{transform:translateY(1px)}
+  .btnPrimary{background:linear-gradient(90deg,var(--accent1),var(--accent2));box-shadow:0 6px 22px rgba(31,121,255,.25)}
+  .btnGhost{background:transparent;border:1px solid var(--surfaceBorder);color:var(--text)}
+
+  .input,.select{width:100%;background:#0b0f1a;border:1px solid var(--surfaceBorder);color:var(--text);padding:10px 12px;border-radius:12px;outline:none}
+  .input:focus,.select:focus{box-shadow:var(--ring)}
+  .tiny{font-size:12px;color:var(--muted)}
+  .row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  .preview{border:1px solid var(--surfaceBorder);border-radius:12px;overflow:hidden;display:grid;grid-template-columns:140px 1fr;min-height:140px}
+  .preview .img{background:#0a0e18;display:grid;place-items:center}
+  .preview .img canvas,.preview .img img{max-width:100%;max-height:100%}
+
+  .badge{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border-radius:999px;border:1px solid var(--surfaceBorder);font-size:12px;color:var(--muted)}
+  .ok{color:#bef5cb;border-color:rgba(48,206,110,.35)}
+  .warn{color:#ffd6a1;border-color:rgba(255,180,65,.35)}
+  .err{color:#ffb3b3;border-color:rgba(255,80,80,.35)}
+
+  .prices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
+  .priceCard{border:1px solid var(--surfaceBorder);border-radius:14px;padding:10px;background:#0b0f1a}
+
+  .table{width:100%;border-collapse:collapse;margin-top:8px}
+  .table th,.table td{padding:10px;border-bottom:1px solid var(--border);text-align:left;font-size:14px}
+  .table tr:last-child td{border-bottom:0}
+  .provider{font-size:12px;color:var(--muted)}
+
+  .videoWrap{position:relative;border:1px solid var(--surfaceBorder);background:#0b0f1a;border-radius:14px;overflow:hidden}
+  .videoWrap video{width:100%;display:block}
+  .videoWrap .videoControls{position:absolute;inset:auto 10px 10px 10px;display:flex;gap:10px;justify-content:flex-end}
+
+  .footerBar{display:flex;justify-content:space-between;align-items:center;margin-top:12px}
+  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;background:#0a0e18;border:1px solid var(--surfaceBorder);padding:2px 6px;border-radius:6px;color:var(--muted)}
+
+  .matchRow{display:none;align-items:center;gap:10px;margin-top:8px}
+  .matchRow.show{display:flex}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="pill"><span>∞</span></div>
+    <div>
+      <div class="wordmark">Infinie & gratuit</div>
+      <div class="sub">Scanner & Prix des cartes — US • Europe</div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- Col: Import & Caméra -->
+    <section class="card">
+      <div class="cardHeader">
+        <div class="cardTitle">Importer / Scanner</div>
+        <div class="tiny">Aucune requête n'est envoyée tant qu'une carte n'est pas importée.</div>
+      </div>
+      <div class="cardBody">
+        <div class="zone">
+          <!-- Import -->
+          <label class="drop" id="dropZone">
+            <div>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 16V4m0 0l-4 4m4-4l4 4" stroke="url(#g1)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 16.5a4.5 4.5 0 01-4.5 4.5h-7A4.5 4.5 0 014 16.5c0-2.054 1.394-3.78 3.27-4.33A5 5 0 0112 5a5 5 0 014.73 7.17c1.876.55 3.27 2.275 3.27 4.33z" stroke="#4f71ff66" stroke-width="1.2"/></svg>
+              <svg width="0" height="0"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop stop-color="var(--accent1)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient></defs></svg>
+            </div>
+            <div><strong>Glisser-déposer</strong> une image de votre carte</div>
+            <div class="tiny">ou</div>
+            <input type="file" accept="image/*" id="fileInput"/>
+            <button class="btn btnPrimary" type="button" id="pickFile">Importer une image</button>
+          </label>
+
+          <!-- Caméra -->
+          <div class="videoWrap" id="cameraBox">
+            <video id="video" playsinline muted></video>
+            <div class="videoControls">
+              <button class="btn btnGhost" type="button" id="toggleCam">Activer la caméra</button>
+              <button class="btn btnPrimary" type="button" id="snap" disabled>Capturer</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:12px"></div>
+
+        <div class="preview" id="preview" hidden>
+          <div class="img"><canvas id="thumb" width="140" height="140"></canvas></div>
+          <div style="padding:12px; width:100%;">
+            <div class="row">
+              <div class="badge" id="ocrBadge">OCR : attente</div>
+              <div class="badge" id="provBadge">Source : —</div>
+            </div>
+            <div style="height:8px"></div>
+
+            <label>
+              <div class="tiny">Nom détecté (corrigez si besoin)</div>
+              <input class="input" id="cardName" placeholder="Ex: Pikachu / Dracaufeu / Charizard"/>
+            </label>
+            <div style="height:8px"></div>
+            <label>
+              <div class="tiny">Numéro détecté (corrigez si besoin, ex: 025/165 ou SWSH136)</div>
+              <input class="input" id="cardNumber" placeholder="Ex: 025/165"/>
+            </label>
+
+            <div class="row matchRow" id="matchRow">
+              <div class="tiny">Meilleure correspondance :</div>
+              <select class="select" id="matchSelect"></select>
+              <button class="btn btnGhost" id="applyMatch" type="button">Choisir</button>
+            </div>
+
+            <div style="height:8px"></div>
+            <div class="row">
+              <button class="btn btnPrimary" id="findPrices" type="button">Trouver les prix</button>
+              <span class="tiny" id="status">Prêt.</span>
+            </div>
+
+            <div class="prices" id="prices" style="display:none">
+              <div class="priceCard"><div class="tiny">États-Unis (TCGplayer)</div><div id="usdPrice" style="font-weight:800;font-size:20px">—</div></div>
+              <div class="priceCard"><div class="tiny">Europe (Cardmarket)</div><div id="eurPrice" style="font-weight:800;font-size:20px">—</div></div>
+            </div>
+
+            <div class="footerBar">
+              <div class="provider" id="providerNote"></div>
+              <button class="btn btnGhost" id="addReport" type="button" disabled>Ajouter au rapport</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- Col: Rapport -->
+    <section class="card">
+      <div class="cardHeader">
+        <div class="cardTitle">Rapport</div>
+        <div class="row">
+          <button class="btn btnGhost" id="clearReport" type="button" title="Vider">Vider</button>
+          <button class="btn btnPrimary" id="exportPDF" type="button">Exporter en PDF</button>
+        </div>
+      </div>
+      <div class="cardBody">
+        <table class="table" id="reportTable">
+          <thead><tr><th style="width:38%">Carte</th><th style="width:22%">US (USD)</th><th style="width:22%">Europe (EUR)</th><th>Source</th></tr></thead>
+          <tbody id="reportBody">
+            <tr><td colspan="4" class="tiny">Aucune carte pour l'instant. Importez une image puis cliquez « Ajouter au rapport ».</td></tr>
+          </tbody>
+        </table>
+        <div class="tiny" style="margin-top:8px">Prix publics via TCGplayer (USD) & Cardmarket (EUR). Les sources sont indiquées carte par carte.</div>
+      </div>
+    </section>
+  </div>
+
+  <div style="margin-top:22px" class="tiny">Raccourcis : <span class="kbd">I</span> importer • <span class="kbd">C</span> caméra • <span class="kbd">P</span> prix • <span class="kbd">A</span> ajouter au rapport • <span class="kbd">E</span> exporter PDF</div>
+</div>
+
+<!-- Deps -->
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+
+<script>
+(function(){
+  // === CONFIG KEYS ===
+  const POKEMONTCG_KEY = '738d31e0-8ac3-4001-bf3b-1174488f7ea9';   // clé fournie
+  const TCGDEX_BASE    = 'https://api.tcgdex.net/v2';              // pas de clé
+
+  // === helpers UI ===
+  const $ = (q)=>document.querySelector(q);
+  const el = {
+    drop: $('#dropZone'), file: $('#fileInput'), pick: $('#pickFile'),
+    video: $('#video'), toggleCam: $('#toggleCam'), snap: $('#snap'),
+    preview: $('#preview'), thumb: $('#thumb'),
+    ocrBadge: $('#ocrBadge'), provBadge: $('#provBadge'), status: $('#status'),
+    name: $('#cardName'), num: $('#cardNumber'), find: $('#findPrices'),
+    pricesBlock: $('#prices'), usd: $('#usdPrice'), eur: $('#eurPrice'),
+    providerNote: $('#providerNote'), addReport: $('#addReport'),
+    reportBody: $('#reportBody'), clearReport: $('#clearReport'), exportPDF: $('#exportPDF'),
+    matchRow: $('#matchRow'), matchSelect: $('#matchSelect'), applyMatch: $('#applyMatch')
+  };
+
+  function setBadge(elm, text, kind){
+    elm.textContent = text;
+    elm.className = 'badge' + (kind?(' '+kind):'');
+  }
+  function fmt(n,cur){ return n==null?'—':new Intl.NumberFormat('fr-FR',{style:'currency',currency:cur}).format(n); }
+  const norm = s => (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();
+
+  // === canvas thumb ===
+  async function drawThumbFromBlob(blob){
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=url; });
+    const ctx = el.thumb.getContext('2d');
+    ctx.clearRect(0,0,el.thumb.width,el.thumb.height);
+    const r = Math.min(el.thumb.width/img.width, el.thumb.height/img.height);
+    const w = img.width*r, h = img.height*r;
+    const x = (el.thumb.width-w)/2, y = (el.thumb.height-h)/2;
+    ctx.fillStyle = '#0a0e18'; ctx.fillRect(0,0,el.thumb.width,el.thumb.height);
+    ctx.drawImage(img,x,y,w,h);
+    URL.revokeObjectURL(url);
+  }
+  function blobFromCanvas(c){ return new Promise(res=>c.toBlob(res,'image/jpeg',0.92)); }
+
+  // === import events ===
+  el.pick.addEventListener('click',()=>el.file.click());
+  el.file.addEventListener('change',()=>{ if(el.file.files?.[0]) handleImageFile(el.file.files[0]); });
+  ['dragenter','dragover'].forEach(ev=> el.drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();el.drop.classList.add('drag');}));
+  ['dragleave','drop'].forEach(ev=> el.drop.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();el.drop.classList.remove('drag');}));
+  el.drop.addEventListener('drop',(e)=>{ const f=e.dataTransfer.files?.[0]; if(f) handleImageFile(f); });
+
+  // === camera ===
+  let stream=null;
+  el.toggleCam.addEventListener('click', async ()=>{
+    if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; el.video.srcObject=null; el.snap.disabled=true; el.toggleCam.textContent='Activer la caméra'; return; }
+    try{
+      stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+      el.video.srcObject = stream; await el.video.play();
+      el.snap.disabled=false; el.toggleCam.textContent='Désactiver la caméra';
+    }catch(e){ alert("Impossible d'accéder à la caméra."); }
+  });
+  el.snap.addEventListener('click', async ()=>{
+    const cvs=document.createElement('canvas'); cvs.width=el.video.videoWidth; cvs.height=el.video.videoHeight;
+    const ctx=cvs.getContext('2d'); ctx.drawImage(el.video,0,0,cvs.width,cvs.height);
+    const blob = await blobFromCanvas(cvs); await handleImageBlob(blob);
+  });
+
+  // === OCR robust: bande haute (nom), bande basse (numéro), nettoyage ===
+  async function handleImageFile(file){ const blob=file.slice(0,file.size,file.type||'image/jpeg'); await handleImageBlob(blob); }
+  async function imageFromBlob(blob){
+    if('createImageBitmap' in window){ try{ return await createImageBitmap(blob); }catch{} }
+    return await new Promise((res,rej)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{URL.revokeObjectURL(url);res(img)}; img.onerror=e=>{URL.revokeObjectURL(url);rej(e)}; img.src=url;});
+  }
+  function cutCanvas(img, x,y,w,h, outW=w, outH=h){
+    const cvs=document.createElement('canvas'); cvs.width=outW; cvs.height=outH;
+    const ctx=cvs.getContext('2d'); ctx.fillStyle='#000'; ctx.fillRect(0,0,outW,outH);
+    ctx.filter='contrast(1.45) brightness(1.1)'; ctx.drawImage(img,x,y,w,h,0,0,outW,outH); ctx.filter='none';
+    return cvs;
+  }
+  function cleanName(raw){
+    if(!raw) return '';
+    let s = raw.replace(/\s+/g,' ').trim();
+    // enlève les tokens non pertinents et chiffres parasites en bord
+    s = s.replace(/\b(Pok[eé]mon|Stage|Niveau|PV|HP|Basic|De base|EX|GX|VMAX|VSTAR|V-UNION|Trainer|Dresseur|Supporter|Stadium)\b/gi,' ').replace(/[|]/g,' ').replace(/\s{2,}/g,' ');
+    s = s.replace(/^[^A-Za-zÀ-ÿ]+/, '').replace(/[^A-Za-zÀ-ÿ]+$/, '');
+    // si des chiffres restent collés au mot, on coupe (ex: 'pikachu604' -> 'pikachu')
+    s = s.replace(/([A-Za-zÀ-ÿ]+)\d+.*/,'$1');
+    // limite 3 mots pour éviter le bruit
+    return s.split(' ').slice(0,3).join(' ').trim();
+  }
+  function formatNumberString(numStr){
+    if(!numStr) return '';
+    // standard 123/456
+    const m = numStr.match(/(\d{1,3})\s*\/\s*(\d{2,3})/);
+    if(m){
+      let n = parseInt(m[1],10), tot = parseInt(m[2],10);
+      // padding si total sur 3 chiffres -> numéro aussi sur 3
+      const needPad = String(tot).length===3 && String(n).length<3;
+      return `${needPad?String(n).padStart(3,'0'):n}/${tot}`;
+    }
+    // variantes SWSH/SM/XY/SV...
+    const m2 = numStr.match(/\b(SWSH|SM|BW|XY|SV[PI]?|DP|HGSS)\s?-?\s?(\d{1,3})\b/i);
+    if(m2){ return `${m2[1].toUpperCase()}${m2[2]}`; }
+    return numStr.trim();
+  }
+
+  async function runDualOCR(blob){
+    try{
+      const img = await imageFromBlob(blob);
+      const W = 900, scale = W/(img.width||W), H = img.height ? Math.round(img.height*scale) : 1200;
+      const top   = cutCanvas(img, 0,0, img.width, Math.round(img.height*0.22), W, Math.round(H*0.22));        // nom
+      const bottom= cutCanvas(img, 0, Math.round(img.height*0.80), img.width, Math.round(img.height*0.20), W, Math.round(H*0.20)); // numéro
+
+      const opts = { langPath:'https://tessdata.projectnaptha.com/4.0.0', logger:(m)=>{ if(m.status==='recognizing text'){ el.status.textContent = `OCR ${Math.round((m.progress||0)*100)}%…`; } } };
+
+      let nameData; try{ nameData = await Tesseract.recognize(top, 'eng+fra', opts); }catch{ nameData = await Tesseract.recognize(top, 'eng', opts); }
+      const rawName = (nameData?.data?.text || '').replace(/\s+/g,' ').trim();
+      const name = cleanName(rawName);
+
+      const numData = await Tesseract.recognize(bottom, 'eng', opts);
+      const rawNum = (numData?.data?.text || '').replace(/\s+/g,' ').trim();
+      const numberString = formatNumberString(rawNum);
+
+      return { name, numberString, rawName, rawNum };
+    }catch(e){ console.error(e); return { name:'', numberString:'' }; }
+  }
+
+  let lastImageBlob=null, lastMatches=[], lastChosenCard=null;
+  async function handleImageBlob(blob){
+    lastImageBlob=blob; lastMatches=[]; lastChosenCard=null;
+    el.preview.hidden=false; el.pricesBlock.style.display='none'; el.addReport.disabled=true; el.providerNote.textContent='';
+    setBadge(el.ocrBadge,'OCR : en cours…','warn'); setBadge(el.provBadge,'Source : —');
+    el.status.textContent='Extraction du nom et du numéro…';
+    await drawThumbFromBlob(blob);
+    const o = await runDualOCR(blob);
+    el.name.value = o.name || '';
+    el.num.value  = o.numberString || '';
+    setBadge(el.ocrBadge, (o.name||o.numberString) ? 'OCR : réussi' : 'OCR : échec', (o.name||o.numberString)?'ok':'err');
+    el.status.textContent = (o.name||o.numberString) ? 'Reconnaissance OK. Cliquez « Trouver les prix ».' : 'Complétez le nom/numéro puis lancez la recherche.';
+  }
+
+  // === search & pricing (PokémonTCG.io d'abord, TCGdex en fallback/enrichissement) ===
+  function toNum(x){ if(x==null) return null; const n = parseFloat(String(x).replace(',', '.')); return Number.isFinite(n)? n : null; }
+  function pickUSD_EUR_fromPokemonTCG(card){
+    const pUSD = card?.tcgplayer?.prices || {};
+    const pEUR = card?.cardmarket?.prices || {};
+    const prefer = ['holofoil','reverseHolofoil','1stEditionHolofoil','unlimitedHolofoil','normal'];
+    let usd=null; for(const k of prefer){ const o=pUSD[k]; if(o){ usd = toNum(o.market) ?? toNum(o.mid) ?? toNum(o.low) ?? toNum(o.high); if(usd!=null) break; } }
+    const eur = toNum(pEUR?.trendPrice) ?? toNum(pEUR?.averageSellPrice) ?? null;
+    return {usd, eur};
+  }
+  function pickUSD_EUR_fromTCGdex(obj){
+    // TCGdex: pricing.cardmarket.trend (EUR), pricing.tcgplayer.normal.marketPrice (USD) — autres variantes possibles
+    const eur = toNum(obj?.pricing?.cardmarket?.trend) ?? toNum(obj?.pricing?.cardmarket?.avg7) ?? null;
+    const usd = toNum(obj?.pricing?.tcgplayer?.normal?.marketPrice) ??
+                toNum(obj?.pricing?.tcgplayer?.holofoil?.marketPrice) ?? null;
+    return {usd, eur};
+  }
+
+  async function fetchPokemonTCG(q){
+    const headers = { 'X-Api-Key': POKEMONTCG_KEY };
+    const ctrl = new AbortController(); const to = setTimeout(()=>ctrl.abort(), 10000);
+    try{
+      const url = `https://api.pokemontcg.io/v2/cards?pageSize=50&q=${encodeURIComponent(q)}`;
+      const r = await fetch(url, {headers, signal:ctrl.signal});
+      if(!r.ok) return {data:[]};
+      return await r.json();
+    }catch(e){ console.warn('pokemontcg.io fail', e); return {data:[]}; }
+    finally{ clearTimeout(to); }
+  }
+  async function fetchTCGdexById(id){
+    try{
+      const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(),10000);
+      const r=await fetch(`${TCGDEX_BASE}/en/cards/${id}`,{signal:ctrl.signal});
+      clearTimeout(to);
+      if(!r.ok) return null; return await r.json();
+    }catch(e){ return null; }
+  }
+
+  function scoreCard(card, qName, qNumStr){
+    let s=0;
+    if(qNumStr){
+      const cnum = (card.number||'').toString();
+      // normalise les formes 25/165 vs 025/165
+      const nn = qNumStr.replace(/^0+/,'');
+      if(cnum.replace(/^0+/,'')===nn) s+=5;
+      if(cnum.includes(nn)) s+=2;
+    }
+    if(qName){
+      const a = norm(card.name); const tokens = norm(qName).split(' ').filter(Boolean);
+      let overlap = 0; tokens.forEach(t=>{ if(a.includes(t)) overlap++; });
+      s += Math.min(3,overlap);
+    }
+    // cartes qui ont des prix sont favorisées
+    const {usd,eur} = pickUSD_EUR_fromPokemonTCG(card); if(usd!=null||eur!=null) s+=2;
+    return s;
+  }
+
+  async function searchCandidates(q){
+    const clauses = [];
+    if(q.name) clauses.push(`name:"${q.name}"`);
+    if(q.number) clauses.push(`number:"${q.number}"`);
+    // relâchement
+    const base1 = clauses.join(' AND ') + ' supertype:"Pokémon"';
+    const base2 = q.name ? `name:${q.name.split(' ')[0]}* supertype:"Pokémon"` : '';
+    const queries = [base1, base2].filter(Boolean);
+
+    const results = await Promise.all(queries.map(fetchPokemonTCG));
+    const map = new Map(); results.forEach(j=> (j?.data||[]).forEach(c=> map.set(c.id,c)));
+    const arr = Array.from(map.values());
+    arr.sort((a,b)=> scoreCard(b, q.name, q.number) - scoreCard(a, q.name, q.number));
+    return arr;
+  }
+
+  function populateMatches(cards){
+    lastMatches = cards;
+    const sel = el.matchSelect; sel.innerHTML='';
+    if(cards.length<=1){ el.matchRow.classList.remove('show'); return; }
+    cards.slice(0,12).forEach((c,i)=>{
+      const p = pickUSD_EUR_fromPokemonTCG(c);
+      const label = `${c.name} — ${c.set?.name||'Set ?'} (${c.number}${c.set?.printedTotal?'/'+c.set.printedTotal:''})${(p.usd||p.eur)?' • $/€':''}`;
+      const o=document.createElement('option'); o.value=i; o.textContent=label; sel.appendChild(o);
+    });
+    el.matchRow.classList.add('show');
+  }
+
+  async function showPricesFromCard(card){
+    lastChosenCard = card;
+    // 1) PokémonTCG.io
+    let {usd,eur} = pickUSD_EUR_fromPokemonTCG(card);
+    // 2) Enrichissement TCGdex (si dispo) via l'id "setcode-number"
+    try{
+      const tcgdex = await fetchTCGdexById(card.id);
+      if(tcgdex){
+        const fromDex = pickUSD_EUR_fromTCGdex(tcgdex);
+        // si une des devises manque côté PTCG, on complète par TCGdex
+        usd = usd ?? fromDex.usd;
+        eur = eur ?? fromDex.eur;
+      }
+    }catch{}
+
+    el.usd.textContent = fmt(usd,'USD');
+    el.eur.textContent = fmt(eur,'EUR');
+    el.pricesBlock.style.display='grid';
+
+    const srcs = [];
+    if(usd!=null) srcs.push('TCGplayer');
+    if(eur!=null) srcs.push('Cardmarket');
+    setBadge(el.provBadge, `Source : ${srcs.join(' + ')||'—'}`, (usd!=null||eur!=null)?'ok':'warn');
+    el.providerNote.textContent = `${card.name} • ${card.set?.name||'Set ?'} • ${card.number}`;
+    el.status.textContent = (usd!=null||eur!=null) ? 'Prix trouvés.' : 'Aucun prix public pour cette édition.';
+    el.addReport.disabled = !(usd!=null||eur!=null);
+  }
+
+  // === actions ===
+  el.find.addEventListener('click', async ()=>{
+    const qName = el.name.value.trim();
+    const qNum  = formatNumberString(el.num.value.trim());
+    if(qNum!==el.num.value.trim()) el.num.value = qNum; // pad auto (ex: 25/165 -> 025/165)
+
+    if(!qName && !qNum){ alert('Saisissez le nom ou le numéro de la carte.'); return; }
+    el.status.textContent='Recherche des correspondances…';
+    setBadge(el.provBadge,'Source : …','warn'); el.pricesBlock.style.display='none'; el.addReport.disabled=true;
+
+    const candidates = await searchCandidates({name:qName, number:qNum});
+    if(!candidates.length){ el.status.textContent='Carte introuvable.'; setBadge(el.provBadge,'Source : introuvable','err'); el.matchRow.classList.remove('show'); return; }
+    populateMatches(candidates);
+    await showPricesFromCard(candidates[0]);
+  });
+
+  el.applyMatch.addEventListener('click', async ()=>{
+    const idx = parseInt(el.matchSelect.value,10);
+    if(Number.isInteger(idx) && lastMatches[idx]) await showPricesFromCard(lastMatches[idx]);
+  });
+
+  // === Rapport + PDF ===
+  const REPORT_KEY = 'infinie_card_report_v2';
+  let report = loadReport(); renderReport();
+
+  el.addReport.addEventListener('click', ()=>{
+    if(!lastChosenCard) return;
+    const {usd,eur} = { usd: textToNumber(el.usd.textContent), eur: textToNumber(el.eur.textContent) };
+    const row = { ts:Date.now(), name:lastChosenCard.name, num:lastChosenCard.number, set:lastChosenCard.set?.name||'', usd, eur, provider: $('#provBadge').textContent.replace('Source : ','') };
+    report.unshift(row); saveReport(); renderReport(); el.status.textContent='Ajouté au rapport.';
+  });
+
+  el.clearReport.addEventListener('click', ()=>{ if(confirm('Vider le rapport ?')){ report=[]; saveReport(); renderReport(); } });
+
+  function renderReport(){
+    const tbody=el.reportBody; tbody.innerHTML='';
+    if(!report.length){
+      const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=4; td.className='tiny'; td.textContent="Aucune carte pour l'instant. Importez une image puis ajoutez-la."; tr.append(td); tbody.append(tr); return;
+    }
+    report.forEach(r=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td>${escapeHtml(`${r.name}${r.num?(' • '+r.num):''}${r.set?(' — '+r.set):''}`)}</td>
+                    <td>${fmt(r.usd,'USD')}</td>
+                    <td>${fmt(r.eur,'EUR')}</td>
+                    <td class="provider">${escapeHtml(r.provider||'—')}</td>`;
+      tbody.append(tr);
+    });
+  }
+  function textToNumber(t){ const m=String(t||'').match(/[\d.,]+/); if(!m) return null; return parseFloat(m[0].replace(/\./g,'').replace(',','.')); }
+  function saveReport(){ localStorage.setItem(REPORT_KEY, JSON.stringify(report)); }
+  function loadReport(){ try{ return JSON.parse(localStorage.getItem(REPORT_KEY)||'[]'); }catch{ return []; } }
+  function escapeHtml(s){ return String(s).replace(/[&<>\"']/g, ch=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[ch])); }
+
+  el.exportPDF.addEventListener('click', ()=>{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'pt', format:'a4'});
+    const W = doc.internal.pageSize.getWidth();
+    doc.setGState(new doc.GState({ opacity:0.10 })); doc.setFillColor('#1B4CFF'); doc.rect(0,0,W,90,'F'); doc.setGState(new doc.GState({ opacity:1 }));
+    doc.setFont('helvetica','bold').setFontSize(18).setTextColor('#ffffff'); doc.text('∞',36,34);
+    doc.setFontSize(16).text('Infinie & gratuit — Rapport des cartes',60,34);
+    doc.setFont('helvetica','normal').setFontSize(11).setTextColor('#cfd6e6'); doc.text(new Date().toLocaleString('fr-FR'),60,54);
+
+    let y=110; doc.setTextColor('#E6ECF7'); doc.setFont('helvetica','bold').setFontSize(12);
+    doc.text('Carte',36,y); doc.text('US (USD)',300,y); doc.text('Europe (EUR)',420,y); doc.text('Source',530,y);
+    y+=8; doc.setDrawColor(150,165,255).setLineWidth(0.6); doc.line(36,y, W-36, y); y+=18;
+    doc.setFont('helvetica','normal').setFontSize(11).setTextColor('#E6ECF7');
+    const lineH=20, maxY=780;
+    report.forEach(r=>{
+      if(y>maxY){ doc.addPage(); y=60; }
+      doc.text(`${r.name}${r.num?(' • '+r.num):''}${r.set?(' — '+r.set):''}`,36,y);
+      doc.text(fmt(r.usd,'USD'),300,y); doc.text(fmt(r.eur,'EUR'),420,y); doc.text(String(r.provider||'—'),530,y);
+      y+=lineH;
+    });
+    doc.setFontSize(9).setTextColor('#A4ADBD'); doc.text('Sources: TCGplayer (USD) • Cardmarket (EUR).',36,820);
+    doc.save('rapport-cartes.pdf');
+  });
+
+  // === keyboard shortcuts ===
+  document.addEventListener('keydown',(e)=>{
+    if(e.target && ['INPUT','TEXTAREA'].includes(e.target.tagName)) return;
+    if(e.key.toLowerCase()==='i') el.file.click();
+    if(e.key.toLowerCase()==='c') el.toggleCam.click();
+    if(e.key.toLowerCase()==='p') el.find.click();
+    if(e.key.toLowerCase()==='a') el.addReport.click();
+    if(e.key.toLowerCase()==='e') el.exportPDF.click();
+  });
+
+})();
+</script>
+</body>
+</html>

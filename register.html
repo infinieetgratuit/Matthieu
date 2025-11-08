@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Infinie & gratuit — Enregistreur d’écran (100% local)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+      --border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF; --accent2:#1B4CFF;
+      --ring:0 0 0 2px rgba(43,167,255,.35);
+      --input-bg:#0b0f1a; --input-bd:#1a2340;
+      --radius:16px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,Apple Color Emoji,Segoe UI Emoji;
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+      color:var(--text);
+    }
+    .wrap{max-width:1100px; margin:0 auto; padding:32px 20px 80px}
+
+    /* Header brand */
+    .brand{display:flex; align-items:center; gap:10px; user-select:none}
+    .brand .badge{
+      width:36px; height:36px; border-radius:999px; display:grid; place-items:center;
+      background:radial-gradient(120% 120% at 20% 20%, var(--accent1), var(--accent2));
+      box-shadow:0 0 0 1px rgba(255,255,255,0.06), 0 10px 30px rgba(33,118,255,.25) inset;
+    }
+    .brand .badge span{font-weight:800; font-size:20px; color:white; transform:translateY(-1px)}
+    .brand .word{font-weight:800; letter-spacing:.2px; font-size:16px; color:var(--text); opacity:.95}
+
+    /* Cards */
+    .card{
+      position:relative; background:
+        linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+        linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+        var(--panel);
+      border:1px solid var(--border); border-radius:var(--radius);
+      box-shadow:0 15px 50px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.03) inset;
+      padding:22px; overflow:hidden;
+    }
+    .card.sheen::after{
+      content:""; position:absolute; inset:-40% -80%; transform:rotate(8deg);
+      background:linear-gradient(90deg, transparent, rgba(255,255,255,.06), transparent);
+      animation:sheen 5s linear infinite; pointer-events:none;
+    }
+    @keyframes sheen{0%{transform:translateX(-40%) rotate(8deg)}100%{transform:translateX(40%) rotate(8deg)}}
+
+    h1{font-size:28px; margin:8px 0 6px}
+    p.lead{color:var(--muted); margin:0 0 14px; line-height:1.6}
+    .hint{font-size:12px; color:var(--muted)}
+    .stack{display:grid; gap:16px; margin-top:18px}
+    .grid{display:grid; gap:12px}
+    @media(min-width:760px){ .grid.cols-2{grid-template-columns:1fr 1fr} .grid.cols-3{grid-template-columns:repeat(3,1fr)} }
+
+    /* Controls */
+    .row-actions{display:flex; gap:12px; flex-wrap:wrap}
+    .btn{
+      appearance:none; border:0; border-radius:14px; padding:12px 16px;
+      font-weight:700; color:white; cursor:pointer; transition:.2s ease transform, .2s ease box-shadow;
+      display:inline-flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    }
+    .btn:hover{transform:translateY(-1px)} .btn:active{transform:translateY(0)}
+    .btn:focus{outline:none; box-shadow:0 0 0 3px rgba(43,167,255,.35)}
+    .btn.primary{background:linear-gradient(135deg, var(--accent1), var(--accent2))}
+    .btn.ghost{background:transparent; color:var(--text); border:1px solid var(--border)}
+    .btn.warn{background:linear-gradient(135deg, #ff7878, #ff3b3b)}
+    .btn.small{padding:9px 12px; font-weight:600; border-radius:12px; font-size:13px}
+
+    /* Inputs */
+    label{display:block; font-size:12px; color:var(--muted); margin-bottom:6px}
+    input[type="checkbox"]{transform:translateY(1px)}
+    .input, select{
+      width:100%; background:var(--input-bg); border:1px solid var(--input-bd);
+      color:var(--text); border-radius:12px; padding:12px; font:inherit; outline:none;
+      transition:.2s ease border-color, .2s ease box-shadow;
+    }
+    .input:focus, select:focus{box-shadow:var(--ring); border-color:#2b5cff}
+
+    /* Status bar */
+    .status{
+      display:flex; align-items:center; gap:12px; padding:12px; border:1px solid var(--border);
+      border-radius:14px; background:rgba(12,16,28,.6)
+    }
+    .dot{width:10px; height:10px; border-radius:999px; background:linear-gradient(135deg,var(--accent1),var(--accent2)); box-shadow:0 0 12px rgba(33,118,255,.7)}
+    .tag{font-size:12px; color:#cfe7ff}
+
+    /* Floating controls during recording */
+    .floating{
+      position:fixed; left:50%; transform:translateX(-50%); bottom:22px; z-index:1000;
+      display:flex; gap:8px; background:rgba(10,14,25,.75); border:1px solid var(--border);
+      padding:8px; border-radius:14px; backdrop-filter:blur(8px)
+    }
+
+    /* Countdown overlay */
+    .countdown{
+      position:fixed; inset:0; display:none; place-items:center; z-index:1200;
+      background:rgba(0,0,0,.35); backdrop-filter:blur(2px)
+    }
+    .countdown.show{display:grid}
+    .count-num{
+      font-weight:800; font-size:96px; color:white;
+      text-shadow:0 10px 40px rgba(27,76,255,.45);
+      animation:pulse .85s ease-in-out forwards;
+    }
+    @keyframes pulse{0%{transform:scale(.7); opacity:.4}100%{transform:scale(1); opacity:1}}
+
+    /* Preview */
+    video{width:100%; border-radius:12px; border:1px solid var(--border); background:#000}
+    .hidden{display:none !important}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="brand" aria-label="Infinie & gratuit">
+      <div class="badge"><span>∞</span></div>
+      <div class="word">Infinie & gratuit</div>
+    </header>
+
+    <main class="stack">
+      <!-- Panneau principal -->
+      <section class="card sheen" id="panel">
+        <h1>Enregistreur d’écran (local)</h1>
+        <p class="lead">Capture ton écran en 1 clic. Optionnel : audio système, micro, webcam en bulle, pause/reprise, qualité personnalisée. Aucune donnée ne quitte ton navigateur.</p>
+
+        <!-- Statut -->
+        <div class="status" id="statusBar">
+          <div class="dot"></div>
+          <div class="tag" id="statusText">Prêt</div>
+          <div class="tag">Format : <span id="fmt">auto</span></div>
+          <div class="tag">Qualité : <span id="qlt">par défaut</span></div>
+          <div class="tag">Durée : <span id="timer">00:00</span></div>
+          <div class="tag">Taille : <span id="size">0.0 Mo</span></div>
+        </div>
+
+        <!-- Options -->
+        <div class="grid cols-3" style="margin-top:14px">
+          <div>
+            <label>Audio système (si supporté)</label>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="sysAudio" checked/> <span>Inclure l’audio du système</span>
+            </label>
+          </div>
+          <div>
+            <label>Micro</label>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="micAudio" /> <span>Ajouter le micro</span>
+            </label>
+          </div>
+          <div>
+            <label>Webcam (bulle en bas à droite)</label>
+            <label style="display:flex;align-items:center;gap:8px">
+              <input type="checkbox" id="camOverlay" /> <span>Superposer la webcam</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid cols-3" style="margin-top:8px">
+          <div>
+            <label>Format</label>
+            <select id="format" class="input"></select>
+          </div>
+          <div>
+            <label>Qualité vidéo (kbps)</label>
+            <input id="vBitrate" class="input" type="number" min="200" step="100" placeholder="Ex: 8000"/>
+          </div>
+          <div>
+            <label>Qualité audio (kbps)</label>
+            <input id="aBitrate" class="input" type="number" min="32" step="16" placeholder="Ex: 192"/>
+          </div>
+        </div>
+
+        <div class="row-actions" style="margin-top:14px">
+          <button class="btn primary" id="startBtn">⏺️ Démarrer l’enregistrement</button>
+          <button class="btn ghost" id="testSupportBtn">🔎 Vérifier le support</button>
+        </div>
+        <div class="hint">Astuce : choisis “Onglet du navigateur” si tu veux inclure facilement l’audio du site.</div>
+      </section>
+
+      <!-- Aperçu du résultat -->
+      <section class="card hidden" id="resultCard">
+        <h1>Enregistrement terminé</h1>
+        <p class="lead">Regarde un aperçu puis télécharge le fichier. Tu peux relancer un nouvel enregistrement à tout moment.</p>
+        <video id="preview" controls playsinline></video>
+        <div class="row-actions" style="margin-top:12px">
+          <button class="btn primary" id="downloadBtn">⬇️ Télécharger</button>
+          <button class="btn primary" id="mp4Btn">🎬 Export MP4</button>
+          <button class="btn ghost" id="newRecBtn">↺ Nouveau</button>
+        </div>
+        <div class="hint" id="compatHint">Format : <span id="finalFmt">—</span> • Taille : <span id="finalSize">—</span></div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Compte à rebours -->
+  <div class="countdown" id="countdown"><div class="count-num" id="countNum">3</div></div>
+
+  <!-- Barre flottante pendant l’enregistrement -->
+  <div class="floating hidden" id="floatBar">
+    <button class="btn small ghost" id="pauseBtn">⏸️ Pause</button>
+    <button class="btn small ghost hidden" id="resumeBtn">▶️ Reprendre</button>
+    <button class="btn small warn" id="stopBtn">⏹️ Stop</button>
+    <span class="tag" id="floatTimer">00:00</span>
+  </div>
+
+  <script>
+    const $ = s => document.querySelector(s);
+    const fmtSel = $('#format');
+    const startBtn = $('#startBtn');
+    const testSupportBtn = $('#testSupportBtn');
+    const sysAudio = $('#sysAudio');
+    const micAudio = $('#micAudio');
+    const camOverlay = $('#camOverlay');
+    const vBitrate = $('#vBitrate');
+    const aBitrate = $('#aBitrate');
+    const statusText = $('#statusText');
+    const timerEl = $('#timer');
+    const floatTimerEl = $('#floatTimer');
+    const sizeEl = $('#size');
+    const fmtEl = $('#fmt');
+    const qltEl = $('#qlt');
+    const panel = $('#panel');
+    const resultCard = $('#resultCard');
+    const preview = $('#preview');
+    const downloadBtn = $('#downloadBtn');
+    const mp4Btn = $('#mp4Btn');
+    const newRecBtn = $('#newRecBtn');
+    const finalFmt = $('#finalFmt');
+    const finalSize = $('#finalSize');
+    const floatBar = $('#floatBar');
+    const pauseBtn = $('#pauseBtn');
+    const resumeBtn = $('#resumeBtn');
+    const countdown = $('#countdown');
+    const countNum = $('#countNum');
+
+    let recorder, chunks = [];
+    let displayStream, micStream, camStream, composedStream, drawRAF = null, drawRafVFC = null;
+    let mixedAudioStream = null;
+    let bytes = 0, startAt = 0, tickInt = null;
+    let chosenMime = '';
+    let lastBlob = null, lastUrl = null;
+
+    // ----- Formats supportés
+    const preferred = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4;codecs=h264,aac',
+      'video/mp4'
+    ];
+    function populateMimeTypes(){
+      fmtSel.innerHTML = '';
+      preferred.forEach(m=>{
+        const opt = document.createElement('option');
+        const ok = MediaRecorder.isTypeSupported ? MediaRecorder.isTypeSupported(m) : false;
+        opt.value = m; opt.textContent = m + (ok?'':' (non supporté)'); opt.disabled = !ok;
+        fmtSel.appendChild(opt);
+      });
+      const firstOk = [...fmtSel.options].find(o=>!o.disabled);
+      if(firstOk){ fmtSel.value = firstOk.value; chosenMime = firstOk.value; }
+      else { chosenMime = ''; }
+      fmtEl.textContent = chosenMime || 'auto';
+    }
+    populateMimeTypes();
+    fmtSel.addEventListener('change', ()=> { chosenMime = fmtSel.value; fmtEl.textContent = chosenMime; });
+
+    // ----- Vérifier support
+    testSupportBtn.addEventListener('click', ()=>{
+      alert([
+        'getDisplayMedia: ' + (!!navigator.mediaDevices?.getDisplayMedia),
+        'MediaRecorder: ' + (!!window.MediaRecorder),
+        'Web Audio (mix): ' + (!!window.AudioContext||!!window.webkitAudioContext),
+        'requestVideoFrameCallback: ' + ('requestVideoFrameCallback' in HTMLVideoElement.prototype)
+      ].join('\n'));
+    });
+
+    // ----- Compte à rebours
+    async function countdown3(){
+      countdown.classList.add('show');
+      for(let n=3;n>0;n--){
+        countNum.textContent = n;
+        countNum.style.animation='none'; void countNum.offsetWidth; countNum.style.animation='';
+        await sleep(850);
+      }
+      countdown.classList.remove('show');
+    }
+
+    // ----- Démarrer
+    startBtn.addEventListener('click', startRecording);
+
+    async function startRecording(){
+      try{
+        status('Sélection de la source…');
+        await countdown3();
+
+        // 1) Capture d’écran (60 fps si possible)
+        const wantSysAudio = !!sysAudio.checked;
+        displayStream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            frameRate: { ideal: 60, max: 60 }
+          },
+          audio: wantSysAudio
+        });
+        const dispVideoTrack = displayStream.getVideoTracks()[0];
+        const dispSettings = dispVideoTrack.getSettings ? dispVideoTrack.getSettings() : {};
+        dispVideoTrack.addEventListener('ended', stopRecording);
+
+        // 2) Micro (optionnel)
+        if(micAudio.checked){
+          micStream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              channelCount: 2, sampleRate: 48000,
+              echoCancellation: true, noiseSuppression: true, autoGainControl: true
+            }
+          });
+        }
+
+        // 3) Webcam (optionnel)
+        if(camOverlay.checked){
+          camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 360 } });
+        }
+
+        // 4) Vidéo finale
+        if(camStream){
+          composedStream = await composeVideo(displayStream, camStream, dispSettings);
+        } else {
+          composedStream = new MediaStream([dispVideoTrack]); // pass-through pour + de netteté
+        }
+
+        // 5) Mixage audio
+        mixedAudioStream = await mixAudio(displayStream, micStream);
+
+        // 6) Fusion (vidéo + audio)
+        const finalStream = new MediaStream();
+        composedStream.getVideoTracks().forEach(t=>finalStream.addTrack(t));
+        if(mixedAudioStream) mixedAudioStream.getAudioTracks().forEach(t=>finalStream.addTrack(t));
+
+        // 7) Encodage (bitrate par défaut élevés)
+        chunks = []; bytes = 0;
+        const options = {};
+        if(chosenMime) options.mimeType = chosenMime;
+        const vkbps = parseInt(vBitrate.value||'8000',10);
+        const akbps = parseInt(aBitrate.value||'192',10);
+        options.videoBitsPerSecond = vkbps * 1000;
+        options.audioBitsPerSecond = akbps * 1000;
+        qltEl.textContent = `${vkbps}/${akbps} kbps`;
+
+        try { recorder = new MediaRecorder(finalStream, options); }
+        catch(e){
+          console.warn('Options refusées, fallback:', e);
+          recorder = new MediaRecorder(finalStream);
+          chosenMime = recorder.mimeType || chosenMime;
+        }
+
+        recorder.ondataavailable = ev=>{
+          if(ev.data && ev.data.size>0){ chunks.push(ev.data); bytes += ev.data.size; updateSize(); }
+        };
+        recorder.onstop = onStop;
+
+        recorder.start(3000); // chunks de 3s
+        startAt = Date.now();
+        tickInt = setInterval(updateTimer, 500);
+        floatBar.classList.remove('hidden');
+
+        const fpsTxt = dispSettings.frameRate ? `${dispSettings.frameRate} fps` : 'fps variable';
+        const resTxt = (dispSettings.width && dispSettings.height) ? `${dispSettings.width}×${dispSettings.height}` : 'résolution auto';
+        status(`Enregistrement… ${resTxt}, ${fpsTxt}`);
+
+      }catch(err){
+        console.error(err);
+        status('Permission refusée ou non supporté.');
+        alert('Impossible de démarrer la capture. Vérifie les permissions/support du navigateur.');
+        cleanupStreams();
+      }
+    }
+
+    // ------ Composition vidéo via canvas HiDPI (si webcam)
+    async function composeVideo(screenStream, camStream, dispSettings){
+      const v = document.createElement('video');
+      v.srcObject = screenStream; v.muted = true; v.playsInline = true;
+      await v.play().catch(()=>{}); await onceMetadata(v);
+
+      const baseW = v.videoWidth || dispSettings.width || 1280;
+      const baseH = v.videoHeight || dispSettings.height || 720;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const width = Math.round(baseW * dpr), height = Math.round(baseH * dpr);
+
+      const offscreen = ('OffscreenCanvas' in window);
+      const canvas = offscreen ? new OffscreenCanvas(width, height) : Object.assign(document.createElement('canvas'), {width,height});
+      const ctx = canvas.getContext('2d');
+
+      let camVideo = null;
+      if(camStream){
+        camVideo = document.createElement('video');
+        camVideo.srcObject = camStream; camVideo.muted = true; camVideo.playsInline = true;
+        await camVideo.play().catch(()=>{}); await onceMetadata(camVideo);
+      }
+
+      const bubbleW = Math.round(baseW * 0.22 * dpr);
+      const bubbleH = Math.round(bubbleW * 9/16);
+      const pad = Math.round(18 * dpr);
+      const radius = Math.round(20 * dpr);
+      const out = canvas.captureStream(60);
+
+      const drawFrame = ()=>{
+        ctx.drawImage(v, 0, 0, width, height);
+        if(camVideo){
+          const x = width - bubbleW - pad, y = height - bubbleH - pad;
+          ctx.save(); ctx.globalAlpha = .95; roundRect(ctx, x, y, bubbleW, bubbleH, radius); ctx.clip();
+          ctx.drawImage(camVideo, x, y, bubbleW, bubbleH); ctx.restore();
+          ctx.save(); ctx.lineWidth = 2 * dpr;
+          const grad = ctx.createLinearGradient(x,y,x+bubbleW,y+bubbleH);
+          grad.addColorStop(0,'#2FE3FF'); grad.addColorStop(1,'#1B4CFF');
+          ctx.strokeStyle = grad; roundRect(ctx, x, y, bubbleW, bubbleH, radius); ctx.stroke(); ctx.restore();
+        }
+      };
+
+      if('requestVideoFrameCallback' in HTMLVideoElement.prototype){
+        const step = ()=>{ drawFrame(); drawRafVFC = v.requestVideoFrameCallback(()=>step()); }; step();
+      } else {
+        const loop = ()=>{ drawFrame(); drawRAF = requestAnimationFrame(loop); }; loop();
+      }
+      return out;
+    }
+    function roundRect(ctx, x, y, w, h, r){
+      r = Math.min(r, w/2, h/2); ctx.beginPath();
+      ctx.moveTo(x+r, y); ctx.arcTo(x+w, y, x+w, y+h, r); ctx.arcTo(x+w, y+h, x, y+h, r);
+      ctx.arcTo(x, y+h, x, y, r); ctx.arcTo(x, y, x+w, y, r); ctx.closePath();
+    }
+    function onceMetadata(video){ return new Promise(res=>{ if(video.readyState>=1) res(); else video.onloadedmetadata=()=>res(); }); }
+
+    // ------ Mixage audio (système + micro) 48k stéréo
+    async function mixAudio(screenStream, micStream){
+      const hasSys = screenStream.getAudioTracks().length>0;
+      const hasMic = !!micStream && micStream.getAudioTracks().length>0;
+      if(!hasSys && !hasMic) return null;
+
+      const AC = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AC({ sampleRate: 48000 });
+      const dest = ctx.createMediaStreamDestination();
+
+      if(hasSys){ const sysSrc = ctx.createMediaStreamSource(screenStream); const g = ctx.createGain(); g.gain.value=1; sysSrc.connect(g).connect(dest); }
+      if(hasMic){ const micSrc = ctx.createMediaStreamSource(micStream); const g = ctx.createGain(); g.gain.value=1; micSrc.connect(g).connect(dest); }
+
+      return dest.stream;
+    }
+
+    // ------ Pause / Reprendre / Stop
+    $('#pauseBtn').addEventListener('click', ()=>{
+      if(recorder && recorder.state==='recording'){
+        recorder.pause();
+        $('#pauseBtn').classList.add('hidden'); $('#resumeBtn').classList.remove('hidden');
+        status('En pause');
+      }
+    });
+    $('#resumeBtn').addEventListener('click', ()=>{
+      if(recorder && recorder.state==='paused'){
+        recorder.resume();
+        $('#resumeBtn').classList.add('hidden'); $('#pauseBtn').classList.remove('hidden');
+        status('Enregistrement…');
+      }
+    });
+    $('#stopBtn').addEventListener('click', stopRecording);
+
+    function stopRecording(){
+      try{
+        if(recorder && (recorder.state==='recording' || recorder.state==='paused')){
+          recorder.stop();
+        } else {
+          onStop();
+        }
+      }catch(e){ onStop(); }
+    }
+
+    function onStop(){
+      clearInterval(tickInt); floatBar.classList.add('hidden');
+      if(drawRAF){ cancelAnimationFrame(drawRAF); drawRAF=null; }
+      if(drawRafVFC && displayStream){
+        const v = document.createElement('video');
+        v.srcObject = displayStream;
+        try{ v.cancelVideoFrameCallback(drawRafVFC); }catch(_){}
+        drawRafVFC = null;
+      }
+
+      const blob = new Blob(chunks, { type: chosenMime || 'video/webm' });
+      const url = URL.createObjectURL(blob);
+      lastBlob = blob; lastUrl = url;
+
+      preview.src = url; preview.load();
+      finalFmt.textContent = (chosenMime || blob.type || 'video/webm');
+      finalSize.textContent = human(bytes);
+
+      panel.classList.add('hidden');
+      resultCard.classList.remove('hidden');
+
+      downloadBtn.onclick = ()=>{
+        const name = `recording_${new Date().toISOString().replace(/[:.]/g,'-')}.${(blob.type.includes('mp4')?'mp4':'webm')}`;
+        const a = document.createElement('a'); a.href = url; a.download = name; a.click();
+      };
+      mp4Btn.onclick = exportMP4;
+      newRecBtn.onclick = ()=>{
+        URL.revokeObjectURL(url);
+        resultCard.classList.add('hidden');
+        panel.classList.remove('hidden');
+        resetStatus();
+      };
+
+      cleanupStreams();
+      status('Prêt');
+    }
+
+    // ------ UI helpers
+    function status(t){ statusText.textContent = t; }
+    function updateTimer(){
+      const s = Math.max(0, Math.floor((Date.now()-startAt)/1000));
+      const mm = String(Math.floor(s/60)).padStart(2,'0');
+      const ss = String(s%60).padStart(2,'0');
+      timerEl.textContent = `${mm}:${ss}`;
+      floatTimerEl.textContent = timerEl.textContent;
+    }
+    function updateSize(){ sizeEl.textContent = human(bytes); }
+    function human(n){ return (n/1024/1024).toFixed(1)+' Mo'; }
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+    function resetStatus(){
+      timerEl.textContent = '00:00'; floatTimerEl.textContent = '00:00';
+      sizeEl.textContent = '0.0 Mo';
+      qltEl.textContent = 'par défaut';
+    }
+
+    function cleanupStreams(){
+      [displayStream, micStream, camStream, composedStream, mixedAudioStream].forEach(s=>{
+        if(!s) return; s.getTracks().forEach(t=>t.stop());
+      });
+      displayStream = micStream = camStream = composedStream = mixedAudioStream = null;
+    }
+
+    window.addEventListener('beforeunload', cleanupStreams);
+
+    /* ================== EXPORT MP4 (ffmpeg.wasm, chargé à la demande) ================== */
+    let ffmpegInstance = null, ffmpegLoading = null;
+    async function ensureFFmpeg(){
+      if(ffmpegInstance) return ffmpegInstance;
+      if(ffmpegLoading) return ffmpegLoading;
+
+      ffmpegLoading = new Promise(async (resolve, reject)=>{
+        try{
+          // charge la lib UMD
+          if(!window.FFmpeg){
+            await loadScript('https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js');
+          }
+          const { createFFmpeg, fetchFile } = window.FFmpeg;
+          const ffmpeg = createFFmpeg({
+            log: true,
+            corePath: 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js'
+          });
+          ffmpeg.setProgress(({ ratio })=>{
+            if(mp4Btn.dataset.busy === '1'){
+              const p = Math.max(0, Math.min(100, Math.round((ratio||0)*100)));
+              mp4Btn.textContent = `🎬 Export MP4 (${p}%)`;
+            }
+          });
+          await ffmpeg.load();
+          ffmpegInstance = { ffmpeg, fetchFile };
+          resolve(ffmpegInstance);
+        }catch(e){ reject(e); }
+      });
+      return ffmpegLoading;
+    }
+    function loadScript(src){
+      return new Promise((res, rej)=>{
+        const s = document.createElement('script'); s.src = src; s.async = true; s.onload = res; s.onerror = rej; document.head.appendChild(s);
+      });
+    }
+
+    async function exportMP4(){
+      try{
+        if(!lastBlob){ alert('Aucun enregistrement.'); return; }
+
+        // Si déjà en MP4, on renomme/télécharge direct
+        if(lastBlob.type && lastBlob.type.includes('mp4')){
+          const a = document.createElement('a');
+          a.href = lastUrl; a.download = `recording_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;
+          a.click();
+          return;
+        }
+
+        mp4Btn.disabled = true; mp4Btn.dataset.busy = '1'; mp4Btn.textContent = '🎬 Export MP4 (préparation…)';
+
+        const { ffmpeg, fetchFile } = await ensureFFmpeg();
+
+        // Ecrit le WebM, tente H.264 + AAC, fallback MPEG4 si besoin
+        const inName = 'input.webm', outName = 'output.mp4';
+        ffmpeg.FS('writeFile', inName, await fetchFile(lastBlob));
+
+        // 1er essai : H.264 (si build le permet)
+        let ok = true;
+        try{
+          await ffmpeg.run(
+            '-i', inName,
+            '-c:v', 'libx264', '-preset', 'veryfast', '-crf', '23', '-pix_fmt', 'yuv420p',
+            '-c:a', 'aac', '-b:a', '192k',
+            '-movflags', 'faststart',
+            outName
+          );
+        }catch(e){
+          ok = false;
+          console.warn('libx264 indisponible, fallback MPEG4', e);
+        }
+
+        // Fallback : MPEG4 (compatible .mp4)
+        if(!ok){
+          await ffmpeg.run(
+            '-i', inName,
+            '-c:v', 'mpeg4', '-q:v', '5',
+            '-c:a', 'aac', '-b:a', '192k',
+            '-movflags', 'faststart',
+            outName
+          );
+        }
+
+        const data = ffmpeg.FS('readFile', outName);
+        const mp4Blob = new Blob([data.buffer], {type:'video/mp4'});
+        const url = URL.createObjectURL(mp4Blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `recording_${new Date().toISOString().replace(/[:.]/g,'-')}.mp4`;
+        a.click();
+
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+        try{
+          ffmpeg.FS('unlink', inName);
+          ffmpeg.FS('unlink', outName);
+        }catch(_) {}
+
+        mp4Btn.textContent = '🎬 Export MP4 (fait)';
+      }catch(err){
+        console.error(err);
+        alert('Conversion MP4 impossible sur ce navigateur (ou mémoire insuffisante).');
+        mp4Btn.textContent = '🎬 Export MP4';
+      }finally{
+        mp4Btn.disabled = false; mp4Btn.dataset.busy = '0';
+      }
+    }
+  </script>
+</body>
+</html>

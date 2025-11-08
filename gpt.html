@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>Infinie.Chat — IA locale</title>
+
+<!-- Inter pour rester cohérent -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+
+<style>
+:root {
+  --bg:#0A0A0B;
+  --text:#F2F3F6;
+  --muted:#A5A9B3;
+  --gold-1:#D8B45A;
+  --gold-2:#F2C76C;
+  --gold-3:#BF8E2C;
+  --panel:rgba(16,18,24,0.8);
+  --border:rgba(212,172,82,.22);
+  --radius:14px;
+  --ring:0 0 0 2px rgba(242,199,108,.4);
+  --grid-line:rgba(242,199,108,.13);
+  --grid-strong:rgba(242,199,108,.28);
+  --panel-blur:12px;
+  --max-width-chat:800px;
+  --bottom-pad:100px;
+  --transition-fast:0.18s cubic-bezier(.2,.7,.4,1);
+}
+
+* {
+  box-sizing:border-box;
+  -webkit-font-smoothing:antialiased;
+}
+
+body {
+  margin:0;
+  background-color:var(--bg);
+  color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,BlinkMacSystemFont,"Inter",Roboto,"Helvetica Neue",sans-serif;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  position:relative;
+  overflow:hidden;
+}
+
+/* fond: halo doré + grille animée */
+.bg-grid {
+  position:fixed;
+  inset:0;
+  pointer-events:none;
+  background-color:var(--bg);
+  background-image:
+    radial-gradient(circle at 50% 20%, rgba(242,199,108,0.18) 0%, rgba(10,10,11,0) 60%),
+    repeating-linear-gradient(
+      to right,
+      transparent 0px,
+      transparent 59px,
+      var(--grid-line) 60px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 59px,
+      var(--grid-line) 60px
+    );
+  background-size:
+    100% 100%,
+    60px 60px,
+    60px 60px;
+  animation:gridMove 10s linear infinite;
+  mask-image:radial-gradient(circle at 50% 50%, rgba(0,0,0,1) 0%, rgba(0,0,0,0) 80%);
+  z-index:0;
+}
+@keyframes gridMove {
+  0%   {background-position:0px 0px,0px 0px,0px 0px;}
+  100% {background-position:0px 0px,120px 0px,0px 120px;}
+}
+
+/* barre top branding */
+.topbar {
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  z-index:10;
+  display:flex;
+  justify-content:center;
+  pointer-events:none;
+  padding:16px;
+}
+
+.topbar-inner {
+  pointer-events:auto;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:var(--panel);
+  backdrop-filter:blur(var(--panel-blur));
+  border:1px solid var(--border);
+  border-radius:calc(var(--radius) + 6px);
+  box-shadow:0 20px 80px rgba(0,0,0,.8),0 0 40px rgba(242,199,108,.3);
+  padding:10px 14px;
+  max-width:var(--max-width-chat);
+  width:100%;
+  font-size:13px;
+  line-height:1.3;
+  color:var(--muted);
+}
+
+.logo-pill {
+  flex-shrink:0;
+  font-size:12px;
+  font-weight:600;
+  color:#0A0A0B;
+  background:radial-gradient(circle at 0% 0%,var(--gold-1) 0%,var(--gold-2) 40%,var(--gold-3) 100%);
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--gold-2);
+  box-shadow:0 0 20px rgba(242,199,108,.5),0 10px 40px rgba(0,0,0,.8);
+  line-height:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:40px;
+}
+.logo-pill span {
+  font-weight:700;
+  font-size:14px;
+}
+
+.topbar-text {
+  display:flex;
+  flex-direction:column;
+}
+.topbar-title {
+  color:var(--text);
+  font-weight:600;
+}
+.topbar-sub {
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* zone chat */
+.chat-shell {
+  position:relative;
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding-top:96px; /* espace sous header */
+  padding-bottom:var(--bottom-pad);
+  z-index:1;
+}
+
+.messages-wrapper {
+  width:100%;
+  max-width:var(--max-width-chat);
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:var(--gold-2) rgba(0,0,0,0);
+  padding:24px 16px 0 16px;
+}
+.messages-wrapper::-webkit-scrollbar {
+  width:6px;
+}
+.messages-wrapper::-webkit-scrollbar-thumb {
+  background:var(--gold-2);
+  border-radius:999px;
+}
+.messages-wrapper::-webkit-scrollbar-track {
+  background:transparent;
+}
+
+.msg-row {
+  display:flex;
+  gap:12px;
+  margin-bottom:20px;
+  align-items:flex-start;
+}
+.msg-row.user {
+  justify-content:flex-end;
+}
+.msg-row.assistant {
+  justify-content:flex-start;
+}
+
+.avatar {
+  flex-shrink:0;
+  width:32px;
+  height:32px;
+  border-radius:50%;
+  border:1px solid var(--border);
+  background:radial-gradient(circle at 0% 0%,var(--gold-1) 0%,var(--gold-2) 60%,var(--gold-3) 100%);
+  box-shadow:0 0 20px rgba(242,199,108,.4),0 10px 30px rgba(0,0,0,.8);
+  font-size:14px;
+  font-weight:600;
+  color:#0A0A0B;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.msg-row.user .avatar {
+  background:rgba(16,18,24,0.6);
+  color:var(--gold-2);
+  box-shadow:0 0 16px rgba(242,199,108,.3),0 10px 30px rgba(0,0,0,.8);
+}
+
+.bubble {
+  max-width:80%;
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+  background:var(--panel);
+  backdrop-filter:blur(var(--panel-blur));
+  box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 30px rgba(242,199,108,.2);
+  padding:12px 14px;
+  font-size:14px;
+  line-height:1.5;
+  white-space:pre-wrap;
+  word-wrap:break-word;
+  color:var(--text);
+}
+.msg-row.user .bubble {
+  background:transparent;
+  border:1px solid var(--gold-2);
+  color:var(--gold-2);
+  box-shadow:0 0 30px rgba(242,199,108,.4),0 20px 60px rgba(0,0,0,.8);
+}
+
+/* barre d'entrée en bas */
+.input-shell {
+  position:fixed;
+  left:0;
+  bottom:0;
+  width:100%;
+  background:linear-gradient(to top,rgba(10,10,11,0.9) 0%,rgba(10,10,11,0) 100%);
+  display:flex;
+  justify-content:center;
+  padding:16px;
+  z-index:10;
+}
+.form-inner {
+  display:flex;
+  align-items:flex-end;
+  gap:12px;
+  max-width:var(--max-width-chat);
+  width:100%;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:0 30px 80px rgba(0,0,0,.8),0 0 30px rgba(242,199,108,.25);
+  backdrop-filter:blur(var(--panel-blur));
+  padding:12px 14px;
+}
+
+textarea#user-input {
+  flex:1;
+  resize:none;
+  background:transparent;
+  border:0;
+  outline:none;
+  color:var(--text);
+  font-family:inherit;
+  font-size:14px;
+  line-height:1.4;
+  max-height:120px;
+}
+textarea#user-input::placeholder {
+  color:var(--muted);
+}
+textarea#user-input:focus {
+  outline:var(--ring);
+  border-radius:calc(var(--radius) - 4px);
+}
+
+button.send-btn {
+  flex-shrink:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:13px;
+  font-weight:600;
+  line-height:1.2;
+  color:#0A0A0B;
+  background:radial-gradient(circle at 0% 0%,var(--gold-1) 0%,var(--gold-2) 40%,var(--gold-3) 100%);
+  border-radius:calc(var(--radius) - 4px);
+  border:1px solid var(--gold-2);
+  padding:9px 12px;
+  min-width:70px;
+  box-shadow:0 0 20px rgba(242,199,108,.5),0 10px 40px rgba(0,0,0,.8);
+  cursor:pointer;
+  transition:all var(--transition-fast);
+}
+button.send-btn:active {
+  transform:scale(.97);
+  box-shadow:0 0 10px rgba(242,199,108,.6),0 6px 24px rgba(0,0,0,.8);
+}
+
+/* overlay loader pendant qu'on télécharge le modèle */
+#loader {
+  position:fixed;
+  inset:0;
+  background:radial-gradient(circle at 50% 20%, rgba(242,199,108,0.18) 0%, rgba(10,10,11,0) 60%), var(--bg);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+  z-index:9999;
+  padding:24px;
+  text-align:center;
+}
+.loader-card {
+  background:var(--panel);
+  backdrop-filter:blur(var(--panel-blur));
+  border:1px solid var(--border);
+  border-radius:calc(var(--radius) + 4px);
+  box-shadow:0 30px 80px rgba(0,0,0,.9),0 0 40px rgba(242,199,108,.4);
+  padding:20px 24px;
+  width:100%;
+  max-width:360px;
+  font-size:14px;
+  line-height:1.4;
+  color:var(--text);
+}
+.loader-headline {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  font-weight:600;
+  font-size:14px;
+  color:var(--text);
+  margin-bottom:8px;
+}
+.loader-pill {
+  background:radial-gradient(circle at 0% 0%,var(--gold-1) 0%,var(--gold-2) 40%,var(--gold-3) 100%);
+  color:#0A0A0B;
+  font-size:12px;
+  line-height:1;
+  font-weight:600;
+  padding:6px 10px;
+  border-radius:999px;
+  border:1px solid var(--gold-2);
+  box-shadow:0 0 20px rgba(242,199,108,.5),0 10px 30px rgba(0,0,0,.8);
+}
+.progress-wrapper {
+  width:100%;
+  background:rgba(0,0,0,.4);
+  border-radius:999px;
+  border:1px solid var(--border);
+  box-shadow:inset 0 0 8px rgba(0,0,0,.8),0 0 20px rgba(242,199,108,.3);
+  height:10px;
+  overflow:hidden;
+}
+.progress-bar {
+  width:0%;
+  height:100%;
+  background:radial-gradient(circle at 0% 0%,var(--gold-1) 0%,var(--gold-2) 40%,var(--gold-3) 100%);
+  box-shadow:0 0 20px rgba(242,199,108,.6),0 0 60px rgba(242,199,108,.3);
+  transition:width .15s linear;
+}
+
+/* petite mention en bas du loader */
+.loader-sub {
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin-top:8px;
+}
+
+.small-note {
+  font-size:12px;
+  color:var(--muted);
+  line-height:1.4;
+  margin-top:4px;
+  text-align:center;
+}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<!-- Header -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo-pill"><span>∞</span></div>
+    <div class="topbar-text">
+      <div class="topbar-title">Infinie.Chat — alpha locale</div>
+      <div class="topbar-sub">IA embarquée · aucune limite · 100% navigateur</div>
+    </div>
+  </div>
+</header>
+
+<!-- Zone chat -->
+<main class="chat-shell">
+  <div class="messages-wrapper" id="messages"></div>
+</main>
+
+<!-- Barre d'entrée -->
+<div class="input-shell">
+  <form class="form-inner" id="chat-form">
+    <textarea
+      id="user-input"
+      rows="1"
+      placeholder="Pose ta question… (tout tourne dans ton navigateur)"
+    ></textarea>
+    <button class="send-btn" type="submit">Envoyer</button>
+  </form>
+</div>
+
+<!-- Loader overlay (affiché au début) -->
+<div id="loader">
+  <div class="loader-card">
+    <div class="loader-headline">
+      <div class="loader-pill">∞</div>
+      <div>Initialisation de l'IA locale…</div>
+    </div>
+
+    <div id="statusText" style="font-size:13px;color:var(--muted);margin-bottom:12px;">
+      Téléchargement du cerveau (~271 Mo)…
+    </div>
+
+    <div class="progress-wrapper">
+      <div class="progress-bar" id="progressFill"></div>
+    </div>
+
+    <div class="loader-sub" id="loaderSub">
+      Merci de ne pas fermer l’onglet.
+      <br/>
+      Après ça, tu peux discuter hors backend.
+    </div>
+  </div>
+
+  <div class="small-note">Infinie & gratuit</div>
+</div>
+
+<script type="module">
+/*
+ * Prototype Infinie.Chat - full frontend
+ * Dépendances externes (CDN uniquement, pas de serveur backend):
+ *  - @wllama/wllama WebAssembly binding llama.cpp (tourne dans le navigateur) :contentReference[oaicite:4]{index=4}
+ *
+ * IMPORTANT:
+ * 1. Ton modèle doit être disponible en statique à:
+ *    ./models/iasmollm2/model.gguf
+ *    (renomme ton .gguf téléchargé en "model.gguf")
+ *
+ * 2. Pour tester en local: lance un serveur HTTP (ex: VS Code Live Server).
+ *    Ouvrir le fichier direct file:/// ne marchera pas car fetch() ne peut pas lire un gros fichier local sans serveur.
+ *
+ * 3. Sur Netlify : juste déployer le dossier tel quel. Les visiteurs téléchargeront le modèle dans leur navigateur,
+ *    donc aucune requête serveur vers un GPU ou une API payante.
+ */
+
+import { Wllama, LoggerWithoutDebug } from "https://unpkg.com/@wllama/wllama@2.3.6/esm/index.js";
+import WasmFromCDN from "https://unpkg.com/@wllama/wllama@2.3.6/esm/wasm-from-cdn.js";
+
+const loaderEl      = document.getElementById("loader");
+const progressFill  = document.getElementById("progressFill");
+const statusTextEl  = document.getElementById("statusText");
+const messagesEl    = document.getElementById("messages");
+const formEl        = document.getElementById("chat-form");
+const inputEl       = document.getElementById("user-input");
+
+let isModelReady = false;
+
+// historique pour createChatCompletion()
+const chatHistory = [
+  {
+    role: "system",
+    content:
+      "Tu es Infinie.Chat, un assistant IA local tournant 100% dans le navigateur. " +
+      "Tu aides l'utilisateur en français, avec des réponses courtes, claires, utiles. " +
+      "Tu ne promets pas d'accès internet en direct ni d'actions serveur."
+  }
+];
+
+// crée une ligne de chat dans l'UI
+function createMessageRow(role, textInitial) {
+  const row = document.createElement("div");
+  row.className = "msg-row " + (role === "user" ? "user" : "assistant");
+
+  const avatar = document.createElement("div");
+  avatar.className = "avatar";
+  avatar.textContent = role === "user" ? "●" : "∞";
+
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = textInitial || "";
+
+  // ordre avatar/bulle selon role
+  if (role === "user") {
+    row.appendChild(bubble);
+    row.appendChild(avatar);
+  } else {
+    row.appendChild(avatar);
+    row.appendChild(bubble);
+  }
+
+  messagesEl.appendChild(row);
+  scrollToBottom();
+
+  return { row, bubble };
+}
+
+function scrollToBottom() {
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+// auto-resize textarea
+function autoResizeTextarea() {
+  inputEl.style.height = "auto";
+  inputEl.style.height = (inputEl.scrollHeight) + "px";
+}
+inputEl.addEventListener("input", autoResizeTextarea);
+
+// ajoute message utilisateur à l'écran + dans l'historique
+function addUserMessage(text) {
+  chatHistory.push({ role: "user", content: text });
+  createMessageRow("user", text);
+}
+
+// ajoute la réponse finale (appelé après le stream)
+// et push dans l'historique
+function finalizeAssistantMessage(bubbleRef, fullText) {
+  bubbleRef.textContent = fullText.trim();
+  chatHistory.push({ role: "assistant", content: fullText.trim() });
+  scrollToBottom();
+}
+
+// génération streaming
+async function generateAssistantReply(userText) {
+  // bulle assistant vide qu'on va remplir en live
+  const assistantUI = createMessageRow("assistant", "…");
+  const assistantBubble = assistantUI.bubble;
+
+  try {
+    // on demande au modèle une complétion de chat
+    const stream = await wllama.createChatCompletion(chatHistory, {
+      nPredict: 200, // limite max de tokens à générer
+      sampling: {
+        temp: 0.7,
+        top_p: 0.9
+      },
+      stream: true,
+      useCache: true // accélère les tours suivants si supporté :contentReference[oaicite:5]{index=5}
+    });
+
+    let fullText = "";
+    for await (const chunk of stream) {
+      // chunk.currentText = tout le texte généré jusque-là
+      fullText = chunk.currentText;
+      assistantBubble.textContent = fullText;
+      scrollToBottom();
+    }
+
+    finalizeAssistantMessage(assistantBubble, fullText);
+  } catch (err) {
+    console.error(err);
+    assistantBubble.textContent =
+      "Désolé, j'ai eu un souci pour générer la réponse.";
+  }
+}
+
+// submit du formulaire
+formEl.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  if (!isModelReady) return;
+
+  const text = inputEl.value.trim();
+  if (!text) return;
+
+  inputEl.value = "";
+  autoResizeTextarea();
+
+  addUserMessage(text);
+  await generateAssistantReply(text);
+});
+
+// init du modèle au chargement de la page
+const wllama = new Wllama(WasmFromCDN, {
+  logger: LoggerWithoutDebug,
+  // suppressNativeLog: true, // si tu veux le silence complet
+});
+
+async function initModel() {
+  statusTextEl.textContent = "Chargement du modèle local…";
+
+  try {
+    await wllama.loadModelFromUrl("./models/iasmollm2/model.gguf", {
+      // taille de contexte (mémoire de chat). 1024/2048 = safe pour petit modèle
+      n_ctx: 2048,
+      n_threads: 1, // une seule thread => compatible sans headers spéciaux :contentReference[oaicite:6]{index=6}
+
+      // callback de progression pendant le download
+      progressCallback: (info) => {
+        // info.progress est entre 0 et 1
+        if (info && typeof info.progress === "number") {
+          const pct = Math.round(info.progress * 100);
+          progressFill.style.width = pct + "%";
+          statusTextEl.textContent =
+            "Téléchargement du cerveau (" + pct + "%)…";
+        }
+      },
+    });
+  } catch (err) {
+    console.error("Erreur loadModelFromUrl:", err);
+    statusTextEl.textContent = "Erreur chargement modèle : " + err.message;
+    document.getElementById("loaderSub").textContent =
+      "Vérifie le chemin ./models/iasmollm2/model.gguf et relance.";
+    return;
+  }
+
+  // modèle prêt
+  isModelReady = true;
+  loaderEl.style.display = "none";
+
+  // petit message d'accueil automatique
+  const hello = "Salut 👋 Je suis l’IA locale Infinie.Chat. " +
+                "Tout tourne dans TON navigateur, sans serveur, sans quota. " +
+                "Je peux répondre en texte, pose ta question.";
+  chatHistory.push({ role: "assistant", content: hello });
+  createMessageRow("assistant", hello);
+}
+
+// démarre
+initModel();
+</script>
+
+</body>
+</html>

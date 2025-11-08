@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Infinie & gratuit — Télécharger la banque d'images (Stickers)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD;
+      --border:rgba(95,123,255,.18); --accent1:#2FE3FF; --accent2:#1B4CFF;
+      --ring:0 0 0 3px rgba(47,227,255,.25)
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text); background:radial-gradient(1200px 600px at 70% -10%, rgba(27,76,255,.18), transparent 60%),
+                         radial-gradient(900px 500px at 0% 100%, rgba(47,227,255,.12), transparent 60%),
+                         var(--bg);
+      display:grid; place-items:center; padding:24px;
+    }
+    .card{
+      width:min(860px,100%); background:linear-gradient(180deg, rgba(13,17,32,.66), rgba(13,17,32,.92));
+      border:1px solid var(--border); border-radius:20px; padding:28px; box-shadow:0 10px 40px rgba(0,0,0,.35);
+    }
+    h1{font-size:clamp(22px,3vw,30px); margin:0 0 10px; letter-spacing:.2px}
+    p.lead{margin:0 0 18px; color:var(--muted)}
+    .row{display:grid; grid-template-columns:1fr; gap:18px}
+    @media (min-width:700px){ .row{grid-template-columns:1.2fr .8fr} }
+    .cta{
+      display:flex; flex-direction:column; gap:14px; padding:18px; border:1px dashed var(--border);
+      border-radius:16px; background:rgba(255,255,255,.02)
+    }
+    .btn{
+      appearance:none; border:0; background:linear-gradient(135deg,var(--accent1),var(--accent2));
+      color:#0B0B0D; font-weight:800; padding:16px 18px; border-radius:14px; cursor:pointer;
+      text-align:center; text-decoration:none; font-size:16px; box-shadow:0 6px 22px rgba(47,227,255,.22);
+      transition:transform .06s ease, box-shadow .2s ease; outline: none;
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .btn:focus{box-shadow:var(--ring)}
+    .alt{
+      display:flex; gap:10px; flex-wrap:wrap; align-items:center; color:var(--muted); font-size:14px
+    }
+    .alt a{color:var(--accent1); text-decoration:none; border-bottom:1px dotted rgba(47,227,255,.4)}
+    .input{
+      display:flex; gap:10px; align-items:center; background:#0a0e1b; border:1px solid var(--border);
+      border-radius:12px; padding:10px 12px
+    }
+    .input input{
+      width:100%; background:transparent; border:0; color:var(--text); font-family:inherit; font-size:14px;
+      outline:none
+    }
+    .chip{font-size:12px; color:#9fb3ff; background:rgba(27,76,255,.12); padding:4px 8px; border-radius:999px; border:1px solid rgba(27,76,255,.25)}
+    .gallery{
+      display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-content:start
+    }
+    @media (min-width:520px){ .gallery{grid-template-columns:repeat(4,1fr)} }
+    @media (min-width:820px){ .gallery{grid-template-columns:repeat(5,1fr)} }
+    .thumb{
+      aspect-ratio:1/1; border-radius:10px; overflow:hidden; border:1px solid rgba(255,255,255,.06);
+      background:#0c1020; display:block
+    }
+    .thumb img{width:100%; height:100%; object-fit:cover; display:block; filter:contrast(1.02) saturate(1.02)}
+    footer{margin-top:16px; color:var(--muted); font-size:12px}
+  </style>
+</head>
+<body>
+  <main class="card">
+    <h1>Banque d’images — Stickers</h1>
+    <p class="lead">Télécharge tout le dossier <span class="chip">stickers</span> en une seule archive ZIP, prêt à être extrait et utilisé dans ton outil.</p>
+
+    <div class="row">
+      <!-- Colonne gauche : actions -->
+      <section class="cta">
+        <!-- Bouton principal (téléchargement direct via codeload) -->
+        <a class="btn" id="download"
+           href="https://codeload.github.com/infinieetgratuit/stickers/zip/refs/heads/main"
+           rel="noopener">⬇️ Télécharger la banque (ZIP)</a>
+
+        <div class="alt">
+          <span>Si besoin :</span>
+          <a href="https://github.com/infinieetgratuit/stickers/archive/refs/heads/main.zip" rel="noopener" target="_blank">Lien alternatif (archive GitHub)</a>
+        </div>
+
+        <!-- Option Git clone (copier l’URL) -->
+        <div class="input">
+          <input id="gitUrl" value="https://github.com/infinieetgratuit/stickers.git" readonly/>
+          <button class="btn" id="copy" style="padding:10px 14px; font-weight:700">Copier l’URL Git</button>
+        </div>
+
+        <small style="color:var(--muted)">Astuce : après extraction, place le dossier <b>stickers</b> au même niveau que ton <b>index.html</b> pour l’utiliser hors-ligne.</small>
+      </section>
+
+      <!-- Colonne droite : mini-aperçu (quelques fichiers du repo) -->
+      <aside class="gallery" aria-label="Aperçu de quelques stickers">
+        <!-- Les images sont servies depuis raw.githubusercontent.com sur la branche main -->
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/tuto.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/tuto.png" alt="tuto.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/incroyable.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/incroyable.png" alt="incroyable.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/coin.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/coin.png" alt="coin.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/echelle.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/echelle.png" alt="echelle.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/liasse.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/liasse.png" alt="liasse.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/souris.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/souris.png" alt="souris.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/cercle.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/cercle.png" alt="cercle.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/cadredor.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/cadredor.png" alt="cadredor.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/what.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/what.png" alt="what.png">
+        </a>
+        <a class="thumb" href="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/voila.png" target="_blank" rel="noopener">
+          <img src="https://raw.githubusercontent.com/infinieetgratuit/stickers/main/voila.png" alt="voila.png">
+        </a>
+      </aside>
+    </div>
+
+    <footer>
+      <div>Source : dépôt GitHub <code>infinieetgratuit/stickers</code>. Le lien de téléchargement pointe vers l’archive ZIP de la branche <b>main</b>.</div>
+    </footer>
+  </main>
+
+  <script>
+    // Copie l'URL Git dans le presse-papiers
+    document.getElementById('copy').addEventListener('click', async () => {
+      const input = document.getElementById('gitUrl');
+      try{
+        await navigator.clipboard.writeText(input.value);
+        const old = event.target.textContent;
+        event.target.textContent = "Copié ✓";
+        setTimeout(()=> event.target.textContent = old, 1200);
+      }catch(e){
+        // fallback
+        input.select(); document.execCommand('copy');
+      }
+    });
+
+    // Optionnel : si tu veux forcer le nom du fichier en local (certains navigateurs ignorent `download` cross-origin)
+    const dl = document.getElementById('download');
+    dl.addEventListener('click', () => {
+      // Laisser le navigateur gérer le téléchargement de l'archive via codeload (fiable et rapide)
+      // URL : https://codeload.github.com/OWNER/REPO/zip/refs/heads/BRANCH
+    });
+  </script>
+</body>
+</html>

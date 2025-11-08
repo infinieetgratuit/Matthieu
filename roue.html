@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Roue de hasard (Revolut‑style)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* Design tokens — identiques à tous les outils */
+      --bg:#0B0B0D;          /* fond global */
+      --panel:#0d1120;       /* cartes/panneaux */
+      --text:#E6ECF7;        /* texte principal */
+      --muted:#A4ADBD;       /* texte secondaire */
+      --border:rgba(95,123,255,0.18); /* bordures subtiles */
+      --accent1:#2FE3FF;     /* cyan néon */
+      --accent2:#1B4CFF;     /* bleu électrique */
+      --ring:0 0 0 2px rgba(43,167,255,.35); /* focus/hover */
+
+      --field:#0b0f1a;       /* Inputs/fonds secondaires */
+      --field-border:#1a2340;
+
+      --card-grad-a: linear-gradient(160deg, rgba(27,76,255,0.06), transparent);
+      --card-grad-b: linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; color:var(--text); background: var(--bg);
+      background-image:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%);
+      min-height:100vh;
+    }
+
+    a{color:inherit}
+    .container{max-width:1200px; margin:0 auto; padding:24px 20px 64px}
+
+    /* Header / Logo */
+    .brand{display:flex; align-items:center; gap:12px; margin-bottom:22px}
+    .pill{display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:999px; box-shadow:var(--shadow);
+      background: radial-gradient(circle at 30% 25%, var(--accent1), var(--accent2));}
+    .pill span{font-weight:800; font-size:22px; color:#fff;}
+    .wordmark{font-weight:800; letter-spacing:.2px; font-size:18px}
+
+    /* Layout */
+    .grid{display:grid; grid-template-columns: 340px 1fr; gap:16px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr;}}
+
+    .card{position:relative; background:var(--panel); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); overflow:hidden}
+    .card::before{content:""; position:absolute; inset:0; background:var(--card-grad-a); pointer-events:none}
+    .card::after{content:""; position:absolute; inset:0; background:var(--card-grad-b); pointer-events:none}
+    .card > .body{position:relative; padding:18px}
+
+    .card h2{margin:0 0 10px; font-weight:800; font-size:16px}
+    .muted{color:var(--muted)}
+
+    /* Controls */
+    .row{display:flex; gap:8px; align-items:center}
+    .input{flex:1; background:var(--field); border:1px solid var(--field-border); color:var(--text); border-radius:12px; padding:10px 12px; font-weight:600}
+    .input:focus{outline:none; box-shadow:var(--ring)}
+    .primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:12px; padding:12px 14px; font-weight:800; color:#fff; cursor:pointer;
+      background:linear-gradient(135deg, var(--accent1), var(--accent2)); box-shadow:0 8px 24px rgba(32,86,255,.35)}
+    .primary:disabled{opacity:.6; cursor:not-allowed; box-shadow:none}
+    .ghost{background:transparent; border:1px solid var(--field-border); color:var(--text); border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer}
+
+    .opts{display:grid; gap:10px; margin-top:12px}
+    .check{display:flex; align-items:flex-start; gap:10px}
+    .check input{margin-top:2px}
+
+    .list{margin-top:12px; border:1px solid var(--field-border); border-radius:12px; overflow:hidden; background:var(--field)}
+    .item{display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid #0f1a33}
+    .item:last-child{border-bottom:0}
+    .swatch{width:14px; height:14px; border-radius:4px; border:1px solid rgba(255,255,255,.15)}
+    .item .name{flex:1; font-weight:700}
+    .del{background:transparent; border:0; color:var(--muted); cursor:pointer; font-weight:800}
+    .del:hover{color:#fff}
+
+    /* Wheel area */
+    .stage{position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center}
+    /* plus compacte en mode édition */
+    .canvas-wrap{position:relative; width:100%; aspect-ratio:1 / 1; max-width:560px; margin:6px auto 10px}
+    @media (max-width: 980px){ .canvas-wrap{max-width:95vw;} }
+    canvas{width:100%; height:100%; display:block}
+
+    /* Pointer (triangle) */
+    .pointer{position:absolute; top:-10px; left:50%; transform:translateX(-50%); width:0; height:0; border-left:14px solid transparent; border-right:14px solid transparent; border-top:22px solid #fff; filter:drop-shadow(0 6px 8px rgba(0,0,0,.35))}
+
+    /* Rim */
+    .rim{position:absolute; inset:0; border-radius:50%; box-shadow:inset 0 0 0 10px rgba(255,255,255,.04), inset 0 0 0 1px rgba(255,255,255,.15)}
+
+    .actions{display:flex; gap:10px; flex-wrap:wrap; justify-content:center}
+
+    /* Overlay résultat — placé DANS la carte cible (fsTarget) pour fonctionner en plein écran */
+    .overlay{position:fixed; inset:0; background:rgba(0,0,0,.72); display:none; align-items:center; justify-content:center; z-index:50}
+    .overlay.show{display:flex}
+    .result-card{background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:22px; min-width:280px; max-width:min(680px, 90vw); text-align:center; box-shadow:var(--shadow)}
+    .result-title{font-size:13px; color:var(--muted); margin-bottom:8px}
+    .result-name{font-size:36px; font-weight:800; margin-bottom:14px; line-height:1.1}
+
+    .kbd{display:inline-block; padding:2px 6px; border-radius:6px; background:#0f1629; border:1px solid var(--field-border); font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="brand" aria-label="Infinie & gratuit">
+      <div class="pill" aria-hidden="true"><span>∞</span></div>
+      <div class="wordmark">Infinie & gratuit</div>
+    </header>
+
+    <div class="grid">
+      <!-- Panneau contrôles -->
+      <section class="card" aria-labelledby="ctrl-title">
+        <div class="body">
+          <h2 id="ctrl-title">Créer la roue</h2>
+          <div class="row" style="margin-bottom:8px">
+            <input id="itemInput" class="input" placeholder="Ajouter un élément (Entrée pour valider)"/>
+            <button id="addBtn" class="primary" aria-label="Ajouter">＋</button>
+          </div>
+          <div class="opts">
+            <label class="check">
+              <input id="elimToggle" type="checkbox"/>
+              <span>Retirer automatiquement le résultat au prochain tour</span>
+            </label>
+            <div class="muted" style="font-size:12px">Astuce : double‑clic sur un nom pour l’éditer • Appuyez sur <span class="kbd">Suppr</span> pour le supprimer.</div>
+          </div>
+
+          <div id="list" class="list" role="list" aria-label="Éléments de la roue"><!-- rempli par JS --></div>
+
+          <div class="row" style="margin-top:10px; gap:10px">
+            <button id="shuffleBtn" class="ghost" title="Mélanger l'ordre">Mélanger</button>
+            <button id="clearBtn" class="ghost" title="Vider la liste">Vider</button>
+            <button id="fsBtn" class="ghost" title="Basculer en plein écran">Plein écran</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Panneau roue -->
+      <section id="fsTarget" class="card" aria-labelledby="wheel-title">
+        <div class="body stage">
+          <h2 id="wheel-title" style="width:100%">Roue de hasard</h2>
+          <div class="canvas-wrap" id="canvasWrap">
+            <canvas id="wheel" width="1000" height="1000" aria-label="Roue de hasard" role="img"></canvas>
+            <div class="pointer" aria-hidden="true"></div>
+            <div class="rim" aria-hidden="true"></div>
+          </div>
+          <div class="actions">
+            <button id="spinBtn" class="primary">▶ Lancer la roue</button>
+            <button id="stopBtn" class="ghost">■ Arrêter</button>
+          </div>
+          <p class="muted" style="margin:10px 0 0; font-size:12px">Idéal pour animation en live : activez <strong>Plein écran</strong>, puis cliquez <strong>Lancer</strong> (ou tapez <span class="kbd">Entrée</span>).</p>
+
+          <!-- Overlay résultat placé ICI pour afficher aussi en plein écran -->
+          <div id="overlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="resTitle">
+            <div class="result-card">
+              <div id="resTitle" class="result-title">Résultat</div>
+              <div id="resName" class="result-name">—</div>
+              <div class="actions" style="margin-top:6px">
+                <button id="againBtn" class="primary">Relancer</button>
+                <button id="closeBtn" class="ghost">Fermer</button>
+              </div>
+              <p class="muted" style="margin-top:10px; font-size:12px">Si l’option est cochée, l’élément sera retiré avant le prochain tour.</p>
+            </div>
+          </div>
+          <!-- Fin overlay -->
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    const TAU = Math.PI*2;
+    const els = {
+      canvas: document.getElementById('wheel'),
+      wrap: document.getElementById('canvasWrap'),
+      spin: document.getElementById('spinBtn'),
+      stop: document.getElementById('stopBtn'),
+      input: document.getElementById('itemInput'),
+      add: document.getElementById('addBtn'),
+      list: document.getElementById('list'),
+      shuffle: document.getElementById('shuffleBtn'),
+      clear: document.getElementById('clearBtn'),
+      fsBtn: document.getElementById('fsBtn'),
+      fsTarget: document.getElementById('fsTarget'),
+      overlay: document.getElementById('overlay'),
+      resName: document.getElementById('resName'),
+      again: document.getElementById('againBtn'),
+      close: document.getElementById('closeBtn'),
+      elimToggle: document.getElementById('elimToggle'),
+    };
+
+    const ctx = els.canvas.getContext('2d');
+
+    // State
+    const K_ITEMS = 'infinie_wheel_items_v2';
+    const K_ELIM = 'infinie_wheel_elim_v2';
+    let items = loadItems();
+    let angle = 0;            // current rotation angle
+    let spinning = false;
+    let animId = null;
+    let startA = 0, targetA = 0, startT = 0, dur = 0;
+    let lastWinner = null;    // string value
+
+    // Init
+    els.elimToggle.checked = loadBool(K_ELIM, false);
+    renderList();
+    resizeCanvas();
+    draw();
+    updateButtons();
+
+    // ===== Helpers =====
+    function saveItems(){ localStorage.setItem(K_ITEMS, JSON.stringify(items)); }
+    function loadItems(){
+      try{ const raw = localStorage.getItem(K_ITEMS);
+        if(raw){ const arr = JSON.parse(raw).filter(Boolean); return Array.isArray(arr)? arr : sampleItems(); }
+      }catch{}
+      return sampleItems();
+    }
+    function sampleItems(){ return ['Alice','Bob','Charlie','Dana']; }
+    function loadBool(key, def){ try{ const v = JSON.parse(localStorage.getItem(key)); return typeof v==='boolean'? v : def; } catch{ return def; } }
+    function saveBool(key, val){ localStorage.setItem(key, JSON.stringify(!!val)); }
+
+    // Couleurs: palette fortement distincte via angle d'or
+    function colorForIndex(i, n){
+      const golden = 137.508; // répartition uniforme sur le cercle
+      const hue = (i * golden + 10) % 360;
+      const sat = 76 + ((i*17)%14);   // 76–90
+      const light = 45 + ((i*23)%10); // 45–55
+      return `hsl(${hue} ${sat}% ${light}%)`;
+    }
+    function textColorFor(hsl){
+      const m = hsl.match(/hsl\(([^)]+)\)/); if(!m) return '#fff';
+      const parts = m[1].trim().split(/\s+/); const L = parseFloat(parts[2]);
+      return (L>=52? '#0b0f1a' : '#fff');
+    }
+    function mod(a,b){ return ((a % b) + b) % b; }
+
+    function winnerIndex(){
+      if(items.length===0) return -1;
+      const slice = TAU/items.length;
+      const idx = Math.floor(mod(-angle, TAU) / slice);
+      return idx;
+    }
+
+    function pickTargetFor(index){
+      const slice = TAU/items.length;
+      const targetRel = index*slice + slice/2;    // centre de la tranche sous le pointeur
+      let base = -targetRel;                      // angle satisfaisant modulo TAU
+      const min = angle + TAU*4 + Math.random()*TAU*0.5; // >= 4 tours + petit aléa
+      const k = Math.ceil((min - base)/TAU);
+      const jitter = (Math.random()-0.5) * slice*0.35;
+      return base + k*TAU + jitter;
+    }
+
+    function easeOutCubic(t){ return 1 - Math.pow(1-t, 3); }
+
+    function resizeCanvas(){
+      const size = Math.min(els.wrap.clientWidth, els.wrap.clientHeight);
+      const px = Math.max(480, Math.floor(size * devicePixelRatio));
+      els.canvas.width = px; els.canvas.height = px;
+      draw();
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+    document.addEventListener('fullscreenchange', ()=> setTimeout(resizeCanvas, 50));
+
+    // ===== UI Render =====
+    function renderList(){
+      if(items.length===0){
+        els.list.innerHTML = `<div class="item muted">Ajoutez des éléments pour créer la roue.</div>`;
+      }else{
+        els.list.innerHTML = '';
+        items.forEach((name, i)=>{
+          const row = document.createElement('div'); row.className='item'; row.dataset.index=i;
+          const sw = document.createElement('div'); sw.className='swatch'; sw.style.background = colorForIndex(i, items.length);
+          const span = document.createElement('div'); span.className='name'; span.textContent = name; span.title = 'Double‑cliquez pour renommer';
+          const del = document.createElement('button'); del.className='del'; del.innerHTML='✕'; del.title='Supprimer';
+
+          // Inline edit
+          span.addEventListener('dblclick', ()=>{
+            const inp = document.createElement('input'); inp.className='input'; inp.value=name; inp.style.padding='6px 8px';
+            row.replaceChild(inp, span); inp.focus();
+            inp.addEventListener('keydown', (e)=>{
+              if(e.key==='Enter'){ const v=inp.value.trim(); if(v){ items[i]=v; saveItems(); renderList(); draw(); }}
+              if(e.key==='Escape'){ renderList(); }
+            });
+            inp.addEventListener('blur', ()=> renderList());
+          });
+
+          del.addEventListener('click', ()=>{ items.splice(i,1); saveItems(); renderList(); draw(); updateButtons();});
+          row.appendChild(sw); row.appendChild(span); row.appendChild(del);
+          els.list.appendChild(row);
+        });
+      }
+      updateButtons();
+    }
+
+    function updateButtons(){
+      const canSpin = items.length>=2 && !spinning;
+      els.spin.disabled = !canSpin;
+      els.stop.disabled = !spinning;
+    }
+
+    // ===== Drawing =====
+    function draw(){
+      const n = items.length; const W = els.canvas.width; const H = els.canvas.height; const R = Math.min(W,H)/2 - 6;
+      const CX = W/2, CY = H/2;
+      const slice = n? TAU/n : 0;
+      ctx.clearRect(0,0,W,H);
+
+      if(n===0){
+        ctx.save(); ctx.translate(CX,CY); ctx.fillStyle='rgba(255,255,255,.6)'; ctx.font='700 26px Inter, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Ajoutez des éléments',0,0); ctx.restore(); return;
+      }
+
+      let base = -Math.PI/2 + angle;
+
+      for(let i=0;i<n;i++){
+        const start = base + i*slice; const end = start + slice;
+        const name = items[i]; const color = colorForIndex(i,n);
+        ctx.beginPath(); ctx.moveTo(CX,CY); ctx.arc(CX,CY,R,start,end); ctx.closePath();
+        // remplissage
+        ctx.fillStyle = color; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(0,0,0,.25)'; ctx.stroke();
+
+        // Texte
+        const mid = (start+end)/2; const tr = R*0.62;
+        ctx.save(); ctx.translate(CX + Math.cos(mid)*tr, CY + Math.sin(mid)*tr); ctx.rotate(mid + Math.PI/2);
+        ctx.fillStyle = textColorFor(color);
+        ctx.font = '800 '+Math.max(14, Math.floor(R*0.075))+'px Inter, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        const label = name.length>28? name.slice(0,25)+'…' : name;
+        ctx.fillText(label,0,0); ctx.restore();
+      }
+
+      // Centre
+      ctx.beginPath(); ctx.arc(CX,CY,R*0.12,0,TAU); ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fill(); ctx.strokeStyle='rgba(0,0,0,.25)'; ctx.stroke();
+    }
+
+    // ===== Spin engine =====
+    function spin(){
+      if(spinning || items.length<2) return;
+      spinning = true; updateButtons();
+
+      const targetIndex = Math.floor(Math.random()*items.length);
+      lastWinner = items[targetIndex];
+      startA = angle; targetA = pickTargetFor(targetIndex);
+      startT = performance.now(); dur = 4800 + Math.random()*800; // 4.8–5.6s
+
+      cancelAnimationFrame(animId);
+      animId = requestAnimationFrame(tick);
+    }
+
+    function stop(){
+      if(!spinning) return;
+      const idx = winnerIndex();
+      targetA = pickTargetFor(idx<0?0:idx); dur = 600; startA = angle; startT = performance.now();
+    }
+
+    function tick(now){
+      const t = Math.min(1, (now - startT)/dur);
+      angle = startA + (targetA - startA) * easeOutCubic(t);
+      draw();
+      if(t<1){ animId = requestAnimationFrame(tick); }
+      else { spinning=false; updateButtons(); showResult(); }
+    }
+
+    function showResult(){
+      const idx = winnerIndex();
+      lastWinner = items[idx] ?? lastWinner ?? '—';
+      els.resName.textContent = lastWinner;
+      els.overlay.classList.add('show');
+    }
+
+    function closeOverlay(){ els.overlay.classList.remove('show'); }
+
+    function relaunch(){
+      if(els.elimToggle.checked && lastWinner){
+        const k = items.indexOf(lastWinner);
+        if(k>=0){ items.splice(k,1); saveItems(); renderList(); }
+        if(items.length<2){ closeOverlay(); draw(); updateButtons(); return; }
+      }
+      closeOverlay();
+      setTimeout(()=>{ spin(); }, 150);
+    }
+
+    // ===== Events =====
+    els.add.addEventListener('click', ()=> tryAdd());
+    els.input.addEventListener('keydown', (e)=>{ if(e.key==='Enter'){ e.preventDefault(); tryAdd(); }});
+
+    function tryAdd(){
+      const v = (els.input.value||'').trim(); if(!v) return; if(items.length>=200){ alert('Limite de 200 éléments.'); return; }
+      items.push(v); els.input.value=''; saveItems(); renderList(); draw();
+    }
+
+    els.shuffle.addEventListener('click', ()=>{ for(let i=items.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [items[i],items[j]]=[items[j],items[i]]; } saveItems(); renderList(); draw(); });
+    els.clear.addEventListener('click', ()=>{ if(confirm('Vider la liste ?')){ items = []; saveItems(); renderList(); draw(); }});
+
+    els.elimToggle.addEventListener('change', ()=> saveBool(K_ELIM, els.elimToggle.checked));
+
+    els.spin.addEventListener('click', spin);
+    els.stop.addEventListener('click', stop);
+
+    // Fullscreen
+    els.fsBtn.addEventListener('click', async ()=>{
+      if(!document.fullscreenElement){ await els.fsTarget.requestFullscreen().catch(()=>{}); els.fsBtn.textContent='Quitter plein écran'; }
+      else { await document.exitFullscreen().catch(()=>{}); els.fsBtn.textContent='Plein écran'; }
+      setTimeout(resizeCanvas, 80);
+    });
+    document.addEventListener('fullscreenchange', ()=>{
+      els.fsBtn.textContent = document.fullscreenElement? 'Quitter plein écran' : 'Plein écran';
+    });
+
+    // Overlay
+    els.close.addEventListener('click', ()=> closeOverlay());
+    els.again.addEventListener('click', ()=> relaunch());
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key==='Escape'){ closeOverlay(); }
+      if((e.key==='Enter' || e.key===' ' || e.code==='Space') && !spinning){
+        if(els.overlay.classList.contains('show')){ relaunch(); }
+        else { spin(); }
+      }
+    }, {passive:false});
+
+    // Empêcher le scroll au Space quand l'intention est de lancer la roue
+    window.addEventListener('keydown', (e)=>{ if((e.key===' ' || e.code==='Space') && document.activeElement===document.body){ e.preventDefault(); } }, {passive:false});
+
+  })();
+  </script>
+</body>
+</html>

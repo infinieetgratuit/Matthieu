@@ -1,0 +1,941 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Infinie & gratuit — IA Immo France (Admin / Entraînement)</title>
+<meta name="color-scheme" content="dark"/>
+
+<style>
+  :root{
+    --bg:#0A0A0B;
+    --text:#F2F3F6;
+    --muted:#A5A9B3;
+    --gold-1:#D8B45A;
+    --gold-2:#F2C76C;
+    --gold-3:#BF8E2C;
+    --panel:rgba(16,18,24,0.8);
+    --border:rgba(212,172,82,0.22);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    background:
+      radial-gradient(circle at 20% 20%,rgba(216,180,90,0.08) 0%,rgba(10,10,11,0) 60%),
+      repeating-linear-gradient(
+        -20deg,
+        rgba(242,199,108,0.05) 0px,
+        rgba(242,199,108,0.05) 1px,
+        rgba(0,0,0,0) 1px,
+        rgba(0,0,0,0) 80px
+      ),
+      var(--bg);
+    color:var(--text);
+    font-family:system-ui,-apple-system,Inter,Roboto,"Segoe UI",sans-serif;
+    min-height:100dvh;
+    padding:2rem;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:2rem;
+  }
+  header{
+    max-width:900px;
+    width:100%;
+    text-align:center;
+  }
+  .brand-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:.75rem;
+    margin-bottom:.5rem;
+  }
+  .logo-pill{
+    display:inline-block;
+    background:linear-gradient(90deg,var(--gold-1),var(--gold-3));
+    color:#0A0A0B;
+    font-weight:700;
+    font-size:.8rem;
+    line-height:1;
+    padding:.5rem .7rem;
+    border-radius:999px;
+    box-shadow:0 0 24px rgba(242,199,108,.45),0 20px 60px rgba(0,0,0,.9);
+    letter-spacing:-0.03em;
+  }
+  h1{
+    font-size:1rem;
+    font-weight:600;
+    color:var(--gold-2);
+    margin:0;
+    letter-spacing:-0.03em;
+  }
+  .subtitle{
+    color:var(--muted);
+    font-size:.8rem;
+    line-height:1.4;
+    max-width:600px;
+    margin:0 auto;
+  }
+
+  .cards-wrapper{
+    width:100%;
+    max-width:1300px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:1.5rem;
+    align-items:flex-start;
+    justify-content:center;
+  }
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:1.25rem 1.25rem 1.5rem;
+    box-shadow:0 30px 120px rgba(0,0,0,0.9);
+    position:relative;
+    overflow:hidden;
+    flex:1 1 360px;
+    max-width:600px;
+  }
+  .card:before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:
+      radial-gradient(circle at 50% 0%,rgba(242,199,108,0.15) 0%,rgba(0,0,0,0) 70%);
+    pointer-events:none;
+  }
+  .card-title{
+    font-size:.8rem;
+    font-weight:600;
+    letter-spacing:-0.03em;
+    color:var(--gold-2);
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    margin:0 0 .75rem;
+  }
+  .badge{
+    display:inline-block;
+    font-size:.65rem;
+    line-height:1;
+    font-weight:600;
+    color:#0A0A0B;
+    background:linear-gradient(90deg,var(--gold-1),var(--gold-3));
+    border-radius:999px;
+    padding:.4rem .5rem;
+    box-shadow:0 0 16px rgba(242,199,108,.4);
+  }
+
+  .section-block{
+    display:flex;
+    flex-direction:column;
+    gap:1rem;
+    margin-bottom:1rem;
+    position:relative;
+  }
+  label{
+    display:block;
+    font-size:.75rem;
+    font-weight:500;
+    color:var(--muted);
+    margin-bottom:.4rem;
+  }
+  input,select,textarea,button{
+    width:100%;
+    background:rgba(0,0,0,0.4);
+    color:var(--text);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    font-size:.8rem;
+    padding:.7rem .8rem;
+    outline:none;
+    font-family:inherit;
+  }
+  textarea{
+    min-height:180px;
+    resize:vertical;
+    line-height:1.4;
+    font-size:.75rem;
+  }
+  input:focus,select:focus,textarea:focus,button:focus{
+    border:1px solid var(--gold-2);
+    box-shadow:0 0 8px var(--gold-2);
+  }
+  button{
+    cursor:pointer;
+    background:linear-gradient(90deg,var(--gold-1),var(--gold-3));
+    color:#0A0A0B;
+    font-weight:600;
+    border:1px solid var(--gold-2);
+    box-shadow:0 12px 40px rgba(191,142,44,.4),0 0 24px rgba(242,199,108,.4);
+    font-size:.8rem;
+  }
+
+  .row-2col,
+  .row-3col{
+    display:flex;
+    gap:.75rem;
+    flex-wrap:wrap;
+  }
+  .row-2col .field{
+    flex:1 1 120px;
+  }
+  .row-3col .field{
+    flex:1 1 100px;
+  }
+  .field{
+    display:flex;
+    flex-direction:column;
+  }
+
+  .result-box{
+    background:rgba(0,0,0,0.4);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:1rem;
+    font-size:1rem;
+    font-weight:600;
+    line-height:1.4;
+    color:var(--gold-2);
+    text-align:center;
+    min-height:3.5rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,.8),
+      0 0 60px rgba(242,199,108,.15) inset;
+    word-break:break-word;
+  }
+  .small-note{
+    font-size:.7rem;
+    line-height:1.4;
+    color:var(--muted);
+  }
+
+  .coeff-view{
+    font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    font-size:.7rem;
+    line-height:1.4;
+    background:rgba(0,0,0,0.4);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:.75rem .9rem;
+    color:var(--gold-2);
+    max-height:220px;
+    overflow:auto;
+    white-space:pre-wrap;
+    word-break:break-word;
+    box-shadow:0 10px 30px rgba(0,0,0,.8),0 0 30px rgba(242,199,108,.12) inset;
+  }
+
+  .hint{
+    font-size:.7rem;
+    color:var(--muted);
+    line-height:1.4;
+  }
+  .hint strong{
+    color:var(--gold-2);
+    font-weight:600;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand-row">
+    <span class="logo-pill">∞</span>
+    <h1>IA Immo France — Mode Admin / Entraînement Local</h1>
+  </div>
+  <p class="subtitle">
+    Tu colles ton dataset (France entière), tu cliques RÉENTRAÎNER,
+    ça calcule les coefficients du modèle et ça les sauvegarde dans ton navigateur.
+    Ensuite tu peux tester une estimation avec le formulaire à droite.
+  </p>
+</header>
+
+<div class="cards-wrapper">
+
+  <!-- =======================
+       CARD 1 : ENTRAÎNEMENT
+       ======================= -->
+  <section class="card" id="train-card">
+    <h2 class="card-title">
+      <span>🧠 Réentraîner le modèle France entière</span>
+      <span class="badge">admin</span>
+    </h2>
+
+    <div class="section-block">
+      <div class="field">
+        <label>Dataset (une ligne = un bien vendu)</label>
+        <textarea id="train-data" placeholder="FORMAT:
+surface_bien_m2,
+surface_terrain_m2,
+pieces,
+parking_places,
+departement,
+zone_type,
+type_bien,
+etat_bien,
+dernier_etage,
+ascenseur,
+exterieur_m2,
+prix
+
+Exemples:
+55,0,2,0,DEP_75,centre_urbain,appart,refait,non,oui,4,520000
+110,400,5,2,DEP_13,periurbain,maison,correct,non,non,60,480000
+800,800,0,0,DEP_33,rural,terrain,a_refaire,non,non,0,70000
+12,0,0,1,DEP_59,centre_urbain,cave_parking,correct,non,non,0,25000
+70,0,3,0,DEP_74,montagne,appart,neuf,oui,oui,6,380000
+"></textarea>
+        <div class="hint">
+          Légende rapide :
+          <br>- <strong>departement</strong> = DEP_75, DEP_13, DEP_59...
+          <br>- <strong>zone_type</strong> = centre_urbain | periurbain | rural | bord_de_mer | montagne
+          <br>- <strong>type_bien</strong> = appart | maison | terrain | cave_parking
+          <br>- <strong>etat_bien</strong> = a_refaire | correct | refait | neuf
+          <br>- <strong>dernier_etage</strong> = oui / non
+          <br>- <strong>ascenseur</strong> = oui / non
+          <br>- <strong>exterieur_m2</strong> = balcon / terrasse / jardin privé (0 si rien)
+        </div>
+      </div>
+
+      <button id="btn-train">Réentraîner le modèle</button>
+
+      <div class="field">
+        <label>Modèle appris (sauvé en local)</label>
+        <div id="model-dump" class="coeff-view">
+          (aucun modèle entraîné encore)
+        </div>
+      </div>
+
+      <p class="small-note">
+        Après un nouvel entraînement : copie ce JSON.
+        Ce JSON = TON modèle final (feature_order, coefficients, intercept).
+        Tu l'injecteras dans la page publique visiteur.
+      </p>
+    </div>
+  </section>
+
+
+  <!-- =======================
+       CARD 2 : TEST EN LIVE
+       ======================= -->
+  <section class="card" id="predict-card">
+    <h2 class="card-title">
+      <span>🔮 Tester une estimation</span>
+      <span class="badge">preview</span>
+    </h2>
+
+    <div class="section-block">
+
+      <div class="row-2col">
+        <div class="field">
+          <label>Surface bien (m² habitable / utile)</label>
+          <input id="p-surface-bien" type="number" min="0" value="55"/>
+        </div>
+        <div class="field">
+          <label>Surface terrain (m²) [0 si pas]</label>
+          <input id="p-surface-terrain" type="number" min="0" value="0"/>
+        </div>
+      </div>
+
+      <div class="row-3col">
+        <div class="field">
+          <label>Pièces (habitable)</label>
+          <input id="p-pieces" type="number" min="0" value="2"/>
+        </div>
+        <div class="field">
+          <label>Parkings / box inclus</label>
+          <input id="p-parking" type="number" min="0" value="0"/>
+        </div>
+        <div class="field">
+          <label>Extérieur privé (m² balcon/jardin)</label>
+          <input id="p-ext" type="number" min="0" value="4"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Département (ex: DEP_75, DEP_13, DEP_59...)</label>
+        <input id="p-dep" type="text" value="DEP_75"/>
+      </div>
+
+      <div class="row-2col">
+        <div class="field">
+          <label>Zone</label>
+          <select id="p-zone">
+            <option value="centre_urbain">centre_urbain</option>
+            <option value="periurbain">periurbain</option>
+            <option value="rural">rural</option>
+            <option value="bord_de_mer">bord_de_mer</option>
+            <option value="montagne">montagne</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Type de bien</label>
+          <select id="p-type">
+            <option value="appart">appart</option>
+            <option value="maison">maison</option>
+            <option value="terrain">terrain</option>
+            <option value="cave_parking">cave_parking</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-2col">
+        <div class="field">
+          <label>État du bien</label>
+          <select id="p-etat">
+            <option value="a_refaire">a_refaire</option>
+            <option value="correct" selected>correct</option>
+            <option value="refait">refait</option>
+            <option value="neuf">neuf</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>Dernier étage ?</label>
+          <select id="p-dernier">
+            <option value="non" selected>non</option>
+            <option value="oui">oui</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row-2col">
+        <div class="field">
+          <label>Ascenseur ?</label>
+          <select id="p-ascenseur">
+            <option value="oui">oui</option>
+            <option value="non">non</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="btn-predict">Estimer le prix</button>
+
+      <div id="predict-result" class="result-box">
+        Prix estimé : —
+      </div>
+
+      <div class="hint" id="predict-hint">
+        <strong>Tip :</strong> change juste le département ou l'état du bien et clique encore.
+      </div>
+
+      <p class="small-note">
+        Ceci utilise le dernier modèle entraîné (localStorage). Si tu n'as pas encore cliqué
+        "Réentraîner le modèle" ou si tu as rechargé sans sauvegarde, l'estimation peut être vide.
+      </p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/*
+==========================================
+ARCHITECTURE GLOBALE
+==========================================
+1. Tu fournis un dataset (plein de ventes réelles / plausibles en France).
+2. On entraîne une régression linéaire multivariée :
+   prix = somme(coeff[i] * feature[i]) + intercept
+3. Les features incluent :
+   - surfaces / pièces / parking / extérieur
+   - étage final / ascenseur
+   - département (one-hot)
+   - zone (centre_urbain / periurbain / rural / bord_de_mer / montagne)
+   - type_bien (appart / maison / terrain / cave_parking)
+   - état_bien (a_refaire / correct / refait / neuf)
+
+On enlève UNE catégorie de chaque groupe (ex: on prend une valeur
+comme "base") pour éviter le piège des variables redondantes.
+
+On sauvegarde le modèle entraîné dans localStorage pour l'utiliser
+dans le testeur à droite.
+*/
+
+const STORAGE_KEY = "immoFR_full_v1";
+
+// état global en mémoire
+let currentModel = loadModelFromLocalStorage() || null;
+renderModelDump();
+
+/* ======================
+   PARSE DU DATASET ADMIN
+   ======================
+
+Chaque ligne attendue :
+surface_bien_m2,
+surface_terrain_m2,
+pieces,
+parking_places,
+departement,
+zone_type,
+type_bien,
+etat_bien,
+dernier_etage,
+ascenseur,
+exterieur_m2,
+prix
+
+Ex:
+55,0,2,0,DEP_75,centre_urbain,appart,refait,non,oui,4,520000
+*/
+
+function parseOuiNon(v){
+  return (v || "").toLowerCase().trim() === "oui" ? 1 : 0;
+}
+
+function parseTrainingData(rawText){
+  const lines = rawText.split("\n").map(l=>l.trim()).filter(l=>l!=="");
+  const data = [];
+
+  for (const line of lines){
+    const parts = line.split(",").map(p=>p.trim());
+    if (parts.length !== 12) continue;
+
+    const surface_bien    = parseFloat(parts[0]);
+    const surface_terrain = parseFloat(parts[1]);
+    const pieces          = parseFloat(parts[2]);
+    const parking_places  = parseFloat(parts[3]);
+    const dep             = parts[4]; // "DEP_75" etc.
+    const zone            = parts[5]; // centre_urbain, ...
+    const typeBien        = parts[6]; // appart, maison, ...
+    const etat            = parts[7]; // a_refaire, correct, ...
+    const dernier         = parseOuiNon(parts[8]); // oui/non
+    const ascenseur       = parseOuiNon(parts[9]); // oui/non
+    const ext_m2          = parseFloat(parts[10]);
+    const prix            = parseFloat(parts[11]);
+
+    if (
+      Number.isFinite(surface_bien) &&
+      Number.isFinite(surface_terrain) &&
+      Number.isFinite(pieces) &&
+      Number.isFinite(parking_places) &&
+      Number.isFinite(ext_m2) &&
+      Number.isFinite(prix) &&
+      dep && zone && typeBien && etat &&
+      Number.isFinite(dernier) &&
+      Number.isFinite(ascenseur)
+    ){
+      data.push({
+        surface_bien,
+        surface_terrain,
+        pieces,
+        parking_places,
+        dep,
+        zone,
+        typeBien,
+        etat,
+        dernier,
+        ascenseur,
+        ext_m2,
+        prix
+      });
+    }
+  }
+  return data;
+}
+
+/* ======================
+   CONSTRUCTION DE X et y
+   ======================
+
+On va créer :
+- Colonnes numériques directes
+- One-hot pour dep / zone / type / etat
+- "bias" = 1
+*/
+
+function buildXY(dataset){
+  // collecter toutes les catégories vues
+  const depSet = new Set();
+  const zoneSet = new Set();
+  const typeSet = new Set();
+  const etatSet = new Set();
+
+  for (const row of dataset){
+    depSet.add(row.dep);
+    zoneSet.add(row.zone);
+    typeSet.add(row.typeBien);
+    etatSet.add(row.etat);
+  }
+
+  // les transformer en listes triées (pour cohérence)
+  const depList  = Array.from(depSet).sort();
+  const zoneList = Array.from(zoneSet).sort();
+  const typeList = Array.from(typeSet).sort();
+  const etatList = Array.from(etatSet).sort();
+
+  // choisir une "base" à enlever pour éviter les colonnes redondantes
+  const baseDep  = depList[0] || null; // première du tri
+  const baseZone = zoneList[0] || null;
+  const baseType = typeList[0] || null;
+  // pour l'état, on préfère "a_refaire" comme base si dispo
+  let baseEtat = "a_refaire";
+  if (!etatSet.has("a_refaire")){
+    baseEtat = etatList[0] || null;
+  }
+
+  // Créer la liste finale des features (ordre des colonnes)
+  // 1. numériques
+  const featureNum = [
+    "surface_bien_m2",
+    "surface_terrain_m2",
+    "pieces",
+    "parking_places",
+    "exterieur_m2",
+    "dernier_etage",
+    "ascenseur"
+  ];
+
+  // 2. one-hot département : dep_DEP_75 ...
+  const featureDep = depList
+    .filter(d => d !== baseDep)
+    .map(d => "dep_" + d);
+
+  // 3. one-hot zone : zone_centre_urbain ...
+  const featureZone = zoneList
+    .filter(z => z !== baseZone)
+    .map(z => "zone_" + z);
+
+  // 4. one-hot type : type_appart ...
+  const featureType = typeList
+    .filter(t => t !== baseType)
+    .map(t => "type_" + t);
+
+  // 5. one-hot état (sauf baseEtat)
+  const featureEtat = etatList
+    .filter(e => e !== baseEtat)
+    .map(e => "etat_" + e);
+
+  // assemble tout + bias
+  const feature_order = [
+    ...featureNum,
+    ...featureDep,
+    ...featureZone,
+    ...featureType,
+    ...featureEtat,
+    "bias"
+  ];
+
+  // maintenant on construit X (chaque bien) et y (prix)
+  const X = [];
+  const y = [];
+
+  for (const row of dataset){
+    // point de départ = features numériques
+    const feats = {
+      surface_bien_m2: row.surface_bien,
+      surface_terrain_m2: row.surface_terrain,
+      pieces: row.pieces,
+      parking_places: row.parking_places,
+      exterieur_m2: row.ext_m2,
+      dernier_etage: row.dernier,
+      ascenseur: row.ascenseur
+    };
+
+    // département one-hot
+    if (row.dep !== baseDep){
+      feats["dep_" + row.dep] = 1;
+    }
+    // zone one-hot
+    if (row.zone !== baseZone){
+      feats["zone_" + row.zone] = 1;
+    }
+    // type one-hot
+    if (row.typeBien !== baseType){
+      feats["type_" + row.typeBien] = 1;
+    }
+    // état one-hot
+    if (row.etat !== baseEtat){
+      feats["etat_" + row.etat] = 1;
+    }
+
+    // bias
+    feats["bias"] = 1;
+
+    // push la ligne dans l'ordre des colonnes finales
+    X.push(feature_order.map(f => feats[f] ?? 0));
+    y.push([ row.prix ]);
+  }
+
+  return {X,y,feature_order};
+}
+
+/* ======================
+   ALGÈBRE LINÉAIRE
+   ====================== */
+
+function matTranspose(A){
+  const rows=A.length, cols=A[0].length;
+  const T=new Array(cols);
+  for(let c=0;c<cols;c++){
+    T[c]=new Array(rows);
+    for(let r=0;r<rows;r++){
+      T[c][r]=A[r][c];
+    }
+  }
+  return T;
+}
+function matMultiply(A,B){
+  const m=A.length, n=A[0].length, p=B[0].length;
+  const C=new Array(m);
+  for(let i=0;i<m;i++){
+    C[i]=new Array(p).fill(0);
+    for(let k=0;k<n;k++){
+      for(let j=0;j<p;j++){
+        C[i][j]+=A[i][k]*B[k][j];
+      }
+    }
+  }
+  return C;
+}
+function matInverse(M){
+  const n=M.length;
+  // matrice augmentée [M | I]
+  const A=new Array(n);
+  for(let i=0;i<n;i++){
+    A[i]=new Array(n*2);
+    for(let j=0;j<n;j++){
+      A[i][j]=M[i][j];
+    }
+    for(let j=0;j<n;j++){
+      A[i][n+j]=(i===j?1:0);
+    }
+  }
+  // Gauss-Jordan
+  for(let col=0;col<n;col++){
+    // pivot
+    let pivot=col;
+    for(let row=col+1;row<n;row++){
+      if(Math.abs(A[row][col])>Math.abs(A[pivot][col])){
+        pivot=row;
+      }
+    }
+    if(Math.abs(A[pivot][col])<1e-12){
+      throw new Error("Matrice non inversible (données pas assez variées)");
+    }
+    if(pivot!==col){ const tmp=A[col]; A[col]=A[pivot]; A[pivot]=tmp; }
+    const valPivot=A[col][col];
+    for(let j=0;j<2*n;j++){
+      A[col][j]/=valPivot;
+    }
+    for(let r=0;r<n;r++){
+      if(r!==col){
+        const f=A[r][col];
+        for(let c=0;c<2*n;c++){
+          A[r][c]-=f*A[col][c];
+        }
+      }
+    }
+  }
+  // extraire inverse
+  const Inv=new Array(n);
+  for(let i=0;i<n;i++){
+    Inv[i]=A[i].slice(n,2*n);
+  }
+  return Inv;
+}
+
+function trainLinearRegression(X,y){
+  const XT=matTranspose(X);
+  const XTX=matMultiply(XT,X);
+  const XTy=matMultiply(XT,y);
+  const XTX_inv=matInverse(XTX);
+  const beta=matMultiply(XTX_inv,XTy);
+  return beta.map(row=>row[0]);
+}
+
+/* ======================
+   ENTRAÎNER (bouton)
+   ====================== */
+
+document.getElementById("btn-train").addEventListener("click", () => {
+  const rawText = document.getElementById("train-data").value;
+  const dataset = parseTrainingData(rawText);
+
+  if (dataset.length < 5){
+    alert("Pas assez de lignes valides pour entraîner (min 5).");
+    return;
+  }
+
+  let Xy;
+  try {
+    Xy = buildXY(dataset);
+  } catch(e){
+    alert("Erreur préparation données: " + e.message);
+    return;
+  }
+
+  const {X,y,feature_order} = Xy;
+
+  let beta;
+  try {
+    beta = trainLinearRegression(X,y);
+  } catch(e){
+    alert("Échec entraînement (matrice non inversible / données trop similaires): " + e.message);
+    return;
+  }
+
+  // beta = [coeff... , intercept] selon feature_order
+  const intercept = beta[beta.length-1];
+  const coeffs = beta.slice(0,beta.length-1);
+
+  currentModel = {
+    feature_order: feature_order.slice(0, feature_order.length-1), // sans "bias"
+    coefficients: coeffs,
+    intercept: intercept
+  };
+
+  saveModelToLocalStorage(currentModel);
+  renderModelDump();
+
+  alert("Modèle réentraîné ✔ Sauvegardé en local.");
+});
+
+/* ======================
+   SAUVEGARDE / RESTORE
+   ====================== */
+
+function saveModelToLocalStorage(model){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(model));
+  }catch(e){
+    console.warn("Impossible de sauvegarder:", e);
+  }
+}
+function loadModelFromLocalStorage(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw) return null;
+    return JSON.parse(raw);
+  }catch(e){
+    console.warn("Impossible de charger le modèle local:", e);
+    return null;
+  }
+}
+
+function renderModelDump(){
+  const dumpEl = document.getElementById("model-dump");
+  if(!currentModel){
+    dumpEl.textContent = "(aucun modèle)";
+    return;
+  }
+  dumpEl.textContent = JSON.stringify(currentModel, null, 2);
+}
+
+/* ======================
+   PREDICTION LIVE (carte droite)
+   ====================== */
+
+function buildFeatureVectorForPrediction(row, feature_order){
+  // row = infos saisies dans le formulaire preview
+
+  const feats = {
+    surface_bien_m2: row.surface_bien,
+    surface_terrain_m2: row.surface_terrain,
+    pieces: row.pieces,
+    parking_places: row.parking_places,
+    exterieur_m2: row.ext_m2,
+    dernier_etage: row.dernier,
+    ascenseur: row.ascenseur
+  };
+
+  // one-hot dynamiques :
+  // dep
+  if (row.dep){
+    feats["dep_" + row.dep] = 1;
+  }
+  // zone
+  if (row.zone){
+    feats["zone_" + row.zone] = 1;
+  }
+  // type
+  if (row.typeBien){
+    feats["type_" + row.typeBien] = 1;
+  }
+  // etat
+  if (row.etat){
+    feats["etat_" + row.etat] = 1;
+  }
+
+  // On N'AJOUTE PAS "bias" ici parce que currentModel.feature_order
+  // n'inclut pas "bias", et on l'applique comme intercept séparément.
+
+  return feature_order.map(name => feats[name] ?? 0);
+}
+
+function predictPrice(model, row){
+  if(!model) return null;
+  const vec = buildFeatureVectorForPrediction(row, model.feature_order);
+
+  let total = model.intercept;
+  for (let i=0; i<vec.length; i++){
+    total += model.coefficients[i] * vec[i];
+  }
+  if (total < 0) total = 0;
+  return total;
+}
+
+// Bouton "Estimer le prix"
+document.getElementById("btn-predict").addEventListener("click", () => {
+  if(!currentModel){
+    alert("Pas de modèle chargé. Entraîne d'abord le modèle à gauche.");
+    return;
+  }
+
+  const surface_bien    = parseFloat(document.getElementById("p-surface-bien").value || "0");
+  const surface_terrain = parseFloat(document.getElementById("p-surface-terrain").value || "0");
+  const pieces          = parseFloat(document.getElementById("p-pieces").value || "0");
+  const parking_places  = parseFloat(document.getElementById("p-parking").value || "0");
+  const ext_m2          = parseFloat(document.getElementById("p-ext").value || "0");
+
+  const dep       = (document.getElementById("p-dep").value || "").trim();
+  const zone      = document.getElementById("p-zone").value;
+  const typeBien  = document.getElementById("p-type").value;
+  const etat      = document.getElementById("p-etat").value;
+  const dernier   = parseOuiNon(document.getElementById("p-dernier").value);
+  const ascenseur = parseOuiNon(document.getElementById("p-ascenseur").value);
+
+  const rowPreview = {
+    surface_bien,
+    surface_terrain,
+    pieces,
+    parking_places,
+    dep,
+    zone,
+    typeBien,
+    etat,
+    dernier,
+    ascenseur,
+    ext_m2
+  };
+
+  const estimation = predictPrice(currentModel, rowPreview);
+  if(estimation == null){
+    document.getElementById("predict-result").textContent =
+      "Prix estimé : —";
+    return;
+  }
+
+  const affichage = Math.round(estimation).toLocaleString('fr-FR') + " €";
+  document.getElementById("predict-result").textContent =
+    "Prix estimé : " + affichage;
+
+  const min = Math.round(estimation * 0.9).toLocaleString('fr-FR') + " €";
+  const max = Math.round(estimation * 1.1).toLocaleString('fr-FR') + " €";
+  document.getElementById("predict-hint").innerHTML =
+    "<strong>Fourchette :</strong> " + min + " → " + max;
+});
+</script>
+
+</body>
+</html>
+

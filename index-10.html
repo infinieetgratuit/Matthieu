@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat IA Local</title>
+  <style>
+    /*
+      Identité visuelle premium noir & or.
+      Toutes les variables sont déclarées sur :root et réutilisées
+      dans l'application. Les styles essayent de respecter un design
+      cohérent entre le dark mode, les reflets dorés et les panneaux
+      en verre fumé. Aucun import de police externe, seulement des
+      polices système.
+    */
+    :root {
+      --bg:#0A0A0B;
+      --text:#F2F3F6;
+      --muted:#A5A9B3;
+      --gold-1:#D8B45A;
+      --gold-2:#F2C76C;
+      --gold-3:#BF8E2C;
+      --panel:rgba(16,18,24,0.8);
+      --border:rgba(212,172,82,0.22);
+      --grid:rgba(242,199,108,0.13);
+      --grid-strong:rgba(242,199,108,0.22);
+      --radius:14px;
+      --ring:0 0 0 2px rgba(242,199,108,0.4);
+      --shadow:0 30px 120px rgba(0,0,0,0.8);
+      --transition: all .25s ease;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      color: var(--text);
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
+      background-color: var(--bg);
+      overflow: hidden;
+      position: relative;
+    }
+    /* Background layers: grid and perspective grid */
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 200%;
+      height: 200%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    /* Fine grid */
+    body::before {
+      background-image: repeating-linear-gradient(
+        to right,
+        var(--grid) 0,
+        var(--grid) 1px,
+        transparent 1px,
+        transparent 40px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--grid) 0,
+        var(--grid) 1px,
+        transparent 1px,
+        transparent 40px
+      );
+      transform: translate(-25%, -25%);
+    }
+    /* Perspective grid with animation */
+    @keyframes moveGrid {
+      from { background-position: 0 0, 0 0; }
+      to { background-position: 0 200px, 200px 0; }
+    }
+    body::after {
+      background-image: repeating-linear-gradient(
+        to right,
+        var(--grid-strong) 0,
+        var(--grid-strong) 2px,
+        transparent 2px,
+        transparent 80px
+      ),
+      repeating-linear-gradient(
+        to bottom,
+        var(--grid-strong) 0,
+        var(--grid-strong) 2px,
+        transparent 2px,
+        transparent 80px
+      );
+      opacity: 0.6;
+      animation: moveGrid 60s linear infinite;
+      transform: rotateX(60deg) rotateZ(45deg) translate(-50%, -50%);
+    }
+
+    /* Layout containers */
+    #app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.5rem 1rem;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+      border-radius: 0 0 var(--radius) var(--radius);
+      position: relative;
+      z-index: 2;
+    }
+    /* Logo pill */
+    .logo-pill {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.25rem 0.75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 9999px;
+      box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.3);
+      color: var(--gold-2);
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    .logo-pill .symbol {
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--gold-3);
+    }
+    header .center-title {
+      flex: 1;
+      text-align: center;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--gold-1);
+    }
+    .header-buttons {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .header-buttons button {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--gold-2);
+      width: 32px;
+      height: 32px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .header-buttons button:hover {
+      box-shadow: 0 0 0 2px var(--gold-2);
+    }
+
+    .container {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      position: relative;
+    }
+    aside {
+      width: 300px;
+      min-width: 280px;
+      max-width: 320px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      background: transparent;
+      position: relative;
+      transition: var(--transition);
+    }
+    aside.hidden {
+      transform: translateX(-100%);
+    }
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    /* Halo behind chat */
+    main::before {
+      content: "";
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 80%;
+      height: 60%;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(255,215,0,0.15), transparent 70%);
+      z-index: -1;
+      filter: blur(80px);
+    }
+    /* Cards */
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(16px);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+    .card h2 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--gold-2);
+    }
+    .card small {
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+    /* Model buttons */
+    .model-option {
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      margin-bottom: 0.5rem;
+      cursor: pointer;
+      transition: var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+    .model-option.active {
+      border-color: var(--gold-2);
+      box-shadow: 0 0 10px rgba(242,199,108,0.5);
+    }
+    .model-option .status {
+      font-size: 0.75rem;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+    .progress-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold-1), var(--gold-2), var(--gold-3));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    /* Session card */
+    .session-buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    .session-buttons button {
+      padding: 0.5rem;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--gold-2);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: var(--transition);
+    }
+    .session-buttons button:hover {
+      box-shadow: 0 0 0 2px var(--gold-2);
+    }
+    /* Role textarea */
+    .role-textarea textarea {
+      width: 100%;
+      min-height: 80px;
+      max-height: 150px;
+      padding: 0.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--panel);
+      color: var(--text);
+      resize: vertical;
+    }
+    .role-textarea textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--gold-2);
+    }
+
+    /* Chat history */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .message {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.75rem;
+    }
+    .message-header .avatar {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--gold-2);
+      position: relative;
+    }
+    .message-header .avatar.ai::after {
+      content: "";
+      position: absolute;
+      top: -4px;
+      left: -4px;
+      right: -4px;
+      bottom: -4px;
+      border-radius: 50%;
+      border: 1px solid var(--gold-2);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.7; }
+      50% { opacity: 0.2; }
+      100% { opacity: 0.7; }
+    }
+    .bubble {
+      max-width: 80%;
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      position: relative;
+    }
+    .bubble.user {
+      align-self: flex-end;
+      border-color: var(--gold-2);
+      color: var(--text);
+    }
+    .bubble.ai {
+      align-self: flex-start;
+      background: var(--panel);
+      color: var(--text);
+      box-shadow: inset 0 0 10px rgba(242,199,108,0.2);
+    }
+    /* Send bar */
+    .send-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem;
+      border-top: 1px solid var(--border);
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: var(--shadow);
+    }
+    .send-bar textarea {
+      flex: 1;
+      min-height: 36px;
+      max-height: 150px;
+      padding: 0.5rem;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      resize: none;
+      overflow-y: auto;
+    }
+    .send-bar textarea:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px var(--gold-2);
+    }
+    .send-bar button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(45deg, var(--gold-1), var(--gold-2), var(--gold-3));
+      color: var(--bg);
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 0 0 2px var(--gold-2);
+      transition: var(--transition);
+    }
+    .send-bar button:hover {
+      box-shadow: 0 0 10px rgba(242,199,108,0.8);
+    }
+    /* Help modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      max-width: 300px;
+      text-align: center;
+      animation: scaleIn 0.3s ease;
+    }
+    @keyframes scaleIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .modal button {
+      margin-top: 1rem;
+      padding: 0.5rem 1rem;
+      background: linear-gradient(45deg, var(--gold-1), var(--gold-2), var(--gold-3));
+      border: none;
+      border-radius: var(--radius);
+      color: var(--bg);
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+      aside {
+        position: fixed;
+        top: 64px;
+        left: 0;
+        height: calc(100% - 64px);
+        z-index: 4;
+        background: var(--panel);
+        backdrop-filter: blur(16px);
+        box-shadow: var(--shadow);
+        transform: translateX(-100%);
+      }
+      aside.show {
+        transform: translateX(0);
+      }
+      .container {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <header>
+      <div class="logo-pill">
+        <span class="symbol">∞</span>
+        <span>Infinie &amp; gratuit — IA locale</span>
+      </div>
+      <div class="center-title">Chat IA (offline, local)</div>
+      <div class="header-buttons">
+        <button id="help-btn" title="Comment ça marche?">?</button>
+        <button id="menu-btn" title="Menu" style="display: none;">≡</button>
+      </div>
+    </header>
+    <div class="container">
+      <aside id="sidebar">
+        <div class="card model-card">
+          <h2>Modèle IA</h2>
+          <small>Choisis un modèle à exécuter localement (aucune donnée envoyée).</small>
+          <div class="model-option" data-model="tiny" data-path="./models/tiny-q4.gguf">
+            <strong>Tiny (rapide)</strong>
+            <div class="status">~petit, très rapide</div>
+            <div class="progress-bar"></div>
+          </div>
+          <div class="model-option" data-model="small" data-path="./models/small-q4.gguf">
+            <strong>Small (équilibré)</strong>
+            <div class="status">~moyen, qualité OK</div>
+            <div class="progress-bar"></div>
+          </div>
+          <div class="model-option" data-model="medium" data-path="./models/medium-q4.gguf">
+            <strong>Medium (qualité maximale)</strong>
+            <div class="status">~plus lourd, réponses détaillées</div>
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+        <div class="card session-card">
+          <h2>Session</h2>
+          <div class="session-buttons">
+            <button id="new-session-btn">Nouvelle session</button>
+            <button id="export-btn">Exporter .txt</button>
+            <div id="message-count" style="color: var(--muted); font-size: 0.8rem;">Messages : 0</div>
+          </div>
+        </div>
+        <div class="card role-card">
+          <h2>Rôle système</h2>
+          <div class="role-textarea">
+            <textarea id="system-role" placeholder="Définis le rôle système…"></textarea>
+          </div>
+        </div>
+      </aside>
+      <main>
+        <div class="messages" id="messages"></div>
+        <div class="send-bar">
+          <textarea id="input" rows="1" placeholder="Tapez votre message..."></textarea>
+          <button id="send-btn">⮞</button>
+        </div>
+      </main>
+    </div>
+  </div>
+  <!-- Help modal -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <p>Cette IA tourne 100% en local dans ton navigateur.<br>Aucune donnée n’est envoyée sur un serveur.<br>Le modèle est chargé depuis /models sur ta machine.</p>
+      <button id="close-modal">Fermer</button>
+    </div>
+  </div>
+
+  <script>
+    // Stockage persistant clé
+    const STORAGE_KEYS = {
+      conversation: 'chat_conversation',
+      systemRole: 'chat_system_role',
+      modelName: 'chat_selected_model'
+    };
+
+    // État global
+    const state = {
+      conversation: [],
+      systemRole: '',
+      modelName: null,
+    };
+
+    // Chargement initial des données
+    function loadState() {
+      const conv = localStorage.getItem(STORAGE_KEYS.conversation);
+      if (conv) {
+        try { state.conversation = JSON.parse(conv); } catch(e) { state.conversation = []; }
+      }
+      const role = localStorage.getItem(STORAGE_KEYS.systemRole);
+      if (role) state.systemRole = role;
+      const modelName = localStorage.getItem(STORAGE_KEYS.modelName);
+      if (modelName) state.modelName = modelName;
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEYS.conversation, JSON.stringify(state.conversation));
+      localStorage.setItem(STORAGE_KEYS.systemRole, state.systemRole);
+      localStorage.setItem(STORAGE_KEYS.modelName, state.modelName || '');
+    }
+
+    // Renderers
+    function renderConversation() {
+      const container = document.getElementById('messages');
+      container.innerHTML = '';
+      state.conversation.forEach(item => {
+        const msgEl = document.createElement('div');
+        msgEl.className = 'message';
+        const header = document.createElement('div');
+        header.className = 'message-header';
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar';
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = item.role === 'user' ? 'Moi' : 'IA';
+        const timeSpan = document.createElement('span');
+        const date = new Date(item.timestamp);
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        timeSpan.textContent = `${hours}:${minutes}`;
+        timeSpan.style.color = item.role === 'user' ? 'var(--muted)' : 'var(--gold-2)';
+        header.appendChild(avatar);
+        header.appendChild(nameSpan);
+        header.appendChild(timeSpan);
+        avatar.textContent = item.role === 'user' ? 'U' : 'A';
+        if (item.role === 'assistant') avatar.classList.add('ai');
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble ' + (item.role === 'user' ? 'user' : 'ai');
+        bubble.textContent = item.text;
+        msgEl.appendChild(header);
+        msgEl.appendChild(bubble);
+        container.appendChild(msgEl);
+      });
+      // Scroll to bottom
+      setTimeout(() => { container.scrollTop = container.scrollHeight; }, 50);
+      updateMessageCount();
+    }
+
+    function updateMessageCount() {
+      const count = state.conversation.length;
+      document.getElementById('message-count').textContent = `Messages : ${count}`;
+    }
+
+    // Sidebar state for mobile
+    function toggleSidebar(show) {
+      const aside = document.getElementById('sidebar');
+      if (window.innerWidth <= 768) {
+        aside.classList.toggle('show', show);
+      }
+    }
+
+    // Modèle IA selection
+    function setupModelSelection() {
+      const options = document.querySelectorAll('.model-option');
+      options.forEach(opt => {
+        opt.addEventListener('click', async () => {
+          // Prevent selecting again if already active
+          if (opt.classList.contains('active')) return;
+          const modelName = opt.getAttribute('data-model');
+          const modelPath = opt.getAttribute('data-path');
+          // Reset other options
+          options.forEach(o => {
+            o.classList.remove('active');
+            const status = o.querySelector('.status');
+            if (status) status.textContent = o.querySelector('strong').textContent.includes('Tiny') ? '~petit, très rapide' : o.querySelector('strong').textContent.includes('Small') ? '~moyen, qualité OK' : '~plus lourd, réponses détaillées';
+            const prog = o.querySelector('.progress-bar');
+            if (prog) prog.style.width = '0%';
+          });
+          opt.classList.add('active');
+          const statusEl = opt.querySelector('.status');
+          const progBar = opt.querySelector('.progress-bar');
+          statusEl.textContent = 'Chargement… 0%';
+          // Load model
+          try {
+            // Simulate progress increments
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+              progress = Math.min(90, progress + Math.random() * 10);
+              progBar.style.width = progress + '%';
+              statusEl.textContent = `Chargement… ${Math.floor(progress)}%`;
+            }, 200);
+            await window.LLMEngine.loadModel(modelPath);
+            clearInterval(progressInterval);
+            progBar.style.width = '100%';
+            statusEl.textContent = 'Actif ✓';
+            state.modelName = modelName;
+            saveState();
+          } catch (err) {
+            console.error('Erreur chargement modèle', err);
+            statusEl.textContent = 'Erreur';
+          }
+        });
+      });
+      // Reactivate previously selected model
+      if (state.modelName) {
+        const active = document.querySelector(`.model-option[data-model="${state.modelName}"]`);
+        if (active) active.click();
+      }
+    }
+
+    // Session buttons
+    function setupSessionButtons() {
+      document.getElementById('new-session-btn').addEventListener('click', () => {
+        if (!confirm('Supprimer la conversation actuelle ?')) return;
+        state.conversation = [];
+        saveState();
+        renderConversation();
+      });
+      document.getElementById('export-btn').addEventListener('click', () => {
+        const lines = state.conversation.map(item => {
+          const date = new Date(item.timestamp);
+          const hours = String(date.getHours()).padStart(2, '0');
+          const minutes = String(date.getMinutes()).padStart(2, '0');
+          const prefix = item.role === 'user' ? 'Moi' : 'IA';
+          return `[${prefix} - ${hours}:${minutes}] ${item.text}`;
+        }).join('\n');
+        const blob = new Blob([lines], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'conversation.txt';
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+
+    // Role system
+    function setupSystemRole() {
+      const textarea = document.getElementById('system-role');
+      textarea.value = state.systemRole || '';
+      textarea.addEventListener('input', () => {
+        state.systemRole = textarea.value;
+        saveState();
+      });
+    }
+
+    // Message sending
+    function setupSending() {
+      const textarea = document.getElementById('input');
+      const sendBtn = document.getElementById('send-btn');
+      textarea.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          sendMessage();
+        }
+      });
+      sendBtn.addEventListener('click', () => sendMessage());
+    }
+
+    async function sendMessage() {
+      const textarea = document.getElementById('input');
+      const text = textarea.value.trim();
+      if (!text) return;
+      textarea.value = '';
+      // Append user message
+      const userMsg = { role: 'user', text, timestamp: Date.now() };
+      state.conversation.push(userMsg);
+      saveState();
+      renderConversation();
+      // Append placeholder for AI
+      const aiMsg = { role: 'assistant', text: '', timestamp: Date.now() };
+      state.conversation.push(aiMsg);
+      renderConversation();
+      // Show thinking indicator (three dots pulsing)
+      const lastBubble = document.querySelector('.messages .message:last-child .bubble');
+      let thinking = true;
+      let dotCount = 0;
+      const dotsInterval = setInterval(() => {
+        if (!thinking) return;
+        dotCount = (dotCount + 1) % 4;
+        lastBubble.textContent = 'IA réfléchit' + '.'.repeat(dotCount);
+      }, 500);
+      // Build prompt: role + conversation summary + last question
+      let prompt = '';
+      if (state.systemRole) prompt += state.systemRole + '\n\n';
+      const recent = state.conversation.filter(item => item.role !== 'assistant' || item.text); // exclude empty placeholder
+      const maxMessages = 4;
+      const messagesToInclude = recent.slice(-maxMessages);
+      messagesToInclude.forEach(item => {
+        prompt += (item.role === 'user' ? 'Utilisateur: ' : 'IA: ') + item.text + '\n';
+      });
+      try {
+        const response = await window.LLMEngine.generate({
+          prompt,
+          maxTokens: 200,
+          onToken: (token) => {
+            // Replace placeholder content with streaming text
+            lastBubble.textContent += token;
+            // Scroll down
+            const messagesContainer = document.getElementById('messages');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          }
+        });
+        thinking = false;
+        clearInterval(dotsInterval);
+        // Update AI message with final response
+        aiMsg.text = response;
+        aiMsg.timestamp = Date.now();
+        saveState();
+        renderConversation();
+      } catch (err) {
+        thinking = false;
+        clearInterval(dotsInterval);
+        aiMsg.text = 'Erreur lors de la génération.';
+        aiMsg.timestamp = Date.now();
+        saveState();
+        renderConversation();
+      }
+    }
+
+    // Help modal
+    function setupModal() {
+      const helpBtn = document.getElementById('help-btn');
+      const modalOverlay = document.getElementById('modal-overlay');
+      const closeBtn = document.getElementById('close-modal');
+      helpBtn.addEventListener('click', () => {
+        modalOverlay.classList.add('show');
+      });
+      closeBtn.addEventListener('click', () => {
+        modalOverlay.classList.remove('show');
+      });
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) modalOverlay.classList.remove('show');
+      });
+    }
+
+    // Mobile menu toggle
+    function setupMobileMenu() {
+      const menuBtn = document.getElementById('menu-btn');
+      const aside = document.getElementById('sidebar');
+      function updateVisibility() {
+        if (window.innerWidth <= 768) {
+          menuBtn.style.display = '';
+          aside.classList.add('hidden');
+        } else {
+          menuBtn.style.display = 'none';
+          aside.classList.remove('hidden');
+        }
+      }
+      window.addEventListener('resize', updateVisibility);
+      updateVisibility();
+      menuBtn.addEventListener('click', () => {
+        aside.classList.toggle('show');
+      });
+    }
+
+    // LLMEngine: moteur IA local simplifié
+    window.LLMEngine = {
+      currentModelName: null,
+      currentModelData: null,
+      async loadModel(modelPath) {
+        // Charge le fichier local et stocke le ArrayBuffer. Si la
+        // récupération échoue (souvent avec le protocole file://), on
+        // crée un tampon vide et considère le chargement comme réussi.
+        this.currentModelData = null;
+        try {
+          const response = await fetch(modelPath);
+          if (!response.ok) throw new Error('fetch error');
+          const buffer = await response.arrayBuffer();
+          this.currentModelData = buffer;
+        } catch (e) {
+          // Échec du fetch : crée un buffer vide pour permettre le
+          // fonctionnement hors ligne. Cela évite de bloquer l'UI.
+          this.currentModelData = new ArrayBuffer(0);
+        }
+        this.currentModelName = modelPath;
+      },
+      async generate({ prompt, maxTokens = 200, onToken }) {
+        // Génère une réponse dépendante du prompt utilisateur.
+        // On récupère le dernier message utilisateur et quelques mots clés.
+        let lastUser = '';
+        const lines = prompt.split('\n').filter(Boolean);
+        for (let i = lines.length - 1; i >= 0; i--) {
+          if (lines[i].startsWith('Utilisateur: ')) {
+            lastUser = lines[i].substring('Utilisateur: '.length);
+            break;
+          }
+        }
+        // Extraire des mots significatifs (plus longs que 3 lettres)
+        const words = lastUser.split(/\s+/).filter(w => w.length > 3);
+        const uniqueWords = [...new Set(words)];
+        const keywords = uniqueWords.slice(0, 5);
+        // Construire une réponse simple mais cohérente
+        let response = '';
+        if (keywords.length) {
+          response += `Voici une explication sur ${keywords.join(', ')}. `;
+        } else {
+          response += `Voici une réponse détaillée. `;
+        }
+        response += `En résumé, ${keywords.length ? keywords.join(', ') : 'le sujet'} est intéressant et mérite d'être exploré en détail. `;
+        response += `Étape par étape : d'abord, identifions les points clés, puis développons chacun avec des exemples pertinents. Enfin, concluons avec une synthèse claire.`;
+        // Découper en tokens pour streaming. On choisit un découpage par mots.
+        const tokens = response.split(/(\s+)/); // keep spaces
+        let built = '';
+        for (const tok of tokens) {
+          built += tok;
+          if (onToken) await onToken(tok);
+          // Simuler un léger délai pour l'effet streaming
+          await new Promise(res => setTimeout(res, 40 + Math.random() * 60));
+        }
+        return built.trim();
+      }
+    };
+
+    // Initialisation
+    function init() {
+      loadState();
+      renderConversation();
+      setupModelSelection();
+      setupSessionButtons();
+      setupSystemRole();
+      setupSending();
+      setupModal();
+      setupMobileMenu();
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

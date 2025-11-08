@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Clicker Test (Revolut‑style)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* Design tokens — garder identiques sur tous les outils */
+      --bg:#0B0B0D;          /* fond global */
+      --panel:#0d1120;       /* cartes/panneaux */
+      --text:#E6ECF7;        /* texte principal */
+      --muted:#A4ADBD;       /* texte secondaire */
+      --border:rgba(95,123,255,0.18); /* bordures subtiles */
+      --accent1:#2FE3FF;     /* cyan néon */
+      --accent2:#1B4CFF;     /* bleu électrique */
+      --ring:0 0 0 2px rgba(43,167,255,.35); /* focus/hover */
+
+      /* UI secondaires (inputs/fonds) */
+      --field:#0b0f1a;       /* Inputs/fonds secondaires */
+      --field-border:#1a2340;
+
+      /* Effets */
+      --card-grad-a: linear-gradient(160deg, rgba(27,76,255,0.06), transparent);
+      --card-grad-b: linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%);
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial; color:var(--text); background: var(--bg);
+      background-image:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%);
+      min-height:100vh;
+    }
+
+    a{color:inherit}
+    .container{max-width:1100px; margin:0 auto; padding:24px 20px 64px}
+
+    /* Header / Logo */
+    .brand{display:flex; align-items:center; gap:12px; margin-bottom:22px}
+    .pill{display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:999px; box-shadow:var(--shadow);
+      background: radial-gradient(circle at 30% 25%, var(--accent1), var(--accent2));}
+    .pill span{font-weight:800; font-size:22px; color:#fff;}
+    .wordmark{font-weight:800; letter-spacing:.2px; font-size:18px}
+
+    /* Cards layout */
+    .grid{display:grid; grid-template-columns: 280px 1fr 280px; gap:16px}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr;}}
+
+    .card{position:relative; background:var(--panel); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); overflow:hidden}
+    .card::before{content:""; position:absolute; inset:0; background:var(--card-grad-a); pointer-events:none}
+    .card::after{content:""; position:absolute; inset:0; background:var(--card-grad-b); pointer-events:none}
+    .card > .body{position:relative; padding:18px 18px}
+
+    .card h2{margin:0 0 10px; font-weight:800; font-size:16px}
+    .muted{color:var(--muted)}
+
+    /* Controls */
+    .segmented{display:flex; background:var(--field); border:1px solid var(--field-border); border-radius:12px; padding:4px}
+    .segmented button{flex:1; background:transparent; border:0; color:var(--muted); padding:10px 12px; border-radius:10px; font-weight:700; cursor:pointer}
+    .segmented button.active{color:#fff; background:rgba(47,227,255,.08); box-shadow:var(--ring)}
+    .segmented button:focus-visible{outline:none; box-shadow:var(--ring)}
+
+    .durations{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+    .chip{background:var(--field); border:1px solid var(--field-border); padding:10px 12px; border-radius:10px; cursor:pointer; font-weight:700; color:var(--muted); text-align:center}
+    .chip.active{color:#fff; background:rgba(27,76,255,.10); box-shadow:var(--ring)}
+
+    .primary{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; border-radius:12px; padding:12px 14px; font-weight:800; color:#fff; cursor:pointer; margin-top:12px;
+      background:linear-gradient(135deg, var(--accent1), var(--accent2)); box-shadow:0 8px 24px rgba(32,86,255,.35)}
+    .primary:disabled{opacity:.5; cursor:not-allowed; box-shadow:none}
+    .ghost{background:transparent; border:1px solid var(--field-border); color:var(--text); border-radius:12px; padding:10px 12px; font-weight:700; cursor:pointer}
+
+    /* Play area */
+    .play{position:relative; display:flex; align-items:center; justify-content:center; min-height:420px; border-radius:16px; border:1px dashed rgba(110,130,255,.22); background:rgba(12,16,28,.55); outline:none}
+    .play.is-click{cursor: pointer}
+    .big{font-size:56px; font-weight:800; letter-spacing:1px}
+    .hint{margin-top:8px; color:var(--muted)}
+
+    /* Progress bar */
+    .progress{height:6px; width:100%; background:#0f1629; border:1px solid var(--field-border); border-radius:999px; overflow:hidden; margin:10px 0 14px}
+    .progress > span{display:block; height:100%; width:0%; background:linear-gradient(90deg, var(--accent1), var(--accent2))}
+
+    /* Stats */
+    .stats{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+    .stat{background:var(--field); border:1px solid var(--field-border); border-radius:12px; padding:12px}
+    .stat .label{color:var(--muted); font-size:12px}
+    .stat .value{font-weight:800; font-size:22px; margin-top:4px}
+
+    /* Table */
+    table{width:100%; border-collapse:collapse; overflow:hidden; border-radius:12px; border:1px solid var(--field-border); background:var(--field)}
+    th,td{padding:10px 12px; text-align:left; border-bottom:1px solid #0f1a33; font-size:13px}
+    th{color:var(--muted); font-weight:700}
+    tr:last-child td{border-bottom:0}
+
+    /* Micro feedback */
+    .pulse{animation:pulse .25s ease}
+    @keyframes pulse{0%{transform:scale(1)} 50%{transform:scale(1.02)} 100%{transform:scale(1)}}
+
+    .footer-note{margin-top:14px; font-size:12px; color:var(--muted)}
+    .kbd{display:inline-block; padding:2px 6px; border-radius:6px; background:#0f1629; border:1px solid var(--field-border); font-weight:700}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="brand" aria-label="Infinie & gratuit">
+      <div class="pill" aria-hidden="true"><span>∞</span></div>
+      <div class="wordmark">Infinie & gratuit</div>
+    </header>
+
+    <div class="grid">
+      <!-- Col: Contrôles -->
+      <section class="card" aria-labelledby="ctrl-title">
+        <div class="body">
+          <h2 id="ctrl-title">Paramètres</h2>
+          <div class="muted" style="margin-bottom:10px">Choisissez la <strong>méthode d'entrée</strong> et la <strong>durée</strong>.</div>
+
+          <div class="muted" style="font-size:12px; margin:8px 0 6px">Méthode d'entrée</div>
+          <div class="segmented" role="tablist" aria-label="Méthode d'entrée">
+            <button id="mode-space" class="active" role="tab" aria-selected="true" data-mode="space" title="Compter les pressions de la touche Espace (⎵)"><span>⎵&nbsp;Espace</span></button>
+            <button id="mode-click" role="tab" aria-selected="false" data-mode="click" title="Compter les clics / taps"><span>🖱️ Clic / Tap</span></button>
+          </div>
+
+          <div class="muted" style="font-size:12px; margin:12px 0 6px">Durée du test</div>
+          <div class="durations" role="radiogroup" aria-label="Durée">
+            <div class="chip active" role="radio" aria-checked="true" data-duration="10">10s</div>
+            <div class="chip" role="radio" aria-checked="false" data-duration="30">30s</div>
+            <div class="chip" role="radio" aria-checked="false" data-duration="60">1 min</div>
+          </div>
+
+          <button id="start" class="primary" aria-label="Démarrer le test"><span>▶</span> Démarrer</button>
+          <button id="reset" class="ghost" style="margin-left:8px">Réinitialiser</button>
+
+          <p class="footer-note">
+            Raccourcis: <span class="kbd">R</span> pour recommencer • <span class="kbd">⎵</span> compte seulement si <strong>Espace</strong> est sélectionné.
+          </p>
+        </div>
+      </section>
+
+      <!-- Col: Zone de jeu -->
+      <section class="card" aria-labelledby="play-title">
+        <div class="body">
+          <h2 id="play-title">Test de clics</h2>
+          <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+
+          <div id="play" class="play" tabindex="0" aria-live="polite" aria-atomic="true">
+            <div style="text-align:center">
+              <div id="cta" class="big">Prêt ?</div>
+              <div id="sub" class="hint">Choisissez les paramètres puis cliquez sur <strong>Démarrer</strong>.</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Col: Statistiques -->
+      <section class="card" aria-labelledby="stats-title">
+        <div class="body">
+          <h2 id="stats-title">Statistiques</h2>
+
+          <div class="stats" style="margin-bottom:12px">
+            <div class="stat">
+              <div class="label">Clics</div>
+              <div id="clicks" class="value">0</div>
+            </div>
+            <div class="stat">
+              <div class="label">CPS (cl/s)</div>
+              <div id="cps" class="value">0.00</div>
+            </div>
+            <div class="stat">
+              <div class="label">Temps restant</div>
+              <div id="remain" class="value">—</div>
+            </div>
+            <div class="stat">
+              <div class="label">Durée</div>
+              <div id="duration" class="value">10s</div>
+            </div>
+          </div>
+
+          <h3 style="margin:14px 0 8px; font-size:14px">Meilleurs scores (local)</h3>
+          <table aria-label="Meilleurs scores">
+            <thead>
+              <tr><th>Mode</th><th>Durée</th><th>Score</th><th>CPS</th></tr>
+            </thead>
+            <tbody id="bests">
+              <!-- rempli par JS -->
+            </tbody>
+          </table>
+
+          <p class="footer-note">Les meilleurs scores sont mémorisés localement (navigateur).</p>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const els = {
+        modeBtns: [document.getElementById('mode-space'), document.getElementById('mode-click')],
+        chips: Array.from(document.querySelectorAll('.chip')),
+        start: document.getElementById('start'),
+        reset: document.getElementById('reset'),
+        play: document.getElementById('play'),
+        cta: document.getElementById('cta'),
+        sub: document.getElementById('sub'),
+        bar: document.getElementById('bar'),
+        clicks: document.getElementById('clicks'),
+        cps: document.getElementById('cps'),
+        remain: document.getElementById('remain'),
+        duration: document.getElementById('duration'),
+        bests: document.getElementById('bests'),
+      };
+
+      const state = {
+        mode: 'space', // 'space' | 'click'
+        totalMs: 10000,
+        running: false,
+        clicks: 0,
+        startAt: 0,
+        timerId: null,
+        spaceHeld: false,
+      };
+
+      // Utils
+      const fmt = (n)=> n.toFixed(2);
+      const storageKey = 'infinie_clicker_best_v1';
+      const readBest = ()=>{ try{ return JSON.parse(localStorage.getItem(storageKey) || '{}'); } catch{ return {}; } };
+      const writeBest = (obj)=> localStorage.setItem(storageKey, JSON.stringify(obj));
+      const comboKey = ()=> `${state.mode}-${Math.round(state.totalMs/1000)}s`;
+
+      function renderBests(){
+        const best = readBest();
+        const rows = [];
+        const durations = [10,30,60];
+        ['space','click'].forEach(m=>{
+          durations.forEach(d=>{
+            const key = `${m}-${d}s`;
+            const item = best[key] || {score: '—', cps: '—'};
+            rows.push(`<tr><td>${m==='space'?'Espace':'Clic/Tap'}</td><td>${d}s</td><td>${item.score}</td><td>${item.cps}</td></tr>`);
+          });
+        });
+        els.bests.innerHTML = rows.join('');
+      }
+
+      function setMode(newMode){
+        state.mode = newMode;
+        els.modeBtns.forEach(b=> b.classList.toggle('active', b.dataset.mode===newMode));
+        updateCTA();
+        updatePadCursor();
+      }
+
+      function setDuration(sec){
+        state.totalMs = sec*1000;
+        els.chips.forEach(c=> c.classList.toggle('active', Number(c.dataset.duration)===sec));
+        els.duration.textContent = sec===60? '1 min' : `${sec}s`;
+        updateTime(0);
+        updateBar(0);
+      }
+
+      function updatePadCursor(){
+        // Cursor pointer only if click mode
+        els.play.classList.toggle('is-click', state.mode==='click');
+      }
+
+      function updateCTA(){
+        if(state.running){ return; }
+        if(state.mode==='space'){
+          els.cta.textContent = 'Appuie sur ESPACE';
+          els.sub.innerHTML = `Puis frappe le plus vite possible pendant la durée choisie.`;
+        } else {
+          els.cta.textContent = 'Clique / Tape ici';
+          els.sub.innerHTML = `Chaque clic/tap est compté pendant la durée choisie.`;
+        }
+      }
+
+      function lockControls(lock){
+        els.modeBtns.forEach(b=> b.disabled = lock);
+        els.chips.forEach(c=> c.style.pointerEvents = lock? 'none' : 'auto');
+        els.start.disabled = lock;
+      }
+
+      function updateBar(p){ els.bar.style.width = `${Math.min(100, Math.max(0, p*100))}%`; }
+      function updateClicks(){ els.clicks.textContent = state.clicks; }
+      function updateCPS(elapsedMs){
+        const s = Math.max(0.001, elapsedMs/1000);
+        els.cps.textContent = fmt(state.clicks / s);
+      }
+      function updateTime(elapsedMs){
+        const remainMs = Math.max(0, state.totalMs - elapsedMs);
+        const secs = remainMs/1000;
+        els.remain.textContent = remainMs>=1000 ? `${Math.ceil(secs)}s` : `${remainMs}ms`;
+      }
+
+      function start(){
+        if(state.running) return;
+        state.running = true;
+        state.clicks = 0;
+        state.startAt = performance.now();
+        updateClicks();
+        updateCPS(0);
+        updateTime(0);
+        updateBar(0);
+        lockControls(true);
+        els.play.focus();
+        els.cta.textContent = 'GO !';
+        els.sub.textContent = '';
+
+        state.timerId = requestAnimationFrame(tick);
+      }
+
+      function finish(){
+        if(!state.running) return;
+        state.running = false;
+        cancelAnimationFrame(state.timerId);
+        const elapsed = performance.now() - state.startAt;
+        updateCPS(state.totalMs); // final CPS calculée sur la durée choisie
+        updateTime(state.totalMs);
+        updateBar(1);
+        lockControls(false);
+
+        const cps = (state.clicks / (state.totalMs/1000));
+        els.cta.textContent = 'Terminé';
+        els.sub.innerHTML = `<strong>${state.clicks}</strong> clics en ${state.totalMs/1000}s • CPS moyen <strong>${fmt(cps)}</strong>`;
+        els.play.classList.add('pulse'); setTimeout(()=>els.play.classList.remove('pulse'), 250);
+
+        // Sauvegarder meilleurs scores
+        const best = readBest();
+        const key = comboKey();
+        const prev = best[key];
+        if(!prev || (typeof prev.score==='number' && state.clicks>prev.score)){
+          best[key] = {score: state.clicks, cps: fmt(cps)};
+          writeBest(best);
+        }
+        renderBests();
+      }
+
+      function tick(now){
+        const elapsed = now - state.startAt;
+        if(elapsed >= state.totalMs){ finish(); return; }
+        updateCPS(elapsed);
+        updateTime(elapsed);
+        updateBar(elapsed/state.totalMs);
+        state.timerId = requestAnimationFrame(tick);
+      }
+
+      function countFromSpace(e){
+        // Compte uniquement si mode espace, pas de répétition clavier
+        if(state.mode!=='space') return;
+        if(!state.running) return;
+        if(e.repeat) return; // ignore auto-repeat
+        state.clicks++;
+        updateClicks();
+        els.play.classList.add('pulse'); setTimeout(()=>els.play.classList.remove('pulse'), 140);
+      }
+
+      function countFromClick(){
+        if(state.mode!=='click') return;
+        if(!state.running) return;
+        state.clicks++;
+        updateClicks();
+      }
+
+      function resetAll(){
+        if(state.running){ finish(); }
+        state.clicks = 0;
+        updateClicks();
+        els.cps.textContent = '0.00';
+        els.remain.textContent = '—';
+        els.bar.style.width = '0%';
+        updateCTA();
+      }
+
+      // Event wiring
+      els.modeBtns.forEach(b=>{
+        b.addEventListener('click', ()=> setMode(b.dataset.mode));
+      });
+
+      els.chips.forEach(c=>{
+        c.addEventListener('click', ()=> setDuration(Number(c.dataset.duration)));
+      });
+
+      els.start.addEventListener('click', start);
+      els.reset.addEventListener('click', resetAll);
+
+      // Compteurs
+      // Empêcher le scroll quand espace est actif
+      window.addEventListener('keydown', (e)=>{
+        if(e.code==='Space'){
+          // empêcher le scroll seulement si mode espace
+          if(state.mode==='space') e.preventDefault();
+          countFromSpace(e);
+        }
+        // R pour restart
+        if(e.key==='r' || e.key==='R'){
+          e.preventDefault();
+          resetAll();
+          start();
+        }
+      }, {passive:false});
+
+      els.play.addEventListener('pointerdown', (e)=>{
+        // Autoriser tap/clic partout dans la zone
+        if(state.mode==='click'){ e.preventDefault(); }
+        countFromClick();
+      });
+
+      // Initial render
+      renderBests();
+      setMode('space');
+      setDuration(10);
+      updateCTA();
+      updatePadCursor();
+    })();
+  </script>
+</body>
+</html>

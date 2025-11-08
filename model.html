@@ -1,0 +1,297 @@
+<!DOCTYPE html> <html lang="fr"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Estimation Immobilière Infinie</title> <style> :root { --bg:#0A0A0B; --text:#F2F3F6; --muted:#A5A9B3; --gold-1:#D8B45A; --gold-2:#F2C76C; --gold-3:#BF8E2C; --panel:rgba(16,18,24,0.8); --border:rgba(212,172,82,.22); --grid:#F2C76C22; --grid-strong:#F2C76C35; --radius:14px; --ring:0 0 0 2px rgba(212,172,82,.4); }
+{
+box-sizing:border-box;
+-webkit-font-smoothing:antialiased;
+text-rendering:optimizeLegibility;
+margin:0;
+padding:0;
+}
+body {
+background-color:var(--bg);
+color:var(--text);
+font-family:system-ui,-apple-system,BlinkMacSystemFont,"Inter","Roboto","Helvetica Neue",Arial,sans-serif;
+min-height:100vh;
+display:flex;
+align-items:center;
+justify-content:center;
+position:relative;
+overflow:hidden;
+}
+/* fond quadrillé + halo doré */
+body::before {
+content:"";
+position:absolute;
+inset:0;
+background-image:
+repeating-linear-gradient(to right, var(--grid-strong) 0px, var(--grid-strong) 1px, transparent 1px, transparent 80px),
+repeating-linear-gradient(to bottom, var(--grid) 0px, var(--grid) 1px, transparent 1px, transparent 80px);
+opacity:0.35;
+pointer-events:none;
+animation:gridMove 30s linear infinite;
+}
+@keyframes gridMove {
+0% { background-position:0px 0px,0px 0px; }
+100% { background-position:80px 80px,80px 80px; }
+}
+body::after {
+content:"";
+position:absolute;
+width:600px;
+height:600px;
+border-radius:50%;
+background:radial-gradient(circle at 50% 50%, rgba(242,199,108,.18) 0%, rgba(0,0,0,0) 70%);
+mix-blend-mode:screen;
+pointer-events:none;
+filter:blur(40px);
+animation:haloPulse 6s ease-in-out infinite alternate;
+}
+@keyframes haloPulse {
+0% {opacity:.35; transform:scale(1);}
+100% {opacity:.15; transform:scale(1.15);}
+}
+/* Conteneur du chat */
+.chat-shell {
+position:relative;
+width:min(440px,90vw);
+height:640px;
+display:flex;
+flex-direction:column;
+background:var(--panel);
+border-radius:var(--radius);
+border:1px solid var(--border);
+box-shadow:
+0 30px 80px rgba(0,0,0,.8),
+0 0 80px rgba(242,199,108,.15);
+backdrop-filter:blur(12px);
+-webkit-backdrop-filter:blur(12px);
+z-index:5;
+}
+/* header du chat */
+.chat-header {
+flex:0 0 auto;
+display:flex;
+align-items:center;
+justify-content:space-between;
+padding:12px 16px;
+border-bottom:1px solid var(--border);
+font-size:12px;
+color:var(--muted);
+}
+.brand-pill {
+display:flex;
+align-items:center;
+gap:8px;
+background:rgba(255,255,255,0.02);
+border-radius:999px;
+padding:6px 10px;
+border:1px solid var(--border);
+font-size:12px;
+line-height:1;
+color:var(--gold-2);
+font-weight:500;
+text-shadow:0 0 8px rgba(242,199,108,.4);
+}
+.brand-pill .logo {
+font-size:14px;
+color:var(--gold-2);
+font-weight:600;
+}
+#personaTag {
+font-size:11px;
+color:var(--muted);
+text-align:right;
+}
+/* zone messages */
+.chat-main {
+flex:1 1 auto;
+overflow-y:auto;
+padding:16px;
+display:flex;
+flex-direction:column;
+gap:16px;
+scroll-behavior:smooth;
+}
+/* zone d'interaction dynamique */
+#interactionZone {
+flex:0 0 auto;
+border-top:1px solid var(--border);
+background:rgba(10,10,11,0.4);
+backdrop-filter:blur(6px);
+-webkit-backdrop-filter:blur(6px);
+padding:12px 16px;
+font-size:13px;
+color:var(--text);
+}
+/* bulles de chat */
+.msg {
+display:flex;
+align-items:flex-start;
+gap:10px;
+max-width:100%;
+}
+.msg.bot {
+flex-direction:row;
+}
+.msg.user {
+flex-direction:row-reverse;
+text-align:right;
+}
+.avatar {
+width:36px;
+height:36px;
+border-radius:50%;
+font-size:14px;
+font-weight:600;
+display:flex;
+align-items:center;
+justify-content:center;
+flex-shrink:0;
+line-height:1;
+}
+.bot-avatar {
+background:#FFFFFF;
+color:var(--gold-2);
+border:1px solid var(--gold-2);
+box-shadow:0 0 16px rgba(242,199,108,.4);
+font-weight:600;
+}
+.user-avatar {
+background:radial-gradient(circle at 30% 30%, var(--gold-2) 0%, var(--gold-3) 40%, #000 70%);
+color:#000;
+border:1px solid var(--gold-2);
+box-shadow:0 0 16px rgba(242,199,108,.4);
+font-weight:600;
+}
+.bubble {
+background:rgba(0,0,0,.4);
+border:1px solid var(--border);
+border-radius:var(--radius);
+padding:12px 14px;
+font-size:14px;
+line-height:1.4;
+color:var(--text);
+max-width:calc(100% - 46px);
+word-break:break-word;
+text-align:left;
+box-shadow:0 20px 40px rgba(0,0,0,.6);
+}
+.msg.user .bubble {
+background:rgba(15,15,15,.6);
+border:1px solid var(--gold-2);
+color:var(--text);
+text-align:left;
+box-shadow:0 20px 40px rgba(0,0,0,.8),0 0 32px rgba(242,199,108,.25);
+}
+/* Zone d'options / inputs */
+.option-grid {
+display:flex;
+flex-wrap:wrap;
+gap:8px;
+}
+.optBtn {
+flex:1 1 calc(50% - 8px);
+background:rgba(16,18,24,0.6);
+border:1px solid var(--border);
+border-radius:var(--radius);
+padding:12px 14px;
+color:var(--text);
+font-size:14px;
+line-height:1.3;
+cursor:pointer;
+text-align:center;
+box-shadow:0 10px 30px rgba(0,0,0,.6);
+}
+.optBtn:hover {
+box-shadow:0 0 0 3px rgba(242,199,108,.25),0 20px 40px rgba(0,0,0,.9);
+border-color:var(--gold-2);
+color:var(--gold-2);
+}
+.departements-grid {
+max-height:180px;
+overflow-y:auto;
+display:flex;
+flex-wrap:wrap;
+gap:6px;
+padding-right:4px;
+}
+.deptBtn {
+flex:1 1 calc(50% - 6px);
+background:rgba(16,18,24,0.6);
+border:1px solid var(--border);
+border-radius:var(--radius);
+padding:10px 12px;
+font-size:13px;
+line-height:1.3;
+cursor:pointer;
+text-align:left;
+color:var(--text);
+box-shadow:0 10px 30px rgba(0,0,0,.6);
+}
+.deptBtn:hover {
+box-shadow:0 0 0 3px rgba(242,199,108,.25),0 20px 40px rgba(0,0,0,.9);
+border-color:var(--gold-2);
+color:var(--gold-2);
+}
+.number-row {
+display:flex;
+gap:8px;
+align-items:center;
+}
+.number-row input {
+flex:1;
+background:#000;
+color:var(--text);
+border:1px solid var(--border);
+border-radius:var(--radius);
+padding:10px 12px;
+font-size:14px;
+line-height:1.3;
+outline:none;
+box-shadow:0 10px 30px rgba(0,0,0,.6);
+}
+.number-row input:focus {
+box-shadow:var(--ring),0 20px 40px rgba(0,0,0,.8),0 0 32px rgba(242,199,108,.25);
+border-color:var(--gold-2);
+}
+.sendBtn {
+background:linear-gradient(to right,var(--gold-3),var(--gold-2));
+color:#000;
+font-weight:600;
+border:none;
+border-radius:var(--radius);
+padding:10px 14px;
+cursor:pointer;
+font-size:14px;
+line-height:1.3;
+min-width:64px;
+box-shadow:0 10px 30px rgba(0,0,0,.6),0 0 32px rgba(242,199,108,.4);
+}
+.sendBtn:hover {
+box-shadow:0 0 0 3px rgba(242,199,108,.25),0 20px 40px rgba(0,0,0,.9),0 0 40px rgba(242,199,108,.5);
+}
+/* petite ligne finale */
+.finish-note {
+font-size:11px;
+line-height:1.4;
+color:var(--muted);
+text-align:center;
+padding-top:8px;
+}
+/* scrollbar custom légère */
+.chat-main::-webkit-scrollbar,
+.departements-grid::-webkit-scrollbar {
+width:4px;
+}
+.chat-main::-webkit-scrollbar-track,
+.departements-grid::-webkit-scrollbar-track {
+background:rgba(255,255,255,0.03);
+border-radius:999px;
+}
+.chat-main::-webkit-scrollbar-thumb,
+.departements-grid::-webkit-scrollbar-thumb {
+background:linear-gradient(var(--gold-3),var(--gold-2));
+border-radius:999px;
+box-shadow:0 0 8px rgba(242,199,108,.6);
+}
+</style>
+</head> <body> <div class="chat-shell"> <div class="chat-header"> <div class="brand-pill"> <span class="logo">∞</span> <span>Estimation immo</span> </div> <div id="personaTag">Profil...</div> </div> <div id="chatMessages" class="chat-main"> <!-- messages dynamiques --> </div> <div id="interactionZone"> <!-- zone interactive dynamique (boutons, input, etc.) --> </div> </div> <script> (function(){ // ----------------------------- // MODÈLE D'ESTIMATION (régression linéaire) // ----------------------------- const FEATURE_ORDER = [ "surface_bien_m2", "surface_terrain_m2", "pieces", "parking_places", "exterieur_m2", "dernier_etage", "ascenseur", "dep_DEP_07", "dep_DEP_11", "dep_DEP_13", "dep_DEP_14", "dep_DEP_21", "dep_DEP_23", "dep_DEP_24", "dep_DEP_27", "dep_DEP_29", "dep_DEP_31", "dep_DEP_32", "dep_DEP_33", "dep_DEP_34", "dep_DEP_41", "dep_DEP_44", "dep_DEP_45", "dep_DEP_50", "dep_DEP_59", "dep_DEP_60", "dep_DEP_62", "dep_DEP_64", "dep_DEP_66", "dep_DEP_69", "dep_DEP_73", "dep_DEP_74", "dep_DEP_75", "dep_DEP_76", "dep_DEP_83", "dep_DEP_85", "zone_centre_urbain", "zone_montagne", "zone_periurbain", "zone_rural", "type_cave_parking", "type_maison", "type_terrain", "etat_correct", "etat_neuf", "etat_refait" ]; const COEFFS = [ 4610.478736835255, 102.60753821583353, 914.9166668708718, 18927.48476062552, 83.10789748928252, 625.8209301081586, 31519.405494826126, 6132.763352512785, -1669.457369968176, 11928.090134859782, -4806.138497806348, 11510.757529486536, 4830.337397261761, 4839.883019125664, 4906.944014827606, -6206.610560602938, 11965.712482396973, 4990.283285734461, 11876.33905087999, -3991.8136438245047, 3970.658101498179, 11761.587564281133, 11410.552036471705, -3382.1110594879683, 11775.57279362784, 11728.963724939782, 11498.389484596146, -1298.922868549271, -2655.6230437414533, 12575.545117769649, -24627.303722037654, -26007.119696348887, -1001.869991408673, 11487.6238623561, -4166.677168034745, -1576.3779638825204, -1001.8699804779806, -50634.43289395696, -258537.31361648257, -477403.228782803, -46421.83910557701, -49337.145551152826, 45260.02298580887, 118901.65818696376, 293130.9279974189, 215658.5829985462 ]; const INTERCEPT = 43376.075550834066; // ----------------------------- // PERSONNALITÉS / TONS // ----------------------------- const PERSONAS = [ { id:"heureux", tag:"Profil: Sympa", intro:"Hey 👋 je suis Fintel, ton estimateur perso. On va calculer la valeur de ton bien en quelques questions. Prêt ?", q:{ type_bien:"On parle de quoi exactement ? Choisis le type de bien 👇", etat_bien:"L'état général du bien ?", zone_type:"Le secteur ressemble plutôt à quoi ?", departement:"Dans quel département ça se situe ?", surface_bien_m2:"Parfait. Quelle est la surface habitable principale (m²) ?", surface_terrain_m2:"Surface du terrain (m²). Si pas de terrain, mets 0 ✍️", pieces:"Combien de pièces principales ?", parking_places:"Places de stationnement privées (garage, box, parking numéroté) ?", exterieur_m2:"Super. Terrasse / balcon / jardin privatif en m² ? (0 si rien)", dernier_etage:"C'est au dernier étage ?", ascenseur:"Ascenseur dans l'immeuble ?" }, beforeCalc1:"Parfait, je croise tout ça...", beforeCalc2:"J'analyse les surfaces, l'état, la zone et le marché local 📊", resultIntro:"Estimation actuelle autour de", rangeIntro:"Fourchette réaliste :", closing:"⚠ C'est une valeur moyenne constatée, pas une promesse de vente." }, { id:"chill", tag:"Profil: Détendu", intro:"Yo. Moi c'est Fintel. Je te fais une estimation rapide sans blabla. On remplit ensemble.", q:{ type_bien:"C'est quoi comme bien ?", etat_bien:"Et l'état du truc, tu dirais quoi ?", zone_type:"Le coin, c'est plutôt quoi ?", departement:"Dis-moi le département.", surface_bien_m2:"Surface habitable en m² ?", surface_terrain_m2:"Terrain en m² (0 si pas de terrain).", pieces:"Nombre de pièces ?", parking_places:"Places privées pour se garer ?", exterieur_m2:"Terrasse/balcon/jardin privé en m² ?", dernier_etage:"C'est au dernier étage ?", ascenseur:"Ascenseur dispo ?" }, beforeCalc1:"Ok j'calcule...", beforeCalc2:"Bouge pas, je mixe les infos local marché.", resultIntro:"Ça vaut à peu près", rangeIntro:"Zone raisonnable :", closing:"C'est une indication marché, pas un contrat de vente." }, { id:"pro", tag:"Profil: Pro", intro:"Bonjour, je suis Fintel, moteur d'estimation immobilière. Je vais vous poser quelques questions précises, puis je calcule.", q:{ type_bien:"Type de bien à estimer :", etat_bien:"État du bien :", zone_type:"Type d'environnement :", departement:"Département concerné :", surface_bien_m2:"Surface habitable principale (en m²) :", surface_terrain_m2:"Surface du terrain (en m², 0 si non applicable) :", pieces:"Nombre de pièces principales :", parking_places:"Nombre de places de stationnement privatives :", exterieur_m2:"Surface extérieure privative (m²) :", dernier_etage:"Le bien est-il situé au dernier étage ?", ascenseur:"Présence d'un ascenseur ?" }, beforeCalc1:"Très bien. Je traite les paramètres.", beforeCalc2:"Je calcule une valeur de marché cohérente.", resultIntro:"Valeur estimée :", rangeIntro:"Intervalle indicatif :", closing:"Note : estimation statistique basée sur des données de ventes réelles." }, { id:"sarcastic", tag:"Profil: Franc", intro:"Salut, Fintel à l'appareil. Je fais des estimations sérieuses, même si tu viens juste pour la curiosité 👀. Réponds honnêtement.", q:{ type_bien:"On parle de quoi là ?", etat_bien:"L'état du bien, sans mentir 😏 ?", zone_type:"Le coin c'est plutôt… ?", departement:"Donne-moi le département.", surface_bien_m2:"Surface habitable (m²). Les vrais m², pas 'loi carrez quand il fait beau'.", surface_terrain_m2:"Terrain en m². Mets 0 si t'as pas un empire.", pieces:"Combien de pièces correctes ? (Cuisine/salon/chambres)", parking_places:"Places de parking privées ?", exterieur_m2:"Terrasse/balcon/jardin en m² ? 0 si t'as pas la jungle.", dernier_etage:"Dernier étage ?", ascenseur:"Ascenseur ou cardio obligatoire ?" }, beforeCalc1:"Ok. Je fais tourner le cerveau.", beforeCalc2:"Je compare avec ce qui se vend vraiment, pas les annonces gonflées.", resultIntro:"Ton bien se situe autour de", rangeIntro:"Fourchette réaliste :", closing:"Disclaimer : si tu demandes x2 ce prix, bonne chance." } ]; // ----------------------------- // QUESTIONS / FLUX // ----------------------------- const DEPARTEMENTS = [ {value:"dep_DEP_07", label:"07 - Ardèche"}, {value:"dep_DEP_11", label:"11 - Aude"}, {value:"dep_DEP_13", label:"13 - Bouches-du-Rhône"}, {value:"dep_DEP_14", label:"14 - Calvados"}, {value:"dep_DEP_21", label:"21 - Côte-d'Or"}, {value:"dep_DEP_23", label:"23 - Creuse"}, {value:"dep_DEP_24", label:"24 - Dordogne"}, {value:"dep_DEP_27", label:"27 - Eure"}, {value:"dep_DEP_29", label:"29 - Finistère"}, {value:"dep_DEP_31", label:"31 - Haute-Garonne"}, {value:"dep_DEP_32", label:"32 - Gers"}, {value:"dep_DEP_33", label:"33 - Gironde"}, {value:"dep_DEP_34", label:"34 - Hérault"}, {value:"dep_DEP_41", label:"41 - Loir-et-Cher"}, {value:"dep_DEP_44", label:"44 - Loire-Atlantique"}, {value:"dep_DEP_45", label:"45 - Loiret"}, {value:"dep_DEP_50", label:"50 - Manche"}, {value:"dep_DEP_59", label:"59 - Nord"}, {value:"dep_DEP_60", label:"60 - Oise"}, {value:"dep_DEP_62", label:"62 - Pas-de-Calais"}, {value:"dep_DEP_64", label:"64 - Pyrénées-Atlantiques"}, {value:"dep_DEP_66", label:"66 - Pyrénées-Orientales"}, {value:"dep_DEP_69", label:"69 - Rhône"}, {value:"dep_DEP_73", label:"73 - Savoie"}, {value:"dep_DEP_74", label:"74 - Haute-Savoie"}, {value:"dep_DEP_75", label:"75 - Paris"}, {value:"dep_DEP_76", label:"76 - Seine-Maritime"}, {value:"dep_DEP_83", label:"83 - Var"}, {value:"dep_DEP_85", label:"85 - Vendée"} ]; // Chaque "step" représente une question et la façon de répondre const steps = [ { id:"type_bien", kind:"buttons", options:[ {value:"type_maison", label:"Maison"}, {value:"type_terrain", label:"Terrain nu"}, {value:"type_cave_parking", label:"Cave / Parking"}, {value:"type_appartement", label:"Appartement"} ] }, { id:"etat_bien", kind:"buttons", options:[ {value:"etat_neuf", label:"Neuf"}, {value:"etat_refait", label:"Refait / rénové"}, {value:"etat_correct", label:"Correct"}, {value:"etat_a_refaire", label:"À refaire"} ] }, { id:"zone_type", kind:"buttons", options:[ {value:"zone_centre_urbain", label:"Centre urbain"}, {value:"zone_periurbain", label:"Périurbain"}, {value:"zone_rural", label:"Rural"}, {value:"zone_montagne", label:"Montagne"} ] }, { id:"departement", kind:"departement" }, { id:"surface_bien_m2", kind:"number", placeholder:"ex: 72", unit:"m²" }, { id:"surface_terrain_m2", kind:"number", placeholder:"ex: 300 (0 si aucun terrain)", unit:"m²" }, { id:"pieces", kind:"number", placeholder:"ex: 3", unit:"pièces" }, { id:"parking_places", kind:"number", placeholder:"ex: 1 (0 si aucune)", unit:"places" }, { id:"exterieur_m2", kind:"number", placeholder:"ex: 12 (0 si rien)", unit:"m² ext." }, { id:"dernier_etage", kind:"yesno" }, { id:"ascenseur", kind:"yesno" } ]; // ----------------------------- // ÉTAT GLOBAL // ----------------------------- let currentStep = 0; let PERSONA = null; const answers = { type_bien:null, etat_bien:null, zone_type:null, departement:null, surface_bien_m2:0, surface_terrain_m2:0, pieces:0, parking_places:0, exterieur_m2:0, dernier_etage:0, ascenseur:0 }; const chatMessages = document.getElementById("chatMessages"); const interactionZone = document.getElementById("interactionZone"); const personaTagEl = document.getElementById("personaTag"); // ----------------------------- // UTILITAIRES UI CHAT // ----------------------------- function scrollToBottom() { chatMessages.scrollTop = chatMessages.scrollHeight; } function appendBotMessage(initialText){ const wrap = document.createElement("div"); wrap.className = "msg bot"; wrap.innerHTML = ` <div class="avatar bot-avatar">F</div> <div class="bubble"><div class="text"></div></div> `; chatMessages.appendChild(wrap); const textEl = wrap.querySelector(".text"); if(initialText){ textEl.textContent = initialText; } scrollToBottom(); return textEl; } function appendUserMessage(text){ const wrap = document.createElement("div"); wrap.className = "msg user"; wrap.innerHTML = ` <div class="avatar user-avatar">Vous</div> <div class="bubble"><div class="text"></div></div> `; const textEl = wrap.querySelector(".text"); textEl.textContent = text; chatMessages.appendChild(wrap); scrollToBottom(); } function botSay(text){ return new Promise(function(resolve){ const textEl = appendBotMessage(""); let i = 0; const chars = text; const interval = setInterval(function(){ textEl.textContent += chars.charAt(i); i++; scrollToBottom(); if(i >= chars.length){ clearInterval(interval); resolve(); } }, 18 + Math.random()*20); }); } // ----------------------------- // RENDU DES CONTRÔLES DANS LE BAS // ----------------------------- function clearInteractionZone(){ interactionZone.innerHTML = ""; } // boutons génériques function renderButtons(step){ const htmlParts = []; htmlParts.push('<div class="option-grid">'); step.options.forEach(function(opt,idx){ htmlParts.push( '<button class="optBtn" data-val="'+opt.value.replace(/"/g,'&quot;')+'">'+opt.label+'</button>' ); }); htmlParts.push('</div>'); interactionZone.innerHTML = htmlParts.join(""); const btns = interactionZone.querySelectorAll(".optBtn"); btns.forEach(function(btn){ btn.addEventListener("click", async function(){ const value = btn.getAttribute("data-val"); const label = btn.textContent.trim(); await handleUserAnswer(step, value, label); }); }); } // yes/no function renderYesNo(step){ interactionZone.innerHTML = ` <div class="option-grid"> <button class="optBtn" data-val="1">Oui</button> <button class="optBtn" data-val="0">Non</button> </div> `; const btns = interactionZone.querySelectorAll(".optBtn"); btns.forEach(function(btn){ btn.addEventListener("click", async function(){ const value = btn.getAttribute("data-val"); const label = btn.textContent.trim(); await handleUserAnswer(step, value, label); }); }); } // départements (liste déroulante stylée) function renderDepartements(step){ let html = '<div class="departements-grid">'; DEPARTEMENTS.forEach(function(dep){ html += '<button class="deptBtn" data-val="'+dep.value+'">'+dep.label+'</button>'; }); html += '</div>'; interactionZone.innerHTML = html; const btns = interactionZone.querySelectorAll(".deptBtn"); btns.forEach(function(btn){ btn.addEventListener("click", async function(){ const value = btn.getAttribute("data-val"); const label = btn.textContent.trim(); await handleUserAnswer(step, value, label); }); }); } // champ numérique + bouton envoyer function renderNumber(step){ interactionZone.innerHTML = ` <div class="number-row"> <input id="numInput" type="number" inputmode="decimal" placeholder="${step.placeholder || ''}"> <button class="sendBtn" id="sendBtn">OK</button> </div> `; const sendBtn = document.getElementById("sendBtn"); const numInput = document.getElementById("numInput"); function go(){ let raw = numInput.value; if(raw === "" || raw === null || raw === undefined){ raw = "0"; } const val = parseFloat(raw); let showTxt = raw; if(step.unit){ showTxt = raw+" "+step.unit; } handleUserAnswer(step, val, showTxt); } sendBtn.addEventListener("click", go); numInput.addEventListener("keydown", function(e){ if(e.key === "Enter"){ go(); } }); } // choisi quoi rendre function renderInteraction(step){ if(!step){ return; } if(step.kind === "buttons"){ renderButtons(step); } else if(step.kind === "departement"){ renderDepartements(step); } else if(step.kind === "number"){ renderNumber(step); } else if(step.kind === "yesno"){ renderYesNo(step); } else { interactionZone.innerHTML = ""; } } // ----------------------------- // LOGIQUE RÉPONSE UTILISATEUR // ----------------------------- async function handleUserAnswer(step, rawVal, displayText){ // 1. afficher bulle utilisateur appendUserMessage(displayText || String(rawVal)); // 2. sauver réponse dans answers answers[step.id] = rawVal; // 3. avancer currentStep++; // 4. nettoyer la zone d'interaction clearInteractionZone(); // 5. prochaine étape ou calcul final await askStep(); } // ----------------------------- // PREDICTION FINALE // ----------------------------- function buildFeatureVector(){ const v = new Array(FEATURE_ORDER.length).fill(0); for(let i=0;i<FEATURE_ORDER.length;i++){ const f = FEATURE_ORDER[i]; if(f === "surface_bien_m2"){ v[i] = Number(answers.surface_bien_m2)||0; } else if(f === "surface_terrain_m2"){ v[i] = Number(answers.surface_terrain_m2)||0; } else if(f === "pieces"){ v[i] = Number(answers.pieces)||0; } else if(f === "parking_places"){ v[i] = Number(answers.parking_places)||0; } else if(f === "exterieur_m2"){ v[i] = Number(answers.exterieur_m2)||0; } else if(f === "dernier_etage"){ v[i] = (Number(answers.dernier_etage)===1)?1:0; } else if(f === "ascenseur"){ v[i] = (Number(answers.ascenseur)===1)?1:0; } else if(f.indexOf("dep_")===0){ // one-hot département v[i] = (answers.departement === f) ? 1 : 0; } else if(f.indexOf("zone_")===0){ // zone_centre_urbain, zone_montagne, zone_periurbain, zone_rural v[i] = (answers.zone_type === f) ? 1 : 0; } else if(f.indexOf("type_")===0){ // type_maison, type_terrain, type_cave_parking (appartement = baseline) v[i] = (answers.type_bien === f) ? 1 : 0; } else if(f.indexOf("etat_")===0){ // etat_correct, etat_neuf, etat_refait (à_refaire = baseline) v[i] = (answers.etat_bien === f) ? 1 : 0; } else { v[i] = 0; } } return v; } function predictPrice(){ const vec = buildFeatureVector(); let price = INTERCEPT; for(let i=0;i<vec.length;i++){ price += vec[i]*COEFFS[i]; } return price; } function formatPriceEUR(v){ const val = Math.max(0, v); try { return new Intl.NumberFormat("fr-FR",{ style:"currency", currency:"EUR", maximumFractionDigits:0 }).format(val); } catch(e){ // fallback si Intl pas dispo return Math.round(val).toLocaleString("fr-FR")+" €"; } } // ----------------------------- // FIN DE DISCUSSION : AFFICHER ESTIMATION // ----------------------------- async function finishAndShowEstimate(){ // on enlève la zone d'interaction clearInteractionZone(); // petit "raisonnement" await botSay(PERSONA.beforeCalc1); await botSay(PERSONA.beforeCalc2); const price = predictPrice(); const low = price*0.92; const high = price*1.08; await botSay(PERSONA.resultIntro+" "+formatPriceEUR(price)); await botSay(PERSONA.rangeIntro+" "+formatPriceEUR(low)+" → "+formatPriceEUR(high)); await botSay(PERSONA.closing); // note finale en bas interactionZone.innerHTML = '<div class="finish-note">Estimation terminée.</div>'; } // ----------------------------- // BOUCLE DIALOGUE // ----------------------------- async function askStep(){ // toutes les questions répondues ? if(currentStep >= steps.length){ await finishAndShowEstimate(); return; } const step = steps[currentStep]; const qText = PERSONA.q[step.id] || "…"; // Bot pose la question await botSay(qText); // Puis on affiche les contrôles pour répondre renderInteraction(step); } // ----------------------------- // INITIALISATION // ----------------------------- async function startChat(){ // choisir perso const idx = Math.floor(Math.random()*PERSONAS.length); PERSONA = PERSONAS[idx]; personaTagEl.textContent = PERSONA.tag; // message d'intro await botSay(PERSONA.intro); // lancer la première vraie question await askStep(); } // démarrer startChat(); })(); </script> </body> </html>

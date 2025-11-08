@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Infinie & gratuit — Page principale</title>
+<meta name="color-scheme" content="dark"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* =======================
+   Identité & Tokens (DA)
+   ======================= */
+:root{
+  --bg:#0B0B0D; --text:#E6ECF7; --muted:#A4ADBD;
+  --panel:#0d1120; --border:rgba(95,123,255,0.18);
+  --accent1:#2FE3FF; --accent2:#1B4CFF;
+  --gold-1:#D8B45A; --gold-2:#F2C76C; --gold-3:#BF8E2C;
+  --grid:#F2C76C22; --grid-strong:#F2C76C35;
+  --ring:0 0 0 2px rgba(212,172,82,.35);
+  --radius:14px;
+  --speed-grid:60s; --speed-plane:26s;
+  --shadow-xl:0 30px 80px rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg); color:var(--text);
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+
+/* =======================
+   Arrière-plan global fluide
+   (grille + halos discrets)
+   ======================= */
+.bg{
+  position:fixed; inset:0; z-index:-2; pointer-events:none;
+  background:
+    radial-gradient(1400px 1200px at 12% 10%, #2b2b2f 0, #0B0B0D 60%),
+    radial-gradient(1400px 1200px at 88% 90%, #14141a 0, #0B0B0D 60%),
+    #0B0B0D;
+}
+.bg::before,
+.bg::after{
+  content:""; position:absolute; inset:-10%;
+  background:
+    repeating-linear-gradient(0deg, var(--grid) 0 1px, transparent 1px 40px),
+    repeating-linear-gradient(90deg, var(--grid) 0 1px, transparent 1px 40px);
+  animation:gridDrift var(--speed-grid) linear infinite;
+}
+.bg::after{
+  mix-blend-mode:screen; opacity:.25;
+  background:
+    radial-gradient(circle at 30% 20%, #F2C76C10 0 40%, transparent 45%),
+    radial-gradient(circle at 70% 80%, #D8B45A0d 0 40%, transparent 45%);
+}
+@keyframes gridDrift{to{transform:translate3d(-3%,2%,0)}}
+
+/* =======================
+   Header (collant)
+   ======================= */
+header{
+  position:sticky; top:0; z-index:50; backdrop-filter:saturate(1.2) blur(8px);
+  background:linear-gradient(#0b0b0df2,#0b0b0de6 40%, #0b0b0d00);
+  border-bottom:1px solid rgba(255,255,255,.04);
+}
+.nav{
+  max-width:1200px; margin:0 auto; padding:18px 22px;
+  display:flex; align-items:center; justify-content:space-between; gap:18px;
+}
+.brand{display:flex; align-items:center; gap:10px; text-decoration:none; color:var(--text)}
+.pill{
+  width:34px; height:34px; border-radius:999px;
+  background:radial-gradient(120% 120% at 25% 22%, var(--accent1), var(--accent2) 70%);
+  display:grid; place-items:center; box-shadow:0 4px 18px rgba(27,76,255,.35), inset 0 0 0 1px #ffffff0f;
+}
+.pill span{font-weight:800; color:white; line-height:1}
+.wordmark{font-weight:800; letter-spacing:.2px}
+.menu{display:flex; gap:26px; align-items:center}
+.menu a{color:var(--muted); text-decoration:none; font-weight:600}
+.menu a:hover{color:var(--text)}
+.lang{padding:.45rem .7rem; border:1px solid #ffffff18; border-radius:10px; font-weight:600}
+
+/* =======================
+   Sections (cadre général)
+   ======================= */
+section{position:relative}
+.wrapper{max-width:1200px; margin:0 auto; padding:84px 22px}
+
+/* TYPO */
+h1{margin:0 0 10px; line-height:1.05; font-weight:800}
+h2{margin:0 0 14px; font-size:40px; line-height:1.1; font-weight:800}
+.lead{color:var(--muted); margin:.4rem 0 1.6rem}
+
+/* Boutons */
+.btn{
+  display:inline-grid; grid-auto-flow:column; align-items:center; gap:.55rem;
+  padding:.9rem 1.1rem; border-radius:12px; text-decoration:none; color:var(--text);
+  background:linear-gradient(#111522,#0d1120); border:1px solid var(--border);
+  font-weight:600; box-shadow:inset 0 0 0 1px #ffffff08, 0 10px 26px rgba(0,0,0,.45);
+}
+.btn:hover{box-shadow:inset 0 0 0 1px #ffffff14, 0 12px 34px rgba(0,0,0,.55)}
+.btn-ghost{
+  background:transparent; border:1px solid #ffffff12;
+}
+
+/* Cartes icônes (Top outils) */
+.tools-row{display:grid; grid-template-columns:repeat(6,1fr); gap:24px; margin-top:38px}
+@media (max-width:1100px){.tools-row{grid-template-columns:repeat(3,1fr)}}
+@media (max-width:640px){.tools-row{grid-template-columns:repeat(2,1fr)}}
+.tool{
+  display:grid; grid-template-columns:auto 1fr; align-items:center; gap:14px;
+  padding:16px 18px; border:1px solid #ffffff15; border-radius:14px; background:linear-gradient(#0f121a,#0c0f16);
+  text-decoration:none; color:var(--text); box-shadow:inset 0 0 0 1px #ffffff06;
+}
+.tool .ico{
+  width:42px; height:42px; border-radius:10px; display:grid; place-items:center;
+  background:linear-gradient(180deg,#1b1e26,#12141b); border:1px solid #b08b3a55; color:#e8c26d;
+  box-shadow:inset 0 0 0 1px #ffffff06, 0 10px 24px rgba(0,0,0,.35);
+}
+.tool b{font-size:15px}
+
+/* =======================
+   SECTION 1 — Hero + Système solaire
+   ======================= */
+.hero{
+  padding-top:46px; padding-bottom:80px;
+}
+.hero h1{
+  font-size:clamp(44px,7.4vw,86px);
+}
+.em-gold{
+  background:linear-gradient(180deg, var(--gold-2), var(--gold-1) 60%, var(--gold-3) 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow:0 6px 40px #F2C76C18;
+}
+
+/* Système solaire discret derrière le titre */
+.solar{
+  position:absolute; inset:0; z-index:-1; pointer-events:none; overflow:hidden;
+  -webkit-mask:linear-gradient(#000,transparent 90%);
+          mask:linear-gradient(#000,transparent 90%);
+}
+.orbit{
+  position:absolute; left:50%; top:50%; translate:-50% -50%;
+  border:1px solid rgba(216,180,90,.16); border-radius:50%;
+  animation:spin linear infinite;
+}
+.orbit.o1{width:820px; height:820px; animation-duration:120s}
+.orbit.o2{width:560px; height:560px; animation-duration:90s}
+.orbit.o3{width:360px; height:360px; animation-duration:60s}
+.planet{
+  position:absolute; top:50%; left:-6px; width:12px; height:12px; border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #F2C76C, #D8B45A 60%, #8a6c2a 100%); box-shadow:0 0 22px #F2C76C55;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Barre de recherche avec liseré doré mobile */
+.search{
+  position:relative; max-width:720px; margin-top:24px;
+}
+.search input{
+  width:100%; padding:18px 58px 18px 48px; border-radius:16px; background:linear-gradient(#10131b,#0c0f16);
+  border:1px solid #ffffff18; color:var(--text); font-size:18px; outline:none;
+  box-shadow:inset 0 0 0 1px #ffffff08;
+}
+.search .k{
+  position:absolute; right:12px; top:50%; translate:0 -50%;
+  font-size:13px; color:var(--muted); border:1px solid #ffffff22; padding:.25rem .45rem; border-radius:8px;
+}
+.search .mic{
+  position:absolute; left:14px; top:50%; translate:0 -50%; opacity:.85
+}
+.search .mic svg{width:22px; height:22px; color:#d4b36c}
+.search::after{
+  /* liseré doré qui tourne autour du champ */
+  content:""; position:absolute; inset:-2px; border-radius:18px; padding:2px;
+  background:conic-gradient(from var(--a,0deg), #F2C76C, #D8B45A 20%, #BF8E2C 40%, transparent 42%, transparent 58%, #BF8E2C 60%, #D8B45A 80%, #F2C76C 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+          mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude; filter:blur(.2px);
+  animation:spinBorder 8s linear infinite;
+}
+@keyframes spinBorder{to{--a:360deg}}
+
+/* =======================
+   SECTION 2 — Hero Sous-titres (téléphone 3D)
+   ======================= */
+.sec2{padding-top:40px; padding-bottom:80px}
+.sec2 .grid{display:grid; grid-template-columns:1.05fr .95fr; gap:42px; align-items:center}
+@media (max-width:980px){.sec2 .grid{grid-template-columns:1fr}}
+/* Reprise du téléphone 3D (adapté) */
+.stage{perspective:1400px; display:grid; place-items:center; height: clamp(420px, 65vh, 760px)}
+.phone{
+  position:relative; width:min(360px, 62vw); aspect-ratio:9/19.5; border-radius:30px;
+  transform-style:preserve-3d; will-change:transform,filter; filter:drop-shadow(0 40px 80px rgba(0,0,0,.55));
+  transform: translate3d(80px,0,0) rotateY(18deg) scale(.98); opacity:0; /* état initial hors-champ */
+}
+.inview-50 .phone{animation:phoneEnter 1.35s cubic-bezier(.2,.7,0,1.05) both}
+@keyframes phoneEnter{
+  0%{transform:translate3d(120px,20px,0) rotateY(50deg) rotateZ(4deg) scale(.9); filter:blur(1px) drop-shadow(0 20px 40px #0009); opacity:0}
+  60%{transform:translate3d(-6px,-2px,0) rotateY(-18deg) rotateZ(10deg) scale(1.02); filter:blur(1.2px) drop-shadow(0 40px 80px #000a); opacity:1}
+  100%{transform:translate3d(0,0,0) rotateY(-14deg) rotateZ(8deg) scale(1); filter:blur(0) drop-shadow(0 40px 80px #000b); opacity:1}
+}
+.frame{position:absolute; inset:0; border-radius:30px; background:linear-gradient(175deg,#0e0f14,#0c0d12);
+  box-shadow: inset 0 0 0 1px #ffffff08, inset 0 0 0 2px #000, 0 12px 30px #000b;}
+.frame::before{
+  content:""; position:absolute; inset:-1px; border-radius:30.5px;
+  background: linear-gradient(160deg, #0000 18%, #8a6c2a55 32%, #e8c26c22 55%, #8a6c2a44 78%, #0000 86%);
+  pointer-events:none; mix-blend-mode:screen; filter: blur(.3px); animation:frameGlow 2.6s ease-in-out infinite alternate;
+}
+@keyframes frameGlow{to{opacity:.8}}
+.screen{position:absolute; inset:8px; border-radius:26px; overflow:hidden; background:#000;
+  box-shadow: inset 0 0 0 1px #000, 0 0 0 1px #0008;}
+.notch{position:absolute; top:8px; left:50%; translate:-50% 0; width:36%; height:22px; border-radius:0 0 16px 16px; background:#0b0d12; box-shadow: inset 0 -1px 0 #0008}
+.player{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0; transition:opacity 1s ease-out .1s; filter:brightness(.92) contrast(1.04) saturate(1.06)}
+.preview{position:absolute; inset:0; display:grid; place-items:end center; padding:20px; background:linear-gradient(180deg,#0c0e12,#0a0a0b 42%, #0a0a0b 42%, #0c0e12 90%); opacity:.22}
+.subtitle-card{width:86%; border-radius:16px; padding:18px 16px; background:linear-gradient(180deg,#0d0f14,#0b0d12);
+  border:1px solid rgba(255,255,255,.06); box-shadow:0 10px 30px #0009, inset 0 0 0 1px #ffffff07;}
+.lines{line-height:1.08; font-weight:800; letter-spacing:.2px}
+.lines .em{color:var(--gold-2); text-shadow:0 0 18px #F2C76C22;}
+.chips{display:flex; gap:.4rem; margin:.9rem 0 0}
+.chip{font-size:12px; padding:.28rem .5rem; border-radius:999px; border:1px solid rgba(212,172,82,.22); color:var(--muted); background:#0b0d12}
+.shadow{position:absolute; left:8%; right:8%; bottom:-28px; height:40px; border-radius:50%; background:radial-gradient(closest-side, #0009, #0000 80%); filter:blur(6px)}
+/* Écran ON lorsque 50% de la section est vue */
+.inview-50 .player{opacity:1}
+.inview-50 .preview{display:none}
+
+/* =======================
+   SECTION 3 — Écosystème d’outils (mind-map)
+   ======================= */
+.sec3{padding:90px 0}
+.eco{display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:28px}
+@media (max-width:1000px){.eco{grid-template-columns:1fr}}
+.center-node{
+  width:110px; height:110px; border-radius:999px; display:grid; place-items:center;
+  background:linear-gradient(180deg,#141720,#0c0f16); border:1px solid #d4b36c55;
+  box-shadow:inset 0 0 0 1px #ffffff06, 0 20px 50px rgba(0,0,0,.45);
+}
+.center-node span{font-weight:800; color:#e7c368; font-size:34px}
+.col{display:grid; gap:22px}
+.eco-card{
+  position:relative; padding:16px 18px; border-radius:14px; background:linear-gradient(#0f121a,#0c0f16);
+  border:1px solid #ffffff15; box-shadow:inset 0 0 0 1px #ffffff06; display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:center;
+}
+.eco-card .ico{width:42px;height:42px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(180deg,#1b1e26,#12141b);border:1px solid #b08b3a55;color:#e8c26d;box-shadow:inset 0 0 0 1px #ffffff06}
+.eco-card b{font-size:16px}
+.eco-card small{display:block; color:var(--muted)}
+/* traits de liaison vers le centre */
+.eco .col.left .eco-card::after,
+.eco .col.right .eco-card::after{
+  content:""; position:absolute; top:50%; width:46px; height:1px; background:linear-gradient(90deg,#d4b36c55,#d4b36c15);
+}
+.eco .col.left .eco-card{padding-left:24px}
+.eco .col.right .eco-card{padding-right:24px}
+.eco .col.left .eco-card::after{right:-46px}
+.eco .col.right .eco-card::after{left:-46px; transform:scaleX(-1)}
+/* Interrupteur “Afficher prix habituels” */
+.toggle{
+  display:flex; align-items:center; gap:12px; justify-content:flex-end; color:var(--muted); margin-bottom:12px;
+}
+.switch{position:relative; width:62px; height:34px; background:#131723; border:1px solid #ffffff1a; border-radius:999px; cursor:pointer}
+.switch i{position:absolute; width:28px; height:28px; border-radius:999px; background:linear-gradient(180deg,#1c1f2a,#121520); top:50%; left:3px; translate:0 -50%; transition:left .25s ease, box-shadow .25s}
+input#prix:checked + .switch i{left:31px; box-shadow:0 0 0 1px #d4b36c55, 0 10px 20px #0007}
+.eco .price{opacity:0; transition:opacity .25s ease}
+#prix:checked ~ .eco .price{opacity:.9}
+
+/* =======================
+   SECTION 4 — Supprimer l’arrière-plan
+   ======================= */
+.sec4{padding-top:70px; padding-bottom:90px}
+.sec4 .grid{display:grid; grid-template-columns:1.1fr .9fr; gap:44px; align-items:center}
+@media (max-width:980px){.sec4 .grid{grid-template-columns:1fr}}
+.device-stack{position:relative; height: clamp(420px, 60vh, 720px); display:grid; place-items:center}
+.phone2{
+  position:absolute; right:-40px; width:min(420px,70vw); aspect-ratio:9/19.5; border-radius:32px; background:linear-gradient(175deg,#0e0f14,#0c0d12);
+  box-shadow: var(--shadow-xl); transform:translateX(140px) rotate(-2deg) scale(.96); opacity:0;
+  border:1px solid #ffffff10;
+}
+.phone2 .bezel{position:absolute; inset:10px; border-radius:26px; overflow:hidden; background:
+  linear-gradient(#0a0a0b,#0d0f14);}
+.phone2 .notch{position:absolute; top:10px; left:50%; translate:-50% 0; width:38%; height:22px; border-radius:0 0 16px 16px; background:#0b0d12}
+.checker{position:absolute; inset:0; background:
+  linear-gradient(45deg,#0000 25%, #0003 0 75%, #0000 0) 0 0/24px 24px,
+  linear-gradient(45deg,#0000 25%, #0003 0 75%, #0000 0) 12px 12px/24px 24px,
+  #6b7280; filter:brightness(.45) contrast(1.1)}
+/* Lame verticale dorée (effet “cut”) */
+.cut{position:absolute; top:10%; bottom:10%; left:calc(50% - 1px); width:2px; background:linear-gradient(#F2C76C,#D8B45A,#BF8E2C); box-shadow:0 0 30px #F2C76C55}
+
+/* Vidéo de démonstration qui “arrive” se poser au-dessus de l’écran */
+.demo-overlay{
+  position:absolute; right:-70px; width:min(380px,66vw); aspect-ratio:9/19.5; border-radius:24px; overflow:hidden;
+  transform:translate(220px,-14px) rotate(6deg) scale(.9); opacity:0; box-shadow:0 30px 70px rgba(0,0,0,.55), inset 0 0 0 1px #000;
+}
+.demo-overlay video{width:100%; height:100%; object-fit:cover; filter:brightness(.94) contrast(1.05) saturate(1.06)}
+/* Déclenchement à 80% de visibilité */
+.inview-80 .phone2{animation:devEnter .95s cubic-bezier(.2,.7,0,1.05) both .1s}
+.inview-80 .demo-overlay{animation:screenSlide 1.05s cubic-bezier(.2,.7,0,1.05) both .28s}
+@keyframes devEnter{from{transform:translateX(180px) rotate(-6deg) scale(.9); opacity:0} to{transform:translateX(0) rotate(-2deg) scale(.96); opacity:1}}
+@keyframes screenSlide{from{transform:translate(300px,-40px) rotate(14deg) scale(.84); opacity:0} to{transform:translate(0,-14px) rotate(6deg) scale(.9); opacity:1}}
+
+/* =======================
+   SECTION 5 — Le créateur
+   ======================= */
+.sec5{padding:90px 0}
+.creator{display:grid; grid-template-columns:1.05fr .95fr; gap:36px; align-items:center}
+@media (max-width:980px){.creator{grid-template-columns:1fr}}
+.quote{font-size:clamp(32px,4.8vw,56px); line-height:1.1; font-weight:800}
+.kicker{letter-spacing:.22em; color:#d8b45a; font-weight:700; font-size:13px; margin-bottom:10px}
+.cards{display:grid; grid-template-columns:repeat(4,1fr); gap:18px; margin-top:24px}
+@media (max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{
+  padding:18px; border-radius:14px; background:linear-gradient(#0f121a,#0c0f16);
+  border:1px solid #ffffff15; box-shadow:inset 0 0 0 1px #ffffff06; color:var(--text)
+}
+.card b{display:block; margin-bottom:4px}
+.me{
+  width:100%; max-width:520px; border-radius:18px; display:block; 
+  box-shadow:0 40px 90px rgba(0,0,0,.6); border:1px solid #ffffff10;
+}
+
+/* Accessibilité — réduire animations */
+@media (prefers-reduced-motion:reduce){
+  .orbit,.search::after,.phone,.phone2,.demo-overlay{animation:none !important; transform:none !important; opacity:1 !important}
+}
+</style>
+</head>
+<body>
+
+<!-- Arrière-plan global -->
+<div class="bg" aria-hidden="true"></div>
+
+<!-- =======================
+     HEADER
+     ======================= -->
+<header>
+  <nav class="nav">
+    <a class="brand" href="insérer lien ici" aria-label="Accueil">
+      <div class="pill"><span>∞</span></div>
+      <div class="wordmark">Infinie & gratuit</div>
+    </a>
+    <div class="menu" role="navigation" aria-label="Principal">
+      <a href="insérer lien ici">Outils</a>
+      <a href="insérer lien ici">Templates</a>
+      <a href="insérer lien ici">Open-source</a>
+      <a href="insérer lien ici">Blog</a>
+      <a href="#apropos">À propos</a>
+      <span class="lang">FR</span>
+    </div>
+  </nav>
+</header>
+
+<!-- =======================
+     SECTION 1 — Hero principal
+     ======================= -->
+<section class="hero">
+  <div class="wrapper">
+
+    <!-- Système solaire discret -->
+    <div class="solar" aria-hidden="true">
+      <div class="orbit o1"><i class="planet"></i></div>
+      <div class="orbit o2"><i class="planet"></i></div>
+      <div class="orbit o3"><i class="planet"></i></div>
+    </div>
+
+    <h1>
+      Des outils IA, <span class="em-gold">infinis</span>.<br/>
+      Gratuit. Open-source.
+    </h1>
+    <p class="lead">Sans compte • Usage illimité • 100&nbsp;% front-end</p>
+
+    <!-- Barre de recherche -->
+    <div class="search" role="search">
+      <span class="mic" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="9" y="3" width="6" height="11" rx="3"/>
+          <path d="M5 11v1a7 7 0 0 0 14 0v-1"/><path d="M12 19v2"/>
+        </svg>
+      </span>
+      <input type="text" placeholder="Rechercher un outil (ex : Supprimer background)" aria-label="Rechercher un outil"/>
+      <span class="k">⌘K</span>
+    </div>
+
+    <!-- Top outils -->
+    <div class="tools-row" aria-label="Top outils">
+      <a class="tool" href="bouton.html">
+        <div class="ico">🖼️</div><b>Supprimer background</b>
+      </a>
+      <a class="tool" href="bouton.html">
+        <div class="ico">🗜️</div><b>Compresser image</b>
+      </a>
+      <a class="tool" href="bouton.html">
+        <div class="ico">💬</div><b>Sous-titres vidéo</b>
+      </a>
+      <a class="tool" href="bouton.html">
+        <div class="ico">📄</div><b>PDF Locker</b>
+      </a>
+      <a class="tool" href="bouton.html">
+        <div class="ico">📊</div><b>Diagrammes</b>
+      </a>
+      <a class="tool" href="bouton.html">
+        <div class="ico">🎛️</div><b>Générateur de prod</b>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- =======================
+     SECTION 2 — Sous-titres automatiques
+     ======================= -->
+<section class="sec2" id="sous-titres">
+  <div class="wrapper">
+    <div class="grid">
+      <div>
+        <h2>Sous-titres <span class="em-gold">automatiques</span></h2>
+        <p class="lead">Shorts • Reels • TikTok — format vertical 9:16</p>
+        <div class="cta">
+          <a class="btn" href="bouton.html">Importer</a>
+          <a class="btn" href="bouton.html">Analyser</a>
+          <a class="btn btn-ghost" href="bouton.html">Exporter</a>
+        </div>
+        <ul class="lead" style="list-style:disc;padding-left:18px">
+          <li>Transcription locale (Whisper WASM)</li>
+          <li>Styles : karaoke / outline / barres noires</li>
+          <li>Export .srt / .mp4</li>
+        </ul>
+      </div>
+      <div class="stage">
+        <div class="phone">
+          <div class="frame"></div>
+          <div class="screen">
+            <div class="notch" aria-hidden="true"></div>
+            <video id="video-sec2" class="player" muted playsinline loop preload="auto" aria-label="Aperçu vidéo 9:16">
+              <source src="video.mp4" type="video/mp4"/>
+            </video>
+            <div class="preview" aria-hidden="true">
+              <div class="subtitle-card">
+                <div class="lines" style="font-size: clamp(18px,2.4vw,22px);">
+                  <div>SUBTITLES</div>
+                  <div>FOR SHORT</div>
+                  <div class="em">VIDEOS MADE</div>
+                  <div>EASY</div>
+                </div>
+                <div class="chips">
+                  <span class="chip">local</span>
+                  <span class="chip">gratuit</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="shadow" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =======================
+     SECTION 3 — Écosystème d’outils
+     ======================= -->
+<section class="sec3" id="ecosysteme">
+  <div class="wrapper">
+    <div class="toggle">
+      <label for="prix">Afficher prix habituels</label>
+      <input id="prix" type="checkbox" hidden>
+      <label class="switch" for="prix" aria-label="Afficher prix habituels"><i></i></label>
+    </div>
+
+    <h2 style="text-align:center;margin-bottom:24px;letter-spacing:.02em">ÉCOSYSTÈME D’OUTILS</h2>
+
+    <div class="eco">
+      <div class="col left">
+        <div class="eco-card"><div class="ico">🖼️</div><div><b>Image</b><small><span class="price">9,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">📄</div><div><b>PDF</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">✍️</div><div><b>Texte</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">🧮</div><div><b>Calculs</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+      </div>
+
+      <div class="center-node"><span>∞</span></div>
+
+      <div class="col right">
+        <div class="eco-card"><div class="ico">🎥</div><div><b>Vidéo</b><small><span class="price">9,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">🎧</div><div><b>Audio</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">💻</div><div><b>Dev</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+        <div class="eco-card"><div class="ico">🤖</div><div><b>IA</b><small><span class="price">0,99€ → </span>gratuit</small></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =======================
+     SECTION 4 — Supprimer l’arrière-plan
+     ======================= -->
+<section class="sec4" id="bg-remover">
+  <div class="wrapper">
+    <div class="grid">
+      <div>
+        <h2>Supprimer l’arrière-plan</h2>
+        <p class="lead">Photos produits, portraits, logos — PNG transparent en 1 clic</p>
+        <div class="cta">
+          <a class="btn" href="bouton.html">Importer</a>
+          <a class="btn" href="bouton.html">Détourer</a>
+          <a class="btn btn-ghost" href="bouton.html">Exporter</a>
+        </div>
+        <ul class="lead" style="list-style:disc;padding-left:18px">
+          <li>Traitement local (WASM)</li>
+          <li>Aucun upload</li>
+          <li>Bords nets (cheveux)</li>
+          <li>Export .png / .webp</li>
+        </ul>
+        <a class="btn btn-ghost" href="bouton.html" style="margin-top:10px">Comparer prix habituels 9,99€ → gratuit</a>
+      </div>
+
+      <div class="device-stack">
+        <div class="phone2">
+          <div class="bezel">
+            <div class="checker"></div>
+            <div class="cut" aria-hidden="true"></div>
+            <div class="notch" aria-hidden="true"></div>
+          </div>
+        </div>
+
+        <div class="demo-overlay" aria-label="Vidéo de démonstration">
+          <video muted playsinline loop preload="auto">
+            <source src="videobg.mp4" type="video/mp4"/>
+          </video>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- =======================
+     SECTION 5 — Le créateur
+     ======================= -->
+<section class="sec5" id="apropos">
+  <div class="wrapper">
+    <div class="creator">
+      <div>
+        <div class="kicker">LE CRÉATEUR</div>
+        <div class="quote">J’ai arrêté de louer des outils — je les construis pour tous.</div>
+        <p class="lead">Oscar, fondateur d’Infinie & gratuit</p>
+        <div class="cards">
+          <div class="card"><b>Open-source</b><span>Code public sur GitHub.</span></div>
+          <div class="card"><b>Illimité</b><span>Aucun quota, pas de compte.</span></div>
+          <div class="card"><b>Gratuit à vie</b><span>Zéro paywall. Zéro essai.</span></div>
+          <div class="card">
+            <b>Pourboire</b><span>Soutenir le projet.</span><br>
+            <a class="btn" href="bouton.html">Laisser un pourboire</a>
+          </div>
+        </div>
+      </div>
+      <div>
+        <img class="me" src="oscar.png" alt="Oscar — fondateur d’Infinie & gratuit">
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* Utilitaires IntersectionObserver
+   - 50% visibilité  => section 2 (téléphone 3D + allumage vidéo)
+   - 80% visibilité  => section 4 (téléphone + vidéo overlay) */
+const onView = (selector, cls, threshold=0.5) => {
+  const el = document.querySelector(selector);
+  if(!el) return;
+  const io = new IntersectionObserver(([e])=>{
+    if(e.isIntersecting){
+      el.classList.add(cls);
+      // Lecture silencieuse des vidéos dans les sections
+      el.querySelectorAll('video').forEach(v=>{
+        try{ v.currentTime=0; const p=v.play(); if(p&&p.catch) p.catch(()=>{});}catch(_){}
+      });
+    }
+  }, {threshold});
+  io.observe(el);
+};
+onView('.sec2', 'inview-50', 0.5);
+onView('.sec4', 'inview-80', 0.8);
+
+/* Accessibilité: si l’utilisateur préfère moins d’animations, jouer les vidéos d’emblée */
+if (window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+  document.querySelectorAll('video').forEach(v=>{ try{ v.play(); }catch(_){}})
+}
+</script>
+</body>
+</html>
+

@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Calculateur de caractères (100% local)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0B0B0D;--panel:#0d1120;--text:#E6ECF7;--muted:#A4ADBD;--border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF;--accent2:#1B4CFF;--ring:0 0 0 2px rgba(43,167,255,.35);
+      --surface:#0b0f1a;--surface-border:#1a2340;
+      --danger:#ff4d4f;--ok:#19c37d;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,'Helvetica Neue','Noto Sans',sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+    }
+    .wrap{max-width:1280px; margin:0 auto; padding:24px}
+
+    /* Header / Brand */
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px}
+    .brand{display:flex; align-items:center; gap:12px}
+    .pill{width:36px; height:36px; border-radius:9999px; display:grid; place-items:center;
+      background:
+        radial-gradient(120% 120% at 35% 25%, var(--accent1), rgba(47,227,255,0.35) 45%, transparent 60%),
+        radial-gradient(120% 120% at 65% 75%, var(--accent2), rgba(27,76,255,0.6) 40%, transparent 70%);
+      box-shadow:0 6px 24px rgba(43,167,255,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .pill span{font-weight:800; color:#fff; font-size:18px; line-height:1}
+    .wordmark{font-weight:800; letter-spacing:.2px}
+
+    .toolbar{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .btn{appearance:none; border:1px solid var(--surface-border); background:var(--surface); color:var(--text);
+      padding:10px 14px; border-radius:12px; font-weight:600; cursor:pointer; transition:transform .08s ease, box-shadow .15s ease, border-color .2s ease}
+    .btn:hover{box-shadow:var(--ring)}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{border:none; background:linear-gradient(135deg,var(--accent1),var(--accent2)); color:#fff}
+
+    .seg{display:flex; background:var(--surface); border:1px solid var(--surface-border); border-radius:12px; padding:4px}
+    .seg button{border:none; background:transparent; padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--muted); font-weight:700}
+    .seg button.active{background:linear-gradient(135deg,rgba(47,227,255,.2),rgba(27,76,255,.15)); color:#fff}
+
+    /* Layout */
+    .grid{display:grid; grid-template-columns: 1fr 360px; gap:16px}
+    @media (max-width: 1080px){.grid{grid-template-columns: 1fr}}
+
+    .card{position:relative; background:
+      linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+      linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+      var(--panel);
+      border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.3);
+    }
+    .card h2{margin:0; padding:16px 16px 0 16px; font-size:14px; color:var(--muted); font-weight:600}
+    .card .content{padding:12px 16px 16px 16px}
+
+    .stage{height:68vh; min-height:520px; display:grid; grid-template-rows: auto 1fr auto}
+    .stage-toolbar{display:flex; gap:8px; align-items:center; padding:10px 12px; border-top:1px solid var(--border)}
+    .stage-header{display:flex; gap:10px; align-items:center; padding:10px 12px; border-bottom:1px solid var(--border)}
+
+    textarea{
+      width:100%; height:100%;
+      resize:none; border:none; outline:none; background:transparent; color:var(--text);
+      padding:16px; font-size:15px; line-height:1.55; caret-color:var(--accent1);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, 'Helvetica Neue', 'Noto Sans', sans-serif;
+    }
+    .mono textarea{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace}
+    .soft{background:
+      linear-gradient(160deg, rgba(27,76,255,0.06), transparent),
+      linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%),
+      var(--panel);
+      border:1px solid var(--border); border-radius:12px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+
+    .status{font-size:12px; color:var(--muted)}
+    .status b{color:#fff}
+    .hint{font-size:12px; color:var(--muted)}
+
+    /* Progress */
+    .progress{position:relative; height:10px; background:rgba(255,255,255,.06); border-radius:999px; overflow:hidden; border:1px solid var(--surface-border)}
+    .progress .bar{position:absolute; inset:0; width:0%}
+    .bar.ok{background:linear-gradient(135deg,var(--accent1),var(--accent2))}
+    .bar.over{background:linear-gradient(135deg,#ff7676,#ff4d4f)}
+
+    /* Right panel table */
+    table{width:100%; border-collapse:separate; border-spacing:0 10px}
+    th,td{font-size:12px; text-align:left}
+    .k{color:var(--muted)}
+    .v{font-weight:800}
+    .line{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; border:1px solid var(--surface-border); background:var(--surface); border-radius:12px}
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row label{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted)}
+    select, input[type="number"]{
+      background:var(--surface); color:var(--text); border:1px solid var(--surface-border); border-radius:10px; padding:8px 10px; outline:none;
+    }
+    select:focus, input[type="number"]:focus{box-shadow:var(--ring); border-color:transparent}
+    input[type="file"]{display:none}
+    .danger{color:var(--danger)}
+    .ok{color:var(--ok)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="pill" aria-hidden="true"><span>∞</span></div>
+        <div class="wordmark">Infinie & gratuit</div>
+      </div>
+      <div class="toolbar">
+        <div class="seg" id="segUnit">
+          <button data-mode="graphemes" class="active">Graphèmes</button>
+          <button data-mode="codepoints">Code points</button>
+        </div>
+        <label class="hint"><input id="optNoSpaces" type="checkbox"/> Exclure espaces</label>
+        <label class="hint"><input id="optNoBreaks" type="checkbox"/> Exclure sauts de ligne</label>
+        <label class="hint"><input id="optMono" type="checkbox"/> Police monospace</label>
+        <button class="btn" id="btnNew">Nouveau</button>
+        <button class="btn" id="btnPaste">Coller</button>
+        <button class="btn" id="btnCopy">Copier</button>
+        <label class="btn">
+          Import .txt <input id="fileIn" type="file" accept=".txt,text/plain"/>
+        </label>
+        <button class="btn btn-primary" id="btnExport">Export .txt</button>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Éditeur -->
+      <section class="card">
+        <h2>Texte</h2>
+        <div class="stage">
+          <div class="stage-header row">
+            <div class="row" style="flex:1; gap:8px">
+              <span class="status">Caractères : <b id="charMain">0</b></span>
+              <span class="status">Mots : <b id="words">0</b></span>
+              <span class="status">Lignes : <b id="lines">0</b></span>
+              <span class="status">Octets UTF-8 : <b id="bytes">0</b></span>
+              <span class="status">Sélection : <b id="sel">0</b></span>
+            </div>
+          </div>
+
+          <div id="editorWrap" class="soft" style="margin:12px 12px 8px 12px">
+            <textarea id="ta" spellcheck="false" placeholder="Écris ou colle ton texte ici… (tout est 100% local)"></textarea>
+          </div>
+
+          <div class="stage-toolbar" style="gap:12px">
+            <div class="row" style="flex:1; min-width:260px">
+              <label class="hint">Préréglage&nbsp;
+                <select id="preset">
+                  <option value="">— Aucun —</option>
+                  <option value="280">X / Twitter (280)</option>
+                  <option value="60">SEO — Titre (60)</option>
+                  <option value="160">SEO — Meta desc. (160)</option>
+                  <option value="2200">Instagram / TikTok (2 200)</option>
+                  <option value="100">YouTube — Titre (100)</option>
+                  <option value="5000">YouTube — Description (5 000)</option>
+                  <option value="3000">LinkedIn — Post (3 000)</option>
+                </select>
+              </label>
+              <label class="hint">Limite&nbsp;<input id="limit" type="number" min="0" step="1" placeholder="ex. 160"/></label>
+              <div class="status" id="limitState">—</div>
+            </div>
+            <div style="flex:1">
+              <div class="progress" title="Progression vers la limite">
+                <div id="bar" class="bar ok" style="width:0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Compteurs & SMS -->
+      <section class="card">
+        <h2>Compteurs & SMS</h2>
+        <div class="content">
+          <div class="line"><span class="k">Caractères (selon options)</span><span class="v" id="charAll">0</span></div>
+          <div class="line"><span class="k">Mots</span><span class="v" id="words2">0</span></div>
+          <div class="line"><span class="k">Lignes</span><span class="v" id="lines2">0</span></div>
+          <div class="line"><span class="k">Octets UTF-8</span><span class="v" id="bytes2">0</span></div>
+          <div class="line"><span class="k">Temps de lecture (~200 wpm)</span><span class="v" id="readtime">0:00</span></div>
+
+          <div class="line"><span class="k">Alphabet SMS détecté</span><span class="v" id="smsAlpha">—</span></div>
+          <div class="line"><span class="k">Segments SMS</span><span class="v" id="smsSeg">0</span></div>
+          <div class="line"><span class="k">Reste dans le segment</span><span class="v" id="smsLeft">—</span></div>
+
+          <div class="hint" style="margin-top:6px">
+            SMS : <b>GSM-7</b> → 160 (ou 153 concat.) • <b>Unicode</b> → 70 (ou 67 concat.).<br/>
+            Le compteur tient compte des caractères d’extension (\\^{}[~]|€) qui valent 2 septets.
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    // ===== Helpers généraux =====
+    const $ = sel => document.querySelector(sel);
+    const ta = $('#ta');
+    const charMain = $('#charMain'), charAll = $('#charAll');
+    const wordsEl = $('#words'), words2El = $('#words2');
+    const linesEl = $('#lines'), lines2El = $('#lines2');
+    const bytesEl = $('#bytes'), bytes2El = $('#bytes2');
+    const selEl = $('#sel'); const readEl = $('#readtime');
+    const preset = $('#preset'), limitInput = $('#limit'), limitState = $('#limitState'), bar = $('#bar');
+    const optNoSpaces = $('#optNoSpaces'), optNoBreaks = $('#optNoBreaks'), optMono = $('#optMono');
+    const segUnit = $('#segUnit');
+
+    // Mode d’unité: 'graphemes' / 'codepoints'
+    let unitMode = 'graphemes';
+
+    // Intl.Segmenter si dispo (graphèmes robustes pour emojis)
+    const GraphemeSeg = (typeof Intl !== 'undefined' && Intl.Segmenter) ? new Intl.Segmenter('fr', {granularity:'grapheme'}) : null;
+
+    // Compte les graphèmes (ou fallback simple)
+    function countGraphemes(str){
+      if(!str) return 0;
+      if(GraphemeSeg){
+        let n = 0; for(const _ of GraphemeSeg.segment(str)) n++; return n;
+      }
+      // Fallback: Array.from (code points) ≈ correct pour la plupart des emojis
+      return Array.from(str).length;
+    }
+
+    // Compte unitaires selon mode
+    function countUnits(str){
+      return unitMode==='graphemes' ? countGraphemes(str) : Array.from(str).length; // code points
+    }
+
+    function removeSpaces(str){
+      // Exclure espaces (y compris tabs, NBSP)
+      return str.replace(/\s/g, '');
+    }
+    function removeBreaks(str){
+      return str.replace(/\r?\n/g, '');
+    }
+
+    function wordCount(str){
+      // Compte de mots robuste (lettres/chiffres, apostrophes, tirets, diacritiques)
+      const m = str.trim().match(/\p{L}[\p{L}\p{M}\p{Nd}'’-]*/gu);
+      return m ? m.length : 0;
+    }
+
+    function lineCount(str){
+      if(!str) return 0;
+      // Normalise fins de texte pour ne pas compter la ligne vide finale
+      const s = str.replace(/\r/g,'').replace(/\n+$/,'');
+      return s ? s.split('\n').length : 0;
+    }
+
+    function utf8Bytes(str){
+      return new TextEncoder().encode(str).length;
+    }
+
+    // ===== GSM-7 / Unicode SMS =====
+    // Jeu de caractères GSM 03.38 (base + extension)
+    const GSM7_BASE = "@£$¥èéùìòÇ\nØø\rÅåΔ_ΦΓΛΩΠΨΣΘΞ" +
+      " !\"#¤%&'()*+,-./0123456789:;<=>?" +
+      "¡ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÑÜ§¿" +
+      "abcdefghijklmnopqrstuvwxyzäöñüà";
+    const GSM7_EXT  = "^{}\\[~]|€";
+
+    function gsmSeptetLength(str){
+      // Retourne null si caractère non-GSM (donc Unicode), sinon nb de septets (ext = 2)
+      let septets = 0;
+      for(const ch of str){
+        if(GSM7_BASE.includes(ch)) { septets += 1; continue; }
+        if(GSM7_EXT.includes(ch))  { septets += 2; continue; }
+        // Caractère non supporté par GSM-7 → Unicode
+        return null;
+      }
+      return septets;
+    }
+
+    function smsInfo(str){
+      if(!str) return {alpha:'—', segments:0, left:'—'};
+      const septets = gsmSeptetLength(str);
+      if(septets === null){
+        // Unicode (UCS-2) — on approxime en code points
+        const len = Array.from(str).length;
+        if(len <= 70) return {alpha:'Unicode', segments:1, left:70-len};
+        const seg = Math.ceil(len / 67);
+        const left = seg*67 - len;
+        return {alpha:'Unicode', segments:seg, left};
+      } else {
+        // GSM-7
+        if(septets <= 160) return {alpha:'GSM-7', segments:1, left:160-septets};
+        const seg = Math.ceil(septets / 153);
+        const left = seg*153 - septets;
+        return {alpha:'GSM-7', segments:seg, left};
+      }
+    }
+
+    // ===== Limites & progression =====
+    function applyPreset(){
+      const v = preset.value;
+      if(v){ limitInput.value = v; }
+      update();
+    }
+
+    function updateProgress(current, limit){
+      if(!limit || limit<=0){
+        bar.style.width = '0%';
+        bar.className = 'bar ok';
+        limitState.textContent = '—';
+        return;
+      }
+      const pct = Math.min(100, (current/limit)*100);
+      bar.style.width = pct + '%';
+      const over = current - limit;
+      if(over > 0){
+        bar.className = 'bar over';
+        limitState.innerHTML = `<span class="danger">+${over} au-delà</span>`;
+      } else {
+        bar.className = 'bar ok';
+        limitState.innerHTML = `<span class="ok">${current} / ${limit}</span>`;
+      }
+    }
+
+    // ===== UI actions =====
+    $('#btnNew').addEventListener('click', ()=>{
+      if(ta.value && !confirm('Effacer le texte ?')) return;
+      ta.value = ''; update(); ta.focus();
+    });
+
+    $('#btnCopy').addEventListener('click', async ()=>{
+      try{ await navigator.clipboard.writeText(ta.value); toast('Texte copié.'); }
+      catch(e){ alert('Impossible de copier (permissions navigateur).'); }
+    });
+
+    $('#btnPaste').addEventListener('click', async ()=>{
+      try{
+        const t = await navigator.clipboard.readText();
+        if(!t) return;
+        ta.value += (ta.value ? '\n' : '') + t;
+        update();
+      }catch(e){ alert('Impossible de coller (permissions navigateur).'); }
+    });
+
+    $('#fileIn').addEventListener('change', async (e)=>{
+      const f = e.target.files[0]; if(!f) return;
+      const text = await f.text();
+      ta.value = text; update();
+      e.target.value = '';
+    });
+
+    $('#btnExport').addEventListener('click', ()=>{
+      const blob = new Blob([ta.value], {type:'text/plain;charset=utf-8'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'texte.txt';
+      a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+    });
+
+    preset.addEventListener('change', applyPreset);
+    limitInput.addEventListener('input', update);
+
+    optMono.addEventListener('change', ()=>{
+      $('#editorWrap').classList.toggle('mono', optMono.checked);
+      ta.focus();
+    });
+
+    // Segmented unit switch
+    segUnit.addEventListener('click', (e)=>{
+      const b = e.target.closest('button[data-mode]'); if(!b) return;
+      segUnit.querySelectorAll('button').forEach(x=>x.classList.toggle('active', x===b));
+      unitMode = b.dataset.mode;
+      update();
+    });
+
+    optNoSpaces.addEventListener('change', update);
+    optNoBreaks.addEventListener('change', update);
+
+    // Mise à jour sélection
+    function updateSelection(){
+      const s = ta.value.substring(ta.selectionStart, ta.selectionEnd);
+      const s2 = (optNoSpaces.checked ? removeSpaces(s) : s);
+      const s3 = (optNoBreaks.checked ? removeBreaks(s2) : s2);
+      selEl.textContent = countUnits(s3);
+    }
+    ta.addEventListener('select', updateSelection);
+    ta.addEventListener('keyup', updateSelection);
+    ta.addEventListener('mouseup', updateSelection);
+
+    // Petit "toast" visuel via console (sobre)
+    function toast(msg){ console.log('ℹ️', msg); }
+
+    // ===== Boucle de calcul principale =====
+    function update(){
+      let text = ta.value;
+
+      // Applique les options d’exclusion uniquement au compteur principal (char)
+      let tOpt = text;
+      if(optNoSpaces.checked) tOpt = removeSpaces(tOpt);
+      if(optNoBreaks.checked) tOpt = removeBreaks(tOpt);
+
+      const cUnits = countUnits(tOpt);
+      const w = wordCount(text);
+      const l = lineCount(text);
+      const b = utf8Bytes(text);
+
+      // Affichage rapide (barre haut éditeur)
+      charMain.textContent = cUnits;
+      wordsEl.textContent = w;
+      linesEl.textContent = l;
+      bytesEl.textContent = b;
+
+      // Panneau à droite (miroir)
+      charAll.textContent = cUnits;
+      words2El.textContent = w;
+      lines2El.textContent = l;
+      bytes2El.textContent = b;
+
+      // Lecture ~200 wpm
+      const minutes = w / 200;
+      const mm = Math.floor(minutes);
+      const ss = Math.round((minutes - mm) * 60);
+      readEl.textContent = `${mm}:${String(ss).padStart(2,'0')}`;
+
+      // SMS
+      const sms = smsInfo(text);
+      $('#smsAlpha').textContent = sms.alpha;
+      $('#smsSeg').textContent = sms.segments;
+      $('#smsLeft').textContent = sms.left;
+
+      // Progression limite
+      const limit = parseInt(limitInput.value,10);
+      updateProgress(cUnits, isFinite(limit) ? limit : 0);
+
+      // Sélection
+      updateSelection();
+    }
+
+    // Entrées live
+    ta.addEventListener('input', update);
+
+    // Init
+    update();
+  </script>
+</body>
+</html>

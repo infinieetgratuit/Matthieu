@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Page Builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Lora:wght@400;500;700&family=Source+Code+Pro:wght@400;500;700&family=Roboto+Mono:wght@400;500;700&family=Playfair+Display:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0A0A0B;
+      --text: #F2F3F6;
+      --muted: #A5A9B3;
+      --gold-1: #D8B45A;
+      --gold-2: #F2C76C;
+      --panel: rgba(16, 18, 24, 0.8);
+      --border: rgba(212, 172, 82, 0.22);
+      --grid: rgba(242, 199, 108, 0.13);
+      --radius: 14px;
+    }
+    body {
+      background-color: var(--bg);
+      font-family: 'Inter', sans-serif;
+    }
+    .font-lora { font-family: 'Lora', serif; }
+    .font-source-code-pro { font-family: 'Source Code Pro', monospace; }
+    .font-roboto-mono { font-family: 'Roboto Mono', monospace; }
+    .font-playfair-display { font-family: 'Playfair Display', serif; }
+    .custom-grid-bg {
+       background-image:
+        linear-gradient(to right, var(--grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+       background-size: 2rem 2rem;
+    }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background-color: var(--border); border-radius: 20px; border: 3px solid var(--bg); }
+    .smoky-glass {
+      background-color: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    input[type="color"] {
+        -webkit-appearance: none;
+        border: none;
+        width: 100%;
+        height: 40px;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        background-color: transparent;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: 1px solid var(--border); border-radius: 0.375rem; }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+    "react-dom/server": "https://aistudiocdn.com/react-dom@^19.2.0/server",
+    "react/jsx-runtime": "https://aistudiocdn.com/react@^19.2.0/jsx-runtime"
+  }
+}
+</script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body class="overflow-hidden">
+  <div id="root"></div>
+  <script type="text/babel" data-type="module">
+    import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+    import ReactDOM from 'react-dom/client';
+    import ReactDOMServer from 'react-dom/server';
+
+    // --- Content from constants.tsx ---
+    const IconText = ({ className = 'w-8 h-8' }) => <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>;
+    const IconHeading = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 12h8m-8 6h16m0-12h-8m0 0V6a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-6Z"></path></svg>;
+    const IconImage = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>;
+    const IconUser = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>;
+    const IconButton = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>;
+    const IconLink = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>;
+    const IconMinus = ({ className = 'w-8 h-8' }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"></path></svg>;
+    const IconSpacer = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="2 4"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>;
+    const IconStats = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M7 14l5-5 4 4 5-5"/></svg>;
+    const IconServices = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>;
+    const IconContact = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>;
+    const IconPlaylist = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4V8z"/></svg>;
+    const IconVideo = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 13.39V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12.39"/><path d="m22 19-3-3-3 3 3 3 3-3z"/></svg>;
+    const IconTestimonials = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>;
+    const IconFAQ = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>;
+    const IconSkills = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>;
+    const IconTimeline = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>;
+    const IconCTA = ({ className = 'w-8 h-8' }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12h3M18 12h3M12 18v3M12 3v3"/><circle cx="12" cy="12" r="7"/></svg>;
+
+    const SOCIAL_ICONS = {
+      twitter: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path></svg>,
+      github: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"></path></svg>,
+      linkedin: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M4.98 3.5c0 1.381-1.11 2.5-2.48 2.5s-2.48-1.119-2.48-2.5c0-1.38 1.11-2.5 2.48-2.5s2.48 1.12 2.48 2.5zm.02 4.5h-5v16h5v-16zm7.982 0h-4.968v16h4.969v-8.399c0-4.67 6.029-5.052 6.029 0v8.399h4.988v-10.131c0-7.88-8.922-7.593-11.018-3.714v-2.155z"></path></svg>,
+      instagram: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.85s-.011 3.584-.069 4.85c-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07s-3.584-.012-4.85-.07c-3.252-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.85s.012-3.584.07-4.85c.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.85-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948s.014 3.667.072 4.947c.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072s3.667-.014 4.947-.072c4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.947s-.014-3.667-.072-4.947c-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.689-.073-4.948-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4s1.791-4 4-4 4 1.79 4 4-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44 1.441-.645 1.441-1.44-.645-1.44-1.441-1.44z"></path></svg>,
+      youtube: <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"></path></svg>,
+    };
+
+    const FONT_FACES = [
+      { name: 'Inter', value: 'font-sans' },
+      { name: 'Lora', value: 'font-lora' },
+      { name: 'Playfair Display', value: 'font-playfair-display' },
+      { name: 'Roboto Mono', value: 'font-roboto-mono' },
+      { name: 'Source Code Pro', value: 'font-source-code-pro' },
+    ];
+
+    const SPACING_OPTIONS = { compact: 'gap-2', normal: 'gap-4', large: 'gap-8' };
+
+    const uid = () => `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    const BLOCK_LIBRARY = [
+        { type: 'banner', label: 'Bannière', icon: IconImage, defaults: { src: `https://picsum.photos/seed/${Math.random()}/1200/675`, alt: 'Image de bannière', height: '42vh' }, propsUI: [{ key: 'src', label: 'Image', type: 'image' }, { key: 'alt', label: 'Texte alternatif', type: 'text', placeholder: "Description de l'image" }, { key: 'height', label: 'Hauteur', type: 'select', options: ['32vh', '42vh', '56vh'] }] },
+        { type: 'avatar', label: 'Photo de profil', icon: IconUser, defaults: { src: `https://picsum.photos/seed/${Math.random()}/200`, alt: 'Avatar', size: 'M', ring: true }, propsUI: [{ key: 'src', label: 'Image', type: 'image' }, { key: 'alt', label: 'Texte alternatif', type: 'text', placeholder: 'Nom Prénom' }, { key: 'size', label: 'Taille', type: 'select', options: ['S', 'M', 'L'] }, { key: 'ring', label: 'Bordure', type: 'toggle' }] },
+        { type: 'heading', label: 'Titre', icon: IconHeading, defaults: { text: 'Votre Titre Principal', level: 'h1' }, propsUI: [{ key: 'text', label: 'Texte', type: 'text', placeholder: 'Entrez votre titre' }, { key: 'level', label: 'Niveau', type: 'select', options: ['h1', 'h2', 'h3'] }] },
+        { type: 'text', label: 'Texte', icon: IconText, defaults: { content: 'Ceci est un paragraphe de texte. Vous pouvez le modifier pour vous présenter, décrire vos projets, ou partager des informations.' }, propsUI: [{ key: 'content', label: 'Contenu', type: 'textarea', placeholder: 'Écrivez votre texte ici...' }] },
+        { type: 'button', label: 'Bouton / Lien', icon: IconButton, defaults: { text: 'Cliquez ici', href: '#', style: 'primary' }, propsUI: [{ key: 'text', label: 'Texte', type: 'text', placeholder: 'Texte du bouton' }, { key: 'href', label: 'URL', type: 'text', placeholder: 'https://example.com' }, { key: 'style', label: 'Style', type: 'select', options: ['primary', 'secondary'] }] },
+        { type: 'socials', label: 'Réseaux Sociaux', icon: IconLink, defaults: { links: [{ platform: 'twitter', url: 'https://twitter.com' }, { platform: 'github', url: 'https://github.com' }, { platform: 'linkedin', url: 'https://linkedin.com' }] }, propsUI: [{ key: 'links', label: 'Liens', type: 'social' }] },
+        { type: 'separator', label: 'Séparateur', icon: IconMinus, defaults: { margin: 'normal' }, propsUI: [{ key: 'margin', label: 'Marge', type: 'select', options: ['compact', 'normal', 'large'] }] },
+        { type: 'spacer', label: 'Espace Vide', icon: IconSpacer, defaults: { height: '2rem' }, propsUI: [{ key: 'height', label: 'Hauteur', type: 'select', options: ['1rem', '2rem', '4rem', '8rem'] }] },
+        
+        // New Blocks
+        { type: 'quick-stats', label: 'Statistiques', icon: IconStats, defaults: { items: [{ id: uid(), value: '120K', label: 'Vues' }, { id: uid(), value: '32', label: 'Clients' }, { id: uid(), value: '8', label: 'Ans exp.' }] }, propsUI: [{ key: 'items', label: 'Statistiques', type: 'quick-stats' }] },
+        { type: 'services', label: 'Services', icon: IconServices, defaults: { items: [{ id: uid(), title: 'Montage Vidéo', description: '24h delivery, sous-titres auto stylés', price: '49€', buttonText: 'Réserver', buttonUrl: '#' }] }, propsUI: [{ key: 'items', label: 'Services', type: 'services' }] },
+        { type: 'contact', label: 'Contact Direct', icon: IconContact, defaults: { items: [{ id: uid(), icon: 'email', label: 'Email', url: 'mailto:contact@example.com' }, { id: uid(), icon: 'phone', label: 'WhatsApp', url: 'https://wa.me/1234567890' }] }, propsUI: [{ key: 'items', label: 'Contacts', type: 'contact' }] },
+        { type: 'playlist', label: 'Playlist', icon: IconPlaylist, defaults: { coverSrc: `https://picsum.photos/seed/${Math.random()}/300`, audioSrc: '', title: 'Mon dernier son', streamUrl: '#' }, propsUI: [{ key: 'coverSrc', label: 'Image de couverture', type: 'image' }, { key: 'audioSrc', label: 'Fichier audio (preview)', type: 'audio-file' }, { key: 'title', label: 'Titre', type: 'text' }, { key: 'streamUrl', label: 'Lien (Spotify, etc.)', type: 'text' }] },
+        { type: 'video', label: 'Vidéo', icon: IconVideo, defaults: { url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', aspectRatio: '16:9' }, propsUI: [{ key: 'url', label: 'URL YouTube', type: 'youtube-url' }, { key: 'aspectRatio', label: 'Ratio', type: 'select', options: ['16:9', '9:16', '4:3', '1:1'] }] },
+        { type: 'testimonials', label: 'Témoignages', icon: IconTestimonials, defaults: { items: [{ id: uid(), avatarSrc: `https://picsum.photos/seed/${Math.random()}/100`, name: 'Jane Doe', quote: 'Service incroyable, livrée en 24h.' }] }, propsUI: [{ key: 'items', label: 'Témoignages', type: 'testimonials' }] },
+        { type: 'faq', label: 'FAQ', icon: IconFAQ, defaults: { items: [{ id: uid(), question: 'Tu bosses avec qui ?', answer: 'Créateurs, marques e-commerce, artistes indépendants.' }] }, propsUI: [{ key: 'items', label: 'Questions / Réponses', type: 'faq' }] },
+        { type: 'skills', label: 'Compétences', icon: IconSkills, defaults: { items: [{ id: uid(), name: 'Figma', level: 90 }, { id: uid(), name: 'React', level: 80 }] }, propsUI: [{ key: 'items', label: 'Compétences', type: 'skills' }] },
+        { type: 'timeline', label: 'Parcours', icon: IconTimeline, defaults: { items: [{ id: uid(), year: '2023', description: 'Freelance full-time' }, { id: uid(), year: '2024', description: 'Lancement de mon projet' }] }, propsUI: [{ key: 'items', label: 'Étapes', type: 'timeline' }] },
+        { type: 'cta', label: 'CTA Géant', icon: IconCTA, defaults: { title: 'Travaillons ensemble.', subtitle: 'J’accepte encore 3 nouveaux clients ce mois-ci.', buttonText: 'Me contacter', buttonUrl: '#' }, propsUI: [{ key: 'title', label: 'Titre', type: 'text' }, { key: 'subtitle', label: 'Sous-titre', type: 'text' }, { key: 'buttonText', label: 'Texte du bouton', type: 'text' }, { key: 'buttonUrl', label: 'URL du bouton', type: 'text' }] },
+    ];
+
+    const INITIAL_STATE = {
+      blocks: [
+        { id: '1', type: 'avatar', props: { ...BLOCK_LIBRARY.find(b => b.type === 'avatar')?.defaults } },
+        { id: '2', type: 'heading', props: { ...BLOCK_LIBRARY.find(b => b.type === 'heading')?.defaults } },
+        { id: '3', type: 'text', props: { ...BLOCK_LIBRARY.find(b => b.type === 'text')?.defaults } },
+        { id: '4', type: 'socials', props: { ...BLOCK_LIBRARY.find(b => b.type === 'socials')?.defaults } },
+      ],
+      theme: {
+        fontFamily: 'font-sans',
+        backgroundColor: '#0A0A0B',
+        textColor: '#F2F3F6',
+        accentColor: '#D8B45A',
+        spacing: 'normal',
+      },
+      meta: {
+        title: 'Ma Page Personnelle',
+        description: 'Créée avec le Page Builder',
+      },
+    };
+
+    // --- Content from services/exportService.ts ---
+    const sanitize = (str) => String(str).replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    const renderBlockToHtml = (block, theme) => {
+      const { type, props } = block;
+      switch (type) {
+        case 'banner': return `<div style="height: ${props.height}; width: 100%;"><img src="${props.src}" alt="${sanitize(props.alt)}" style="width:100%; height:100%; object-fit:cover; border-radius: var(--radius);"></div>`;
+        case 'avatar':
+          const sizeMap = { S: '80px', M: '128px', L: '192px' };
+          const size = sizeMap[props.size] || '128px';
+          const ringStyle = props.ring ? `border: 4px solid ${theme.accentColor}; box-shadow: 0 0 20px ${theme.accentColor}4D;` : '';
+          return `<div style="text-align:center; margin-top: -${parseInt(size)/2}px;"><img src="${props.src}" alt="${sanitize(props.alt)}" style="width:${size}; height:${size}; border-radius:50%; object-fit:cover; display:inline-block; ${ringStyle}"></div>`;
+        case 'heading': 
+            const fontSize = { h1: '2.5rem', h2: '2rem', h3: '1.5rem' };
+            return `<${props.level} style="text-align:center; font-size: ${fontSize[props.level]}; font-weight: 700;">${sanitize(props.text)}</${props.level}>`;
+        case 'text': return `<p style="text-align:center; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; color: var(--muted);">${sanitize(props.content).replace(/\n/g, '<br>')}</p>`;
+        case 'button':
+          const isPrimary = props.style === 'primary';
+          const btnStyle = `display:inline-block; padding: 0.75rem 1.5rem; border-radius: 9999px; text-decoration: none; font-weight: 500; transition: all 0.2s; background-color: ${isPrimary ? theme.accentColor : 'transparent'}; color: ${isPrimary ? theme.backgroundColor : theme.accentColor}; border: 1px solid ${theme.accentColor};`;
+          return `<div style="text-align:center;"><a href="${props.href}" target="_blank" rel="noopener noreferrer" style="${btnStyle}" onmouseover="this.style.backgroundColor='${isPrimary ? theme.accentColor + 'CC' : theme.accentColor}'; this.style.color='${theme.backgroundColor}';" onmouseout="this.style.backgroundColor='${isPrimary ? theme.accentColor : 'transparent'}'; this.style.color='${isPrimary ? theme.backgroundColor : theme.accentColor}';">${sanitize(props.text)}</a></div>`;
+        case 'socials':
+          return `<div style="text-align:center; display: flex; justify-content: center; gap: 1rem;">${props.links.map((link) => `<a href="${link.url}" target="_blank" rel="noopener noreferrer" style="color: var(--muted); transition: color 0.2s;" onmouseover="this.style.color='${theme.accentColor}'" onmouseout="this.style.color='var(--muted)'">${ReactDOMServer.renderToStaticMarkup(SOCIAL_ICONS[link.platform])}</a>`).join('')}</div>`;
+        case 'separator':
+          const marginMap = { compact: '0.5rem', normal: '1rem', large: '2rem' };
+          return `<hr style="border:0; border-top:1px solid var(--border); width: 80%; max-width: 400px; margin: ${marginMap[props.margin] || '1rem'} auto;">`;
+        case 'spacer':
+            return `<div style="height: ${props.height};"></div>`;
+        case 'quick-stats':
+          return `<div style="display: flex; justify-content: center; align-items: center; gap: 2rem; flex-wrap: wrap;">${props.items.map((item) => `<div style="text-align: center;"><div style="font-size: 2rem; font-weight: bold; color: ${theme.accentColor};">${sanitize(item.value)}</div><div style="font-size: 0.875rem; color: var(--muted); text-transform: uppercase;">${sanitize(item.label)}</div></div>`).join('')}</div>`;
+        case 'video':
+          const youtubeId = props.url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/)?.[1];
+          return `<div style="width: 100%; aspect-ratio: ${props.aspectRatio.replace(':', '/')};"><iframe src="https://www.youtube.com/embed/${youtubeId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="width: 100%; height: 100%; border-radius: var(--radius);"></iframe></div>`;
+        case 'cta':
+            return `<div style="padding: 2rem; border: 2px solid ${theme.accentColor}; border-radius: var(--radius); text-align: center;"><h2 style="font-size: 2rem; font-weight: bold;">${sanitize(props.title)}</h2><p style="margin-top: 0.5rem; color: var(--muted);">${sanitize(props.subtitle)}</p><a href="${props.buttonUrl}" target="_blank" rel="noopener noreferrer" style="margin-top: 1.5rem; display: inline-block; padding: 0.75rem 2rem; border-radius: 9999px; font-weight: bold; text-decoration: none; background-color: ${theme.accentColor}; color: ${theme.backgroundColor};">${sanitize(props.buttonText)}</a></div>`;
+        default: return `<!-- Block type ${type} not implemented for export -->`;
+      }
+    };
+
+    const exportAsHTML = (state) => {
+        const { blocks, theme, meta } = state;
+        const fontConfig = FONT_FACES.find(f => f.value === theme.fontFamily) || FONT_FACES[0];
+        const fontName = fontConfig.name.replace(' ', '+');
+        const fontLink = `https://fonts.googleapis.com/css2?family=${fontName}:wght@400;500;700&display=swap`;
+        
+        const blocksHtml = blocks.map(block => renderBlockToHtml(block, theme)).join('\n');
+        const spacingClass = SPACING_OPTIONS[theme.spacing] || 'gap-4';
+        const spacingValue = parseFloat(spacingClass.replace('gap-', '')) * 0.25;
+
+        const html = `<!doctype html>
+    <html lang="fr">
+    <head>
+      <meta charset="utf-8"/>
+      <meta name="viewport" content="width=device-width,initial-scale=1"/>
+      <title>${sanitize(meta.title)}</title>
+      <meta name="description" content="${sanitize(meta.description)}"/>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="${fontLink}" rel="stylesheet">
+      <style>
+        :root {
+          --bg: ${theme.backgroundColor};
+          --text: ${theme.textColor};
+          --accent: ${theme.accentColor};
+          --muted: #A5A9B3;
+          --border: rgba(212,172,82,0.22);
+          --radius: 14px;
+        }
+        body {
+          background-color: var(--bg);
+          color: var(--text);
+          font-family: '${fontConfig.name}', sans-serif;
+          margin: 0;
+          padding: 2rem 1rem;
+          box-sizing: border-box;
+          display: flex;
+          justify-content: center;
+          align-items: center; /* This centers the content vertically */
+          min-height: 100vh;
+        }
+        main {
+          width: 100%;
+          max-width: 900px;
+          display: flex;
+          flex-direction: column;
+          gap: ${spacingValue}rem;
+          align-items: stretch;
+        }
+        * { box-sizing: border-box; }
+        h1, h2, h3, p { margin: 0; }
+      </style>
+    </head>
+    <body>
+      <main>
+        ${blocksHtml}
+      </main>
+    </body>
+    </html>`;
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ma-page.html';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    // --- Content from components/BlockRenderer.tsx ---
+    const FAQItem = ({ item }) => {
+        const [isOpen, setIsOpen] = useState(false);
+        return (
+            <div className="border-b border-[var(--border)]">
+                <button onClick={() => setIsOpen(!isOpen)} className="w-full flex justify-between items-center p-3 text-left font-medium">
+                    <span>{item.question}</span>
+                    <span className={`transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}>▼</span>
+                </button>
+                {isOpen && <div className="p-3 text-[var(--muted)]">{item.answer}</div>}
+            </div>
+        );
+    };
+    
+    const BlockRenderer = ({ block, theme }) => {
+      const { type, props } = block;
+
+      switch (type) {
+        case 'banner':
+          return <div style={{ height: props.height }} className="w-full"><img src={props.src} alt={props.alt} className="w-full h-full object-cover rounded-[var(--radius)]" /></div>;
+        
+        case 'avatar':
+          const sizeClass = { S: 'w-20 h-20', M: 'w-32 h-32', L: 'w-48 h-48' };
+          return <div className="flex justify-center"><img src={props.src} alt={props.alt} className={`rounded-full object-cover ${sizeClass[props.size] || 'w-32 h-32'}`} style={props.ring ? { border: `4px solid ${theme.accentColor}`, boxShadow: `0 4px 6px -1px ${theme.accentColor}33, 0 2px 4px -2px ${theme.accentColor}33` } : {}}/></div>;
+
+        case 'heading': {
+          const level = (props.level && ['h1', 'h2', 'h3'].includes(props.level)) ? props.level : 'h1';
+          const headingSize = { h1: 'text-4xl', h2: 'text-3xl', h3: 'text-2xl' };
+          const className = `text-center font-bold ${headingSize[level]}`;
+          return React.createElement(level, { className }, props.text);
+        }
+
+        case 'text':
+          return <p className="text-center text-[var(--muted)] whitespace-pre-wrap max-w-prose mx-auto">{props.content}</p>;
+
+        case 'button':
+          const isPrimary = props.style === 'primary';
+          return <div className="text-center"><a href={props.href} target="_blank" rel="noopener noreferrer" className={`inline-block px-6 py-2 rounded-full font-medium transition-colors ${!isPrimary && 'border'}`} style={{ backgroundColor: isPrimary ? theme.accentColor : 'transparent', color: isPrimary ? theme.backgroundColor : theme.accentColor, borderColor: theme.accentColor }}>{props.text}</a></div>;
+          
+        case 'socials':
+          return <div className="flex justify-center items-center gap-4">{props.links.map((link, index) => <a key={index} href={link.url} target="_blank" rel="noopener noreferrer" className="text-[var(--muted)] hover:text-white transition-colors" style={{'--hover-color': theme.accentColor}} onMouseOver={(e) => e.currentTarget.style.color = 'var(--hover-color)'} onMouseOut={(e) => e.currentTarget.style.color = ''}>{SOCIAL_ICONS[link.platform]}</a>)}</div>;
+        
+        case 'separator':
+          const marginMap = { compact: 'my-2', normal: 'my-4', large: 'my-8' };
+          return <hr className={`w-full border-t border-[var(--border)] ${marginMap[props.margin]}`} />;
+
+        case 'spacer':
+            return <div style={{ height: props.height }}></div>;
+            
+        case 'quick-stats':
+          return <div className="flex justify-center items-center gap-4 md:gap-8 flex-wrap">{props.items.map((item) => <div key={item.id} className="text-center"><div className="text-2xl md:text-3xl font-bold" style={{color: theme.accentColor}}>{item.value}</div><div className="text-sm text-[var(--muted)] uppercase tracking-wider">{item.label}</div></div>)}</div>;
+
+        case 'services':
+            return <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">{props.items.map((item) => <div key={item.id} className="p-4 border border-[var(--border)] rounded-[var(--radius)] text-center flex flex-col"><h4 className="font-bold text-lg">{item.title}</h4><p className="text-[var(--muted)] text-sm my-2 flex-grow">{item.description}</p><p className="font-bold my-2" style={{color: theme.accentColor}}>{item.price}</p><a href={item.buttonUrl} className="mt-auto inline-block px-4 py-2 text-sm rounded-full font-medium transition-colors border" style={{backgroundColor: theme.accentColor, color: theme.backgroundColor, borderColor: theme.accentColor}}>{item.buttonText}</a></div>)}</div>;
+            
+        case 'contact':
+            const contactIcons = { email: '✉️', phone: '📞', location: '📍' };
+            return <div className="flex justify-center items-center gap-4">{props.items.map((item) => <a key={item.id} href={item.url} target="_blank" rel="noopener noreferrer" className="flex flex-col items-center gap-1 text-[var(--muted)] hover:text-white transition-colors" style={{'--hover-color': theme.accentColor}} onMouseOver={(e) => e.currentTarget.style.color = 'var(--hover-color)'} onMouseOut={(e) => e.currentTarget.style.color = ''}><span className="text-2xl">{contactIcons[item.icon]}</span><span className="text-xs">{item.label}</span></a>)}</div>;
+
+        case 'playlist':
+            return <div className="flex items-center gap-4 p-3 border border-[var(--border)] rounded-[var(--radius)] w-full max-w-md mx-auto"><img src={props.coverSrc} alt="cover" className="w-20 h-20 rounded-md object-cover" /> <div className="flex-grow"><h4 className="font-bold">{props.title}</h4>{props.audioSrc && <audio controls src={props.audioSrc} className="w-full h-8 mt-2"></audio>}</div><a href={props.streamUrl} target="_blank" rel="noopener noreferrer" className="p-2 rounded-full border border-[var(--border)] hover:bg-[var(--border)] transition-colors">🎵</a></div>;
+
+        case 'video':
+          const youtubeId = props.url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/)?.[1];
+          return <div className="w-full" style={{ aspectRatio: props.aspectRatio.replace(':', '/') }}><iframe src={`https://www.youtube.com/embed/${youtubeId}`} title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen className="w-full h-full rounded-[var(--radius)]"></iframe></div>;
+
+        case 'testimonials':
+            return <div className="space-y-4">{props.items.map((item) => <div key={item.id} className="p-4 border border-[var(--border)] rounded-[var(--radius)] flex items-center gap-4"><img src={item.avatarSrc} alt={item.name} className="w-16 h-16 rounded-full object-cover" /><div className="flex-grow"><p className="italic">"{item.quote}"</p><p className="text-right font-bold mt-2 text-sm" style={{color: theme.accentColor}}>- {item.name}</p></div></div>)}</div>;
+            
+        case 'faq':
+            return <div className="w-full max-w-prose mx-auto space-y-2">{props.items.map((item) => <FAQItem key={item.id} item={item} />)}</div>;
+        
+        case 'skills':
+            return <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">{props.items.map((item) => <div key={item.id} className="text-center"><p className="font-medium">{item.name}</p><div className="w-full bg-[var(--border)] rounded-full h-2.5 mt-1"><div className="h-2.5 rounded-full" style={{ width: `${item.level}%`, backgroundColor: theme.accentColor }}></div></div></div>)}</div>;
+            
+        case 'timeline':
+            return <div className="relative border-l-2 border-[var(--border)] ml-4 pl-8 space-y-8">{props.items.map((item, index) => <div key={item.id} className="relative"><div className="absolute -left-[38px] top-1 w-4 h-4 rounded-full" style={{backgroundColor: theme.accentColor}}></div><p className="font-bold" style={{color: theme.accentColor}}>{item.year}</p><p className="text-[var(--muted)]">{item.description}</p></div>)}</div>;
+
+        case 'cta':
+            return <div className="p-8 border-2 rounded-[var(--radius)] text-center" style={{borderColor: theme.accentColor}}><h2 className="text-3xl font-bold">{props.title}</h2><p className="mt-2 text-[var(--muted)]">{props.subtitle}</p><a href={props.buttonUrl} target="_blank" rel="noopener noreferrer" className="mt-6 inline-block px-8 py-3 rounded-full font-bold transition-colors" style={{backgroundColor: theme.accentColor, color: theme.backgroundColor}}>{props.buttonText}</a></div>;
+
+        default:
+          return <div className="text-red-500">Bloc inconnu: {type}</div>;
+      }
+    };
+
+    // --- Content from components/PropEditor.tsx ---
+    const ArrayPropEditor = ({ block, propKey, type, onChange, baseInputClass }) => {
+      const items = block.props[propKey] || [];
+
+      const updateItem = (index, newValues) => {
+        const newItems = [...items];
+        newItems[index] = { ...newItems[index], ...newValues };
+        onChange(block.id, { [propKey]: newItems });
+      };
+      
+      const addItem = () => {
+        let newItem;
+        switch (type) {
+          case 'social': newItem = { platform: 'twitter', url: '' }; break;
+          case 'quick-stats': newItem = { id: uid(), value: '0', label: 'Label' }; break;
+          case 'services': newItem = { id: uid(), title: 'Nouveau Service', description: '', price: 'Sur devis', buttonText: 'Contacter', buttonUrl: '#' }; break;
+          case 'contact': newItem = { id: uid(), icon: 'email', label: 'Email', url: 'mailto:' }; break;
+          case 'testimonials': newItem = { id: uid(), avatarSrc: `https://picsum.photos/seed/${Math.random()}/100`, name: 'Nouveau Témoin', quote: '' }; break;
+          case 'faq': newItem = { id: uid(), question: 'Nouvelle Question ?', answer: 'Réponse' }; break;
+          case 'skills': newItem = { id: uid(), name: 'Compétence', level: 50 }; break;
+          case 'timeline': newItem = { id: uid(), year: new Date().getFullYear().toString(), description: 'Nouvel événement' }; break;
+          default: newItem = { id: uid() };
+        }
+        onChange(block.id, { [propKey]: [...items, newItem] });
+      };
+      
+      const removeItem = (index) => {
+        const newItems = items.filter((_, i) => i !== index);
+        onChange(block.id, { [propKey]: newItems });
+      };
+
+      const renderItemFields = (item, index) => {
+        switch(type) {
+          case 'social': return <div className="flex gap-2"><select value={item.platform} onChange={e => updateItem(index, {platform: e.target.value})} className={`${baseInputClass} w-1/3`}>{Object.keys(SOCIAL_ICONS).map(p => <option key={p} value={p}>{p}</option>)}</select><input type="text" value={item.url} onChange={e => updateItem(index, {url: e.target.value})} className={`${baseInputClass} w-2/3`} /></div>
+          case 'quick-stats': return <div className="flex gap-2"><input placeholder="Valeur" value={item.value} onChange={e => updateItem(index, {value: e.target.value})} className={`${baseInputClass} w-1/3`} /><input placeholder="Label" value={item.label} onChange={e => updateItem(index, {label: e.target.value})} className={`${baseInputClass} w-2/3`} /></div>
+          case 'services': return <div className="space-y-2"><input placeholder="Titre" value={item.title} onChange={e => updateItem(index, {title: e.target.value})} className={baseInputClass} /><textarea placeholder="Description" value={item.description} onChange={e => updateItem(index, {description: e.target.value})} className={`${baseInputClass} h-16`} /><div className="flex gap-2"><input placeholder="Prix" value={item.price} onChange={e => updateItem(index, {price: e.target.value})} className={`${baseInputClass} w-1/3`} /><input placeholder="Texte bouton" value={item.buttonText} onChange={e => updateItem(index, {buttonText: e.target.value})} className={`${baseInputClass} w-1/3`} /><input placeholder="URL bouton" value={item.buttonUrl} onChange={e => updateItem(index, {buttonUrl: e.target.value})} className={`${baseInputClass} w-1/3`} /></div></div>
+          case 'contact': return <div className="flex gap-2"><select value={item.icon} onChange={e => updateItem(index, {icon: e.target.value})} className={`${baseInputClass} w-1/3`}><option value="email">Email</option><option value="phone">Phone</option><option value="location">Location</option></select><input placeholder="Label" value={item.label} onChange={e => updateItem(index, {label: e.target.value})} className={`${baseInputClass} w-1/3`} /><input placeholder="URL" value={item.url} onChange={e => updateItem(index, {url: e.target.value})} className={`${baseInputClass} w-1/3`} /></div>
+          case 'testimonials': return <div className="space-y-2"><input placeholder="Nom" value={item.name} onChange={e => updateItem(index, {name: e.target.value})} className={baseInputClass} /><textarea placeholder="Citation" value={item.quote} onChange={e => updateItem(index, {quote: e.target.value})} className={`${baseInputClass} h-16`} /></div>
+          case 'faq': return <div className="space-y-2"><input placeholder="Question" value={item.question} onChange={e => updateItem(index, {question: e.target.value})} className={baseInputClass} /><textarea placeholder="Réponse" value={item.answer} onChange={e => updateItem(index, {answer: e.target.value})} className={`${baseInputClass} h-16`} /></div>
+          case 'skills': return <div className="space-y-2"><input placeholder="Nom" value={item.name} onChange={e => updateItem(index, {name: e.target.value})} className={baseInputClass} /><div className="flex items-center gap-2"><input type="range" min="0" max="100" value={item.level} onChange={e => updateItem(index, {level: parseInt(e.target.value)})} className="w-full" /><span className="text-sm font-mono w-8">{item.level}%</span></div></div>
+          case 'timeline': return <div className="flex gap-2"><input placeholder="Année" value={item.year} onChange={e => updateItem(index, {year: e.target.value})} className={`${baseInputClass} w-1/3`} /><input placeholder="Description" value={item.description} onChange={e => updateItem(index, {description: e.target.value})} className={`${baseInputClass} w-2/3`} /></div>
+          default: return null;
+        }
+      };
+
+      return (
+        <div className="space-y-3">
+          {items.map((item, index) => (
+            <div key={item.id || index} className="p-3 border border-[var(--border)] rounded-md space-y-2 relative">
+              <button onClick={() => removeItem(index)} className="absolute top-1 right-1 p-1 text-[var(--muted)] hover:text-red-400 font-bold text-lg">&times;</button>
+              {renderItemFields(item, index)}
+            </div>
+          ))}
+          <button onClick={addItem} className="w-full py-2 text-sm border border-dashed border-[var(--border)] rounded-md hover:bg-[var(--border)] transition-colors text-[var(--gold-2)]">+ Ajouter un élément</button>
+        </div>
+      );
+    }
+
+    const PropEditor = ({ block, onChange, theme }) => {
+      const config = BLOCK_LIBRARY.find(b => b.type === block.type);
+      if (!config) return null;
+
+      const handlePropChange = (key, value) => {
+        onChange(block.id, { [key]: value });
+      };
+      
+      const handleFileChange = (key, file, isAudio = false) => {
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            handlePropChange(key, e.target?.result);
+          };
+          reader.readAsDataURL(file);
+        }
+      };
+
+      const renderPropControl = (propUI) => {
+        const baseInputClass = "w-full bg-[#0A0A0B] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gold-1)]/50";
+        const value = block.props[propUI.key];
+
+        switch (propUI.type) {
+          case 'text':
+            return <input type="text" value={value} onChange={e => handlePropChange(propUI.key, e.target.value)} placeholder={propUI.placeholder} className={baseInputClass} />;
+          case 'textarea':
+            return <textarea value={value} onChange={e => handlePropChange(propUI.key, e.target.value)} placeholder={propUI.placeholder} className={`${baseInputClass} h-24 resize-none`} />;
+          case 'image':
+            return <input type="file" onChange={e => handleFileChange(propUI.key, e.target.files?.[0] ?? null)} accept="image/*" className={`${baseInputClass} file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--border)] file:text-[var(--gold-2)] hover:file:bg-[var(--gold-1)]/30 cursor-pointer`} />;
+          case 'audio-file':
+            return <input type="file" onChange={e => handleFileChange(propUI.key, e.target.files?.[0] ?? null, true)} accept="audio/*" className={`${baseInputClass} file:mr-4 file:py-1 file:px-2 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--border)] file:text-[var(--gold-2)] hover:file:bg-[var(--gold-1)]/30 cursor-pointer`} />;
+          case 'select':
+            return <select value={value} onChange={e => handlePropChange(propUI.key, e.target.value)} className={`${baseInputClass} appearance-none bg-[url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23D8B45A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")] bg-no-repeat bg-right`}>{propUI.options?.map(opt => <option key={opt} value={opt}>{opt}</option>)}</select>;
+          case 'toggle':
+            return <div className="flex items-center"><input type="checkbox" checked={value} onChange={e => handlePropChange(propUI.key, e.target.checked)} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" /> <span className="ml-2 text-sm">Activé</span></div>;
+          case 'youtube-url':
+            return <input type="text" value={value} onChange={e => handlePropChange(propUI.key, e.target.value)} placeholder="https://youtube.com/watch?v=..." className={baseInputClass} />;
+          case 'range':
+            return <div className="flex items-center gap-2"><input type="range" min="0" max="100" value={value} onChange={e => handlePropChange(propUI.key, parseInt(e.target.value))} className="w-full" /><span className="text-sm font-mono w-8">{value}%</span></div>;
+            
+          case 'social':
+          case 'quick-stats':
+          case 'services':
+          case 'contact':
+          case 'testimonials':
+          case 'faq':
+          case 'skills':
+          case 'timeline':
+            return <ArrayPropEditor block={block} propKey={propUI.key} type={propUI.type} onChange={onChange} baseInputClass={baseInputClass} />;
+
+          default: return null;
+        }
+      };
+
+      return config.propsUI.map(propUI => (
+        <div key={propUI.key} className="space-y-2">
+          <label className="text-sm font-medium text-[var(--muted)]">{propUI.label}</label>
+          {renderPropControl(propUI)}
+        </div>
+      ));
+    };
+
+    // --- Content from App.tsx ---
+    const App = () => {
+      const [appState, setAppState] = useState(INITIAL_STATE);
+      const [selectedBlockId, setSelectedBlockId] = useState(null);
+      const [activePanel, setActivePanel] = useState('blocks');
+      const [viewport, setViewport] = useState('desktop');
+
+      const history = useRef({ stack: [], currentIndex: -1 });
+
+      const [draggedItem, setDraggedItem] = useState(null);
+      const [dragOverIndex, setDragOverIndex] = useState(null);
+
+      // --- State and History Management ---
+      useEffect(() => {
+        try {
+          const savedState = localStorage.getItem('portfolioBuilderState');
+          if (savedState) {
+            const parsed = JSON.parse(savedState);
+            // Basic validation
+            if(parsed.blocks && parsed.theme && parsed.meta) {
+              setAppState(parsed);
+              history.current = { stack: [JSON.stringify(parsed)], currentIndex: 0 };
+            }
+          } else {
+            history.current = { stack: [JSON.stringify(INITIAL_STATE)], currentIndex: 0 };
+          }
+        } catch (error) {
+          console.error("Failed to load state from localStorage:", error);
+          history.current = { stack: [JSON.stringify(INITIAL_STATE)], currentIndex: 0 };
+        }
+      }, []);
+
+      const updateState = useCallback((newState) => {
+        const stringifiedState = JSON.stringify(newState);
+        if (stringifiedState === history.current.stack[history.current.currentIndex]) {
+          return;
+        }
+
+        setAppState(newState);
+        
+        const { stack, currentIndex } = history.current;
+        const newStack = stack.slice(0, currentIndex + 1);
+        newStack.push(stringifiedState);
+        history.current = { stack: newStack, currentIndex: newStack.length - 1 };
+        
+        try {
+          localStorage.setItem('portfolioBuilderState', stringifiedState);
+        } catch (error) {
+          console.error("Failed to save state to localStorage:", error);
+        }
+      }, []);
+
+      const undo = useCallback(() => {
+        if (history.current.currentIndex > 0) {
+          const newIndex = history.current.currentIndex - 1;
+          const prevState = JSON.parse(history.current.stack[newIndex]);
+          setAppState(prevState);
+          history.current.currentIndex = newIndex;
+        }
+      }, []);
+
+      const redo = useCallback(() => {
+        if (history.current.currentIndex < history.current.stack.length - 1) {
+          const newIndex = history.current.currentIndex + 1;
+          const nextState = JSON.parse(history.current.stack[newIndex]);
+          setAppState(nextState);
+          history.current.currentIndex = newIndex;
+        }
+      }, []);
+
+      useEffect(() => {
+        const handleKeyDown = (e) => {
+          if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+            e.preventDefault();
+            if (e.shiftKey) {
+              redo();
+            } else {
+              undo();
+            }
+          }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+      }, [undo, redo]);
+
+      // --- Block Operations ---
+      const addBlock = (blockConfig, index) => {
+        const newBlock = {
+          id: uid(),
+          type: blockConfig.type,
+          props: JSON.parse(JSON.stringify(blockConfig.defaults)), // Deep copy defaults
+        };
+        const newBlocks = [...appState.blocks];
+        if (index !== undefined) {
+          newBlocks.splice(index, 0, newBlock);
+        } else {
+          newBlocks.push(newBlock);
+        }
+        updateState({ ...appState, blocks: newBlocks });
+        setSelectedBlockId(newBlock.id);
+      };
+
+      const duplicateBlock = (blockId) => {
+        const blockIndex = appState.blocks.findIndex(b => b.id === blockId);
+        if (blockIndex === -1) return;
+        const blockToDuplicate = appState.blocks[blockIndex];
+        const newBlock = {
+          ...JSON.parse(JSON.stringify(blockToDuplicate)),
+          id: uid(),
+        };
+        const newBlocks = [...appState.blocks];
+        newBlocks.splice(blockIndex + 1, 0, newBlock);
+        updateState({ ...appState, blocks: newBlocks });
+      };
+      
+      const deleteBlock = (blockId) => {
+        const newBlocks = appState.blocks.filter(b => b.id !== blockId);
+        updateState({ ...appState, blocks: newBlocks });
+        if (selectedBlockId === blockId) {
+          setSelectedBlockId(null);
+        }
+      };
+
+      const moveBlockUp = (blockId) => {
+        const blocks = [...appState.blocks];
+        const index = blocks.findIndex(b => b.id === blockId);
+        if (index > 0) {
+          [blocks[index], blocks[index - 1]] = [blocks[index - 1], blocks[index]];
+          updateState({ ...appState, blocks });
+        }
+      };
+
+      const moveBlockDown = (blockId) => {
+        const blocks = [...appState.blocks];
+        const index = blocks.findIndex(b => b.id === blockId);
+        if (index > -1 && index < blocks.length - 1) {
+          [blocks[index], blocks[index + 1]] = [blocks[index + 1], blocks[index]];
+          updateState({ ...appState, blocks });
+        }
+      };
+
+      const updateBlockProps = (blockId, newProps) => {
+        const newBlocks = appState.blocks.map(b => 
+          b.id === blockId ? { ...b, props: { ...b.props, ...newProps } } : b
+        );
+        updateState({ ...appState, blocks: newBlocks });
+      };
+
+      const updateTheme = (newTheme) => {
+        updateState({ ...appState, theme: { ...appState.theme, ...newTheme }});
+      };
+
+      const updateMeta = (newMeta) => {
+        updateState({ ...appState, meta: { ...appState.meta, ...newMeta }});
+      };
+
+      // --- Drag and Drop Handlers ---
+      const handleDrop = () => {
+        if (draggedItem === null || dragOverIndex === null) return;
+        
+        const newBlocks = [...appState.blocks];
+
+        if (typeof draggedItem === 'number') { // Reordering existing block
+          const [movedBlock] = newBlocks.splice(draggedItem, 1);
+          newBlocks.splice(dragOverIndex, 0, movedBlock);
+        } else if (typeof draggedItem === 'string') { // Adding new block
+          const blockConfig = BLOCK_LIBRARY.find(b => b.type === draggedItem);
+          if (blockConfig) {
+            const newBlock = { id: uid(), type: blockConfig.type, props: { ...blockConfig.defaults } };
+            newBlocks.splice(dragOverIndex, 0, newBlock);
+          }
+        }
+        
+        updateState({ ...appState, blocks: newBlocks });
+        setDraggedItem(null);
+        setDragOverIndex(null);
+      };
+      
+      const selectedBlock = useMemo(() => appState.blocks.find(b => b.id === selectedBlockId), [appState.blocks, selectedBlockId]);
+      
+      return (
+        <div className="flex h-screen bg-[#0A0A0B] text-[#F2F3F6] font-sans">
+          <LeftPanel 
+            activePanel={activePanel}
+            setActivePanel={setActivePanel}
+            appState={appState}
+            updateTheme={updateTheme}
+            updateMeta={updateMeta}
+            addBlock={addBlock}
+            setDraggedItem={setDraggedItem}
+            canUndo={history.current.currentIndex > 0}
+            canRedo={history.current.currentIndex < history.current.stack.length - 1}
+            undo={undo}
+            redo={redo}
+          />
+
+          <main className="flex-1 flex flex-col items-center justify-center p-8 bg-[#0A0A0B] custom-grid-bg overflow-hidden">
+            <ViewportSwitcher viewport={viewport} setViewport={setViewport} />
+            
+            <Canvas
+              appState={appState}
+              viewport={viewport}
+              selectedBlockId={selectedBlockId}
+              setSelectedBlockId={setSelectedBlockId}
+              duplicateBlock={duplicateBlock}
+              deleteBlock={deleteBlock}
+              moveBlockUp={moveBlockUp}
+              moveBlockDown={moveBlockDown}
+              setDraggedItem={setDraggedItem}
+              dragOverIndex={dragOverIndex}
+              setDragOverIndex={setDragOverIndex}
+              handleDrop={handleDrop}
+            />
+
+            <button 
+              onClick={() => exportAsHTML(appState)} 
+              className="mt-6 px-6 py-3 bg-[var(--gold-1)] text-[var(--bg)] font-bold rounded-full hover:bg-[var(--gold-2)] transition-colors shadow-[0_5px_20px_rgba(212,172,82,0.3)]"
+              style={{ backgroundColor: appState.theme.accentColor, color: appState.theme.backgroundColor }}
+            >
+              Exporter en HTML
+            </button>
+          </main>
+
+          <RightPanel 
+            selectedBlock={selectedBlock}
+            setSelectedBlockId={setSelectedBlockId}
+            updateBlockProps={updateBlockProps}
+            theme={appState.theme}
+          />
+        </div>
+      );
+    }
+
+    // --- Sub-components ---
+
+    const LeftPanel = ({ activePanel, setActivePanel, appState, updateTheme, updateMeta, addBlock, setDraggedItem, canUndo, canRedo, undo, redo }) => {
+      const { theme, meta } = appState;
+      return (
+        <aside className="w-[350px] flex-shrink-0 h-full flex flex-col smoky-glass border-r border-[var(--border)]">
+          <header className="p-4 flex items-center justify-between border-b border-[var(--border)]">
+            <div className="flex items-center gap-2">
+              <svg className="w-8 h-8 text-[var(--gold-1)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+              <h1 className="text-xl font-bold text-white">Page Builder</h1>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={undo} disabled={!canUndo} className="p-1 rounded-md hover:bg-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v6h6"></path><path d="M21 12A9 9 0 0 0 6.42 6.58L3 10"></path></svg></button>
+              <button onClick={redo} disabled={!canRedo} className="p-1 rounded-md hover:bg-[var(--border)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-gray-400 hover:text-white"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 3v6h-6"></path><path d="M3 12a9 9 0 0 0 14.58 6.42L21 14"></path></svg></button>
+            </div>
+          </header>
+          <div className="flex border-b border-[var(--border)]">
+            <button onClick={() => setActivePanel('blocks')} className={`flex-1 p-3 text-sm font-medium transition-colors ${activePanel === 'blocks' ? 'bg-[var(--border)] text-white' : 'hover:bg-[rgba(212,172,82,0.1)] text-gray-400 hover:text-white'}`}>Blocs</button>
+            <button onClick={() => setActivePanel('theme')} className={`flex-1 p-3 text-sm font-medium transition-colors ${activePanel === 'theme' ? 'bg-[var(--border)] text-white' : 'hover:bg-[rgba(212,172,82,0.1)] text-gray-400 hover:text-white'}`}>Thème</button>
+          </div>
+          <div className="flex-grow overflow-y-auto p-4">
+            {activePanel === 'blocks' ? (
+              <div className="grid grid-cols-2 gap-3">
+                {BLOCK_LIBRARY.map(block => (
+                  <div key={block.type} draggable onDragStart={() => setDraggedItem(block.type)} onClick={() => addBlock(block)} className="relative p-3 flex flex-col items-center justify-center gap-2 text-center rounded-[var(--radius)] border border-[var(--border)] cursor-pointer hover:bg-[var(--border)] hover:shadow-[0_0_15px_rgba(212,172,82,0.2)] transition-all duration-200">
+                    {block.type === 'video' && (
+                      <span className="absolute top-1 right-1 bg-sky-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full leading-none">BETA</span>
+                    )}
+                    <block.icon className="w-8 h-8 text-[var(--gold-2)]" />
+                    <span className="text-sm font-medium">{block.label}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <ThemeEditor theme={theme} meta={meta} updateTheme={updateTheme} updateMeta={updateMeta} />
+            )}
+          </div>
+        </aside>
+      );
+    };
+
+    const ThemeEditor = ({ theme, meta, updateTheme, updateMeta }) => {
+      const baseInputClass = "w-full bg-[#0A0A0B] border border-[var(--border)] rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--gold-1)]/50";
+      return (
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--muted)]">Titre de la Page</label>
+            <input type="text" value={meta.title} onChange={e => updateMeta({ title: e.target.value })} className={baseInputClass} />
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--muted)]">Description</label>
+            <textarea value={meta.description} onChange={e => updateMeta({ description: e.target.value })} className={`${baseInputClass} h-20 resize-none`}></textarea>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--muted)]">Police</label>
+            <select value={theme.fontFamily} onChange={e => updateTheme({ fontFamily: e.target.value })} className={`${baseInputClass} appearance-none bg-[url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23D8B45A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")] bg-no-repeat bg-right`}>
+              {FONT_FACES.map(font => <option key={font.value} value={font.value}>{font.name}</option>)}
+            </select>
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-2"><label className="text-sm font-medium text-[var(--muted)]">Fond</label><input type="color" value={theme.backgroundColor} onChange={e => updateTheme({ backgroundColor: e.target.value })} className="w-full h-10" /></div>
+            <div className="space-y-2"><label className="text-sm font-medium text-[var(--muted)]">Texte</label><input type="color" value={theme.textColor} onChange={e => updateTheme({ textColor: e.target.value })} className="w-full h-10" /></div>
+            <div className="space-y-2"><label className="text-sm font-medium text-[var(--muted)]">Accent</label><input type="color" value={theme.accentColor} onChange={e => updateTheme({ accentColor: e.target.value })} className="w-full h-10" /></div>
+          </div>
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-[var(--muted)]">Espacement</label>
+            <div className="flex gap-2">
+              {(['compact', 'normal', 'large']).map(s => <button key={s} onClick={() => updateTheme({ spacing: s })} className={`flex-1 py-2 text-sm rounded-md border transition-colors ${theme.spacing === s ? 'text-[#0A0A0B] border-[var(--gold-1)]' : 'border-[var(--border)] hover:bg-[var(--border)]'}`} style={{backgroundColor: theme.spacing === s ? theme.accentColor : 'transparent'}}>{s.charAt(0).toUpperCase() + s.slice(1)}</button>)}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const ViewportSwitcher = ({ viewport, setViewport }) => (
+      <div className="flex-shrink-0 mb-4 flex items-center gap-1 p-1 rounded-full smoky-glass border border-[var(--border)]">
+        {(['desktop', 'mobile']).map(v => (
+          <button key={v} onClick={() => setViewport(v)} className={`px-4 py-1.5 text-sm font-medium rounded-full transition-colors ${viewport === v ? 'bg-white/10 text-white' : 'text-gray-400 hover:text-white'}`}>
+            {v.charAt(0).toUpperCase() + v.slice(1)}
+          </button>
+        ))}
+      </div>
+    );
+
+    const Canvas = ({ appState, viewport, selectedBlockId, setSelectedBlockId, duplicateBlock, deleteBlock, moveBlockUp, moveBlockDown, setDraggedItem, dragOverIndex, setDragOverIndex, handleDrop }) => {
+      const viewportClasses = { desktop: 'w-full max-w-4xl', mobile: 'w-[375px]' };
+
+      return (
+        <div id="viewport-wrapper" className={`shadow-2xl transition-all duration-300 ease-in-out rounded-lg ${viewportClasses[viewport]}`}>
+          <div 
+            id="preview-pane"
+            className="w-full h-[70vh] overflow-y-auto rounded-lg border border-[var(--border)]"
+            style={{ backgroundColor: appState.theme.backgroundColor, color: appState.theme.textColor }}
+          >
+            <div
+              id="canvas-content-wrapper"
+              className={`p-8 mx-auto max-w-3xl flex flex-col ${SPACING_OPTIONS[appState.theme.spacing]} ${appState.theme.fontFamily}`}
+              onDragOver={e => e.preventDefault()}
+              onDrop={handleDrop}
+              onDragLeave={() => setDragOverIndex(null)}
+            >
+              {appState.blocks.length === 0 && (
+                <div 
+                  className="h-48 rounded-lg border-2 border-dashed border-[var(--gold-2)]/50 bg-[var(--gold-1)]/10 flex items-center justify-center text-center text-[var(--gold-2)]/80 font-medium p-4"
+                  onDragEnter={() => setDragOverIndex(0)}
+                >
+                  Déposez votre premier bloc ici
+                </div>
+              )}
+
+              {appState.blocks.map((block, index) => (
+                <React.Fragment key={block.id}>
+                  {dragOverIndex === index && <DropIndicator />}
+                  <BlockCard
+                    block={block}
+                    index={index}
+                    theme={appState.theme}
+                    isSelected={selectedBlockId === block.id}
+                    onSelect={() => setSelectedBlockId(block.id)}
+                    onDuplicate={() => duplicateBlock(block.id)}
+                    onDelete={() => deleteBlock(block.id)}
+                    onMoveUp={() => moveBlockUp(block.id)}
+                    onMoveDown={() => moveBlockDown(block.id)}
+                    isFirst={index === 0}
+                    isLast={index === appState.blocks.length - 1}
+                    onDragStart={() => setDraggedItem(index)}
+                    onDragEnter={() => setDragOverIndex(index)}
+                  />
+                </React.Fragment>
+              ))}
+              
+              {dragOverIndex === appState.blocks.length && <DropIndicator />}
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    const BlockCard = ({ block, index, theme, isSelected, onSelect, onDuplicate, onDelete, onMoveUp, onMoveDown, isFirst, isLast, onDragStart, onDragEnter }) => {
+      return (
+        <div
+          draggable
+          onDragStart={onDragStart}
+          onDragEnter={onDragEnter}
+          onClick={onSelect}
+          className={`relative group p-2 rounded-lg transition-all cursor-move ${isSelected ? 'outline outline-2' : 'hover:bg-white/5'}`}
+          style={{ outlineColor: isSelected ? theme.accentColor : 'transparent' }}
+        >
+          <BlockRenderer block={block} theme={theme} />
+          <div className="absolute top-1 right-1 z-10 hidden group-hover:flex items-center gap-1 p-1 rounded-md smoky-glass border border-[var(--border)]">
+            <button onClick={(e) => { e.stopPropagation(); onMoveUp(); }} disabled={isFirst} className="p-1 hover:text-[var(--gold-2)] disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onMoveDown(); }} disabled={isLast} className="p-1 hover:text-[var(--gold-2)] disabled:opacity-50 disabled:cursor-not-allowed">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <button onClick={(e) => { e.stopPropagation(); onDuplicate(); }} className="p-1 hover:text-[var(--gold-2)]"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path></svg></button>
+            <button onClick={(e) => { e.stopPropagation(); onDelete(); }} className="p-1 hover:text-red-400"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button>
+          </div>
+        </div>
+      );
+    };
+
+    const DropIndicator = () => <div className="h-2 my-2 rounded-lg bg-[var(--gold-2)] transition-all duration-150"></div>;
+
+    const RightPanel = ({ selectedBlock, setSelectedBlockId, updateBlockProps, theme }) => {
+      return (
+        <aside className={`w-[350px] flex-shrink-0 h-full flex flex-col smoky-glass border-l border-[var(--border)] transition-transform duration-300 ease-in-out ${selectedBlock ? 'translate-x-0' : 'translate-x-full'}`}>
+          {selectedBlock && (
+            <>
+              <header className="p-4 flex items-center justify-between border-b border-[var(--border)]">
+                <h2 className="text-lg font-bold">Propriétés</h2>
+                <button onClick={() => setSelectedBlockId(null)} className="p-1 rounded-md hover:bg-[var(--border)]"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+              </header>
+              <div className="flex-grow overflow-y-auto p-4 space-y-4">
+                <PropEditor key={selectedBlock.id} block={selectedBlock} onChange={updateBlockProps} theme={theme} />
+              </div>
+            </>
+          )}
+        </aside>
+      );
+    };
+
+    // --- Content from index.tsx ---
+    const rootElement = document.getElementById('root');
+    if (!rootElement) {
+      throw new Error("Could not find root element to mount to");
+    }
+
+    const root = ReactDOM.createRoot(rootElement);
+    root.render(
+      <React.StrictMode>
+        <App />
+      </React.StrictMode>
+    );
+
+  </script>
+</body>
+</html>

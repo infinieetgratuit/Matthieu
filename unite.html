@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Convertisseur d’unités</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* === DA Infinie (à garder identique) === */
+      --bg:#0B0B0D; --panel:#0d1120; --text:#E6ECF7; --muted:#A4ADBD; --border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF; --accent2:#1B4CFF; --ring:0 0 0 2px rgba(43,167,255,.35);
+      --panel-veil1:linear-gradient(160deg, rgba(27,76,255,0.06), transparent);
+      --panel-veil2:linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      background:var(--bg); color:var(--text); -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    }
+    /* Halos de fond (garder) */
+    body::before{
+      content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%);
+    }
+    .wrap{min-height:100%; display:grid; grid-template-rows:auto 1fr; position:relative; z-index:1}
+
+    /* Header / Logo (garder) */
+    header{display:flex; align-items:center; gap:12px; padding:28px 22px}
+    .brand{display:flex; align-items:center; gap:12px; user-select:none}
+    .brand-badge{
+      width:36px;height:36px; border-radius:999px; display:grid; place-items:center;
+      background: radial-gradient(120% 120% at 30% 25%, var(--accent1), var(--accent2));
+      box-shadow:0 8px 28px rgba(43,167,255,.15), 0 2px 10px rgba(27,76,255,.18);
+    }
+    .brand-badge span{font-weight:800; font-size:20px; color:#fff; transform:translateY(-1px)}
+    .brand-word{font-weight:800; letter-spacing:.2px; white-space:nowrap}
+
+    /* Carte principale */
+    .card{
+      width:min(1100px, 94vw); margin:12px auto 42px; background:var(--panel);
+      border:1px solid var(--border); border-radius:20px; position:relative; overflow:hidden;
+      box-shadow:0 20px 60px rgba(0,0,0,.45), 0 1px 0 rgba(255,255,255,.02) inset;
+    }
+    .card::before,.card::after{content:""; position:absolute; inset:0; pointer-events:none}
+    .card::before{background:var(--panel-veil1)}
+    .card::after{background:var(--panel-veil2)}
+    .card-inner{padding:26px; display:grid; gap:18px}
+
+    .head{display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap}
+    .title{font-weight:700; font-size:18px; opacity:.92}
+    .hint{color:var(--muted); font-size:13px}
+
+    /* Chips catégories */
+    .cats{display:flex; gap:8px; flex-wrap:wrap}
+    .chip{
+      padding:8px 12px; border-radius:12px; font-weight:600; font-size:13px; cursor:pointer; user-select:none;
+      background:#0b0f1a; border:1px solid #1a2340; color:var(--text); opacity:.9;
+      transition:filter .15s ease, transform .06s ease, border-color .15s ease;
+    }
+    .chip:hover{border-color:#26305a}
+    .chip:active{transform:translateY(1px)}
+    .chip.active{
+      background:linear-gradient(90deg, var(--accent1), var(--accent2)); color:#fff; border-color:transparent;
+      box-shadow:0 8px 22px rgba(43,167,255,.18), 0 2px 6px rgba(27,76,255,.25);
+    }
+
+    /* Grille de contrôles */
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1.2fr 1.2fr auto;
+    }
+    @media (max-width:860px){
+      .grid{grid-template-columns:1fr}
+    }
+
+    .field{display:grid; gap:8px}
+    .label{font-size:12px; color:var(--muted)}
+    .input, .select, .output{
+      width:100%; background:#0b0f1a; color:var(--text);
+      border:1px solid #1a2340; border-bottom-color:#132038; border-radius:14px;
+      padding:12px 14px; font-size:15px; font-weight:600; font-variant-numeric:tabular-nums;
+      box-shadow:0 1px 0 rgba(255,255,255,.04) inset;
+      outline:none; transition:box-shadow .15s ease, border-color .15s ease, background .15s ease;
+    }
+    .input:focus, .select:focus, .output:focus{ box-shadow:var(--ring) }
+
+    .row{display:grid; gap:10px; grid-template-columns:1fr 1fr auto}
+    @media (max-width:860px){ .row{grid-template-columns:1fr} }
+
+    .btn{
+      appearance:none; border:1px solid #1a2340; background:#0b0f1a; color:var(--text);
+      padding:12px 16px; border-radius:14px; font-weight:700; font-size:14px; cursor:pointer;
+      transition:transform .06s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+      display:inline-flex; align-items:center; gap:8px;
+    }
+    .btn:hover{border-color:#26305a}
+    .btn:active{transform:translateY(1px)}
+    .btn-primary{background:linear-gradient(90deg, var(--accent1), var(--accent2)); color:#fff; border-color:transparent;
+      box-shadow:0 8px 22px rgba(43,167,255,.18), 0 2px 6px rgba(27,76,255,.25);}
+    .btn:focus-visible{outline:none; box-shadow:var(--ring)}
+    .btn svg{width:16px;height:16px}
+
+    .toolbar{display:flex; gap:10px; flex-wrap:wrap}
+    .toggle{
+      display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:12px;
+      background:#0b0f1a; border:1px solid #1a2340; font-size:13px; color:var(--text); font-weight:600;
+    }
+    .toggle input{accent-color:#33cfff}
+    .prec{display:flex; align-items:center; gap:10px}
+    .prec input[type=range]{width:160px}
+
+    .mini{font-size:12px; color:var(--muted)}
+    .divider{height:1px; background:linear-gradient(90deg, transparent, rgba(95,123,255,0.18), transparent); margin:4px 0}
+
+    /* Favoris & historique */
+    .favbox, .hist{
+      background:#0b0f1a; border:1px solid #1a2340; border-radius:14px; padding:10px;
+    }
+    .favlist, .histlist{display:flex; gap:8px; flex-wrap:wrap}
+    .pill{
+      padding:6px 10px; border-radius:999px; border:1px solid #26305a; background:#0f1424; color:#a7b4ff;
+      font-size:12px; cursor:pointer
+    }
+
+    footer{ color:var(--muted); font-size:12px; text-align:center; padding:0 0 28px }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand" aria-label="Infinie & gratuit">
+        <div class="brand-badge" aria-hidden="true"><span>∞</span></div>
+        <div class="brand-word">Infinie & gratuit</div>
+      </div>
+    </header>
+
+    <main>
+      <section class="card" role="group" aria-labelledby="convHeading">
+        <div class="card-inner">
+          <div class="head">
+            <div class="title" id="convHeading">Convertisseur d’unités</div>
+            <div class="hint">Live, haute précision, design cohérent.</div>
+          </div>
+
+          <!-- Catégories -->
+          <div class="cats" id="cats"></div>
+
+          <!-- Grille principale -->
+          <div class="grid">
+            <!-- Colonne gauche : saisie -->
+            <div class="field">
+              <div class="label">Valeur</div>
+              <input id="inputVal" class="input" inputmode="decimal" placeholder="Ex. 12.5 ou 12,5" autocomplete="off"/>
+            </div>
+
+            <!-- Sélecteurs unités -->
+            <div class="field">
+              <div class="label">De (unité source)</div>
+              <select id="fromUnit" class="select"></select>
+            </div>
+
+            <div class="field">
+              <div class="label">À (unité cible)</div>
+              <div class="row">
+                <select id="toUnit" class="select"></select>
+                <button id="btnSwap" class="btn" title="Inverser (swap)">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M7 7h11m0 0-3-3m3 3-3 3M17 17H6m0 0 3 3m-3-3 3-3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  Inverser
+                </button>
+                <button id="btnCopy" class="btn" title="Copier le résultat">
+                  <svg viewBox="0 0 24 24" fill="none"><path d="M9 3h6a2 2 0 0 1 2 2v2h-2V5H9v2H7V5a2 2 0 0 1 2-2Z" fill="currentColor"/><rect x="7" y="9" width="10" height="11" rx="2" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+                  Copier
+                </button>
+              </div>
+            </div>
+
+            <!-- Résultat -->
+            <div class="field" style="grid-column:1/-1">
+              <div class="label">Résultat</div>
+              <input id="outputVal" class="output" readonly aria-live="polite"/>
+              <div class="mini" id="formulaNote"></div>
+            </div>
+          </div>
+
+          <!-- Toolbar -->
+          <div class="toolbar">
+            <label class="toggle"><input type="checkbox" id="fmtFR" checked> Format FR (1 234,56)</label>
+            <div class="prec">
+              <span class="label">Précision</span>
+              <input type="range" id="decimals" min="0" max="8" step="1" value="4">
+              <span id="decLabel" class="label">4 décimales</span>
+            </div>
+            <button id="btnFav" class="btn">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+              Ajouter aux favoris
+            </button>
+            <button id="btnShare" class="btn">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Lien partageable
+            </button>
+          </div>
+
+          <!-- Options spécifiques -->
+          <div id="dataNote" class="mini" style="display:none">Astuce : utilisez la catégorie <b>Données (binaire)</b> pour KiB/MiB/GiB (base 1024) et <b>Données (décimal)</b> pour kB/MB/GB (base 1000).</div>
+
+          <div class="divider"></div>
+
+          <!-- Favoris + Historique -->
+          <div class="favbox">
+            <div class="label" style="margin-bottom:6px">Favoris</div>
+            <div id="favList" class="favlist"></div>
+          </div>
+          <div class="hist">
+            <div class="label" style="margin-bottom:6px">Historique (10 derniers)</div>
+            <div id="histList" class="histlist"></div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer>Design cohérent — Logo, couleurs et background partagés sur tous les outils.</footer>
+  </div>
+
+  <script>
+    // ================== Définition des unités ==================
+    // Structure générale :
+    // category: { label, base, units: { key: { label, factor } } }
+    // -> Conversion standard: value_SI = value * factor ; inverse: value = value_SI / factor
+    // Température: { toSI(v), fromSI(v) } (base K)
+    // Les facteurs sont définis vers l'unité de base (SI) de la catégorie.
+
+    const CATS = {
+      length: {
+        label:'Longueur', base:'m',
+        units:{
+          km:{label:'Kilomètre (km)', factor:1000},
+          m:{label:'Mètre (m)', factor:1},
+          cm:{label:'Centimètre (cm)', factor:0.01},
+          mm:{label:'Millimètre (mm)', factor:0.001},
+          µm:{label:'Micromètre (µm)', factor:1e-6},
+          nm:{label:'Nanomètre (nm)', factor:1e-9},
+          mi:{label:'Mile (mi)', factor:1609.344},
+          nmi:{label:'Mille marin (nmi)', factor:1852},
+          yd:{label:'Yard (yd)', factor:0.9144},
+          ft:{label:'Pied (ft)', factor:0.3048},
+          in:{label:'Pouce (in)', factor:0.0254}
+        }
+      },
+      mass: {
+        label:'Masse', base:'kg',
+        units:{
+          t:{label:'Tonne (t)', factor:1000},
+          kg:{label:'Kilogramme (kg)', factor:1},
+          g:{label:'Gramme (g)', factor:0.001},
+          mg:{label:'Milligramme (mg)', factor:1e-6},
+          lb:{label:'Livre (lb)', factor:0.45359237},
+          oz:{label:'Once (oz)', factor:0.028349523125},
+          st:{label:'Stone (st)', factor:6.35029318}
+        }
+      },
+      temperature: {
+        label:'Température', base:'K',
+        units:{
+          C:{label:'Celsius (°C)', toSI:v=>v+273.15, fromSI:v=>v-273.15},
+          F:{label:'Fahrenheit (°F)', toSI:v=>(v-32)*5/9+273.15, fromSI:v=>(v-273.15)*9/5+32},
+          K:{label:'Kelvin (K)', toSI:v=>v, fromSI:v=>v}
+        }
+      },
+      area: {
+        label:'Aire', base:'m²',
+        units:{
+          'km²':{label:'Kilomètre carré (km²)', factor:1e6},
+          'm²':{label:'Mètre carré (m²)', factor:1},
+          'cm²':{label:'Centimètre carré (cm²)', factor:1e-4},
+          'mm²':{label:'Millimètre carré (mm²)', factor:1e-6},
+          ha:{label:'Hectare (ha)', factor:10000},
+          are:{label:'Are (a)', factor:100},
+          'ft²':{label:'Pied carré (ft²)', factor:0.09290304},
+          'in²':{label:'Pouce carré (in²)', factor:0.00064516},
+          'yd²':{label:'Yard carré (yd²)', factor:0.83612736},
+          acre:{label:'Acre (acre)', factor:4046.8564224}
+        }
+      },
+      volume: {
+        label:'Volume', base:'m³',
+        units:{
+          'm³':{label:'Mètre cube (m³)', factor:1},
+          L:{label:'Litre (L)', factor:0.001},
+          mL:{label:'Millilitre (mL)', factor:1e-6},
+          'cm³':{label:'Centimètre cube (cm³)', factor:1e-6},
+          'ft³':{label:'Pied cube (ft³)', factor:0.028316846592},
+          'in³':{label:'Pouce cube (in³)', factor:1.6387064e-5},
+          galUS:{label:'Gallon US (gal)', factor:0.003785411784},
+          galImp:{label:'Gallon Impérial (gal UK)', factor:0.00454609},
+          ptUS:{label:'Pinte US (pt)', factor:0.000473176473},
+          cupUS:{label:'Tasse US (cup)', factor:0.000236588236}
+        }
+      },
+      speed: {
+        label:'Vitesse', base:'m/s',
+        units:{
+          'm/s':{label:'Mètre par seconde (m/s)', factor:1},
+          'km/h':{label:'Kilomètre par heure (km/h)', factor:1000/3600},
+          mph:{label:'Mile par heure (mph)', factor:0.44704},
+          kt:{label:'Nœud (kt)', factor:0.514444},
+          'ft/s':{label:'Pied par seconde (ft/s)', factor:0.3048}
+        }
+      },
+      time: {
+        label:'Temps', base:'s',
+        units:{
+          s:{label:'Seconde (s)', factor:1},
+          ms:{label:'Milliseconde (ms)', factor:1e-3},
+          µs:{label:'Microseconde (µs)', factor:1e-6},
+          ns:{label:'Nanoseconde (ns)', factor:1e-9},
+          min:{label:'Minute (min)', factor:60},
+          h:{label:'Heure (h)', factor:3600},
+          day:{label:'Jour (24 h)', factor:86400},
+          week:{label:'Semaine (7 j)', factor:604800},
+          yr:{label:'Année (365 j)', factor:31536000}
+        }
+      },
+      dataDec: {
+        label:'Données (décimal)', base:'B',
+        units:{
+          bit:{label:'bit (b)', factor:1/8},
+          B:{label:'Octet (B)', factor:1},
+          kB:{label:'Kilooctet (kB, 10³)', factor:1e3},
+          MB:{label:'Mégaoctet (MB, 10⁶)', factor:1e6},
+          GB:{label:'Gigaoctet (GB, 10⁹)', factor:1e9},
+          TB:{label:'Téraoctet (TB, 10¹²)', factor:1e12}
+        }
+      },
+      dataBin: {
+        label:'Données (binaire)', base:'B',
+        units:{
+          bit:{label:'bit (b)', factor:1/8},
+          B:{label:'Octet (B)', factor:1},
+          KiB:{label:'Kibioctet (KiB, 1024)', factor:1024},
+          MiB:{label:'Mibioctet (MiB)', factor:1024**2},
+          GiB:{label:'Gibioctet (GiB)', factor:1024**3},
+          TiB:{label:'Tibioctet (TiB)', factor:1024**4}
+        }
+      },
+      energy: {
+        label:'Énergie', base:'J',
+        units:{
+          J:{label:'Joule (J)', factor:1},
+          kJ:{label:'Kilojoule (kJ)', factor:1000},
+          Wh:{label:'Watt-heure (Wh)', factor:3600},
+          kWh:{label:'Kilowatt-heure (kWh)', factor:3.6e6},
+          cal:{label:'Calorie (cal)', factor:4.184},
+          kcal:{label:'Kilocalorie (kcal)', factor:4184},
+          BTU:{label:'BTU (IT)', factor:1055.05585262}
+        }
+      },
+      power: {
+        label:'Puissance', base:'W',
+        units:{
+          W:{label:'Watt (W)', factor:1},
+          kW:{label:'Kilowatt (kW)', factor:1000},
+          MW:{label:'Mégawatt (MW)', factor:1e6},
+          hp:{label:'Cheval vapeur (imp.) (hp)', factor:745.699872},
+          PS:{label:'Cheval (métrique) (PS)', factor:735.49875}
+        }
+      },
+      pressure: {
+        label:'Pression', base:'Pa',
+        units:{
+          Pa:{label:'Pascal (Pa)', factor:1},
+          kPa:{label:'Kilopascal (kPa)', factor:1000},
+          MPa:{label:'Mégapascal (MPa)', factor:1e6},
+          bar:{label:'Bar (bar)', factor:1e5},
+          atm:{label:'Atmosphère (atm)', factor:101325},
+          psi:{label:'Livre par pouce² (psi)', factor:6894.757293168},
+          mmHg:{label:'Millimètre Hg (mmHg)', factor:133.3223684211},
+          inHg:{label:'Pouce Hg (inHg)', factor:3386.38815789}
+        }
+      },
+      angle: {
+        label:'Angle', base:'rad',
+        units:{
+          rad:{label:'Radian (rad)', factor:1},
+          deg:{label:'Degré (°)', factor:Math.PI/180},
+          grad:{label:'Grade (gon)', factor:Math.PI/200},
+          arcmin:{label:'Minute d’arc (′)', factor:Math.PI/10800},
+          arcsec:{label:'Seconde d’arc (″)', factor:Math.PI/648000}
+        }
+      }
+    };
+
+    const ORDER = ['length','mass','temperature','area','volume','speed','time','dataDec','dataBin','energy','power','pressure','angle'];
+
+    // ============== DOM refs ==============
+    const $cats    = document.getElementById('cats');
+    const $input   = document.getElementById('inputVal');
+    const $from    = document.getElementById('fromUnit');
+    const $to      = document.getElementById('toUnit');
+    const $output  = document.getElementById('outputVal');
+    const $swap    = document.getElementById('btnSwap');
+    const $copy    = document.getElementById('btnCopy');
+    const $fmtFR   = document.getElementById('fmtFR');
+    const $decs    = document.getElementById('decimals');
+    const $decLab  = document.getElementById('decLabel');
+    const $favBtn  = document.getElementById('btnFav');
+    const $share   = document.getElementById('btnShare');
+    const $favList = document.getElementById('favList');
+    const $histList= document.getElementById('histList');
+    const $note    = document.getElementById('formulaNote');
+    const $dataNote= document.getElementById('dataNote');
+
+    let currentCatKey = 'length';
+    const history = [];
+    const FAVORITES_KEY = 'infinie-conv-favs-v1';
+
+    // ============== UI Builders ==============
+    function buildCategories(){
+      $cats.innerHTML = '';
+      ORDER.forEach(key=>{
+        const chip = document.createElement('div');
+        chip.className = 'chip' + (key===currentCatKey?' active':'');
+        chip.textContent = CATS[key].label;
+        chip.dataset.key = key;
+        chip.addEventListener('click', ()=>{
+          document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+          chip.classList.add('active');
+          currentCatKey = key;
+          populateUnits();
+          compute();
+        });
+        $cats.appendChild(chip);
+      });
+    }
+
+    function populateUnits(){
+      const cat = CATS[currentCatKey];
+      const keys = Object.keys(cat.units);
+      $from.innerHTML = '';
+      $to.innerHTML = '';
+      keys.forEach(k=>{
+        const u = cat.units[k];
+        const opt1 = new Option(u.label, k);
+        const opt2 = new Option(u.label, k);
+        $from.add(opt1); $to.add(opt2);
+      });
+      // Choix par défaut intelligents
+      if (currentCatKey==='length'){ $from.value='m'; $to.value='km'; }
+      else if (currentCatKey==='mass'){ $from.value='kg'; $to.value='g'; }
+      else if (currentCatKey==='temperature'){ $from.value='C'; $to.value='F'; }
+      else if (currentCatKey==='area'){ $from.value='m²'; $to.value='cm²'; }
+      else if (currentCatKey==='volume'){ $from.value='L'; $to.value='m³'; }
+      else if (currentCatKey==='speed'){ $from.value='km/h'; $to.value='m/s'; }
+      else if (currentCatKey==='time'){ $from.value='min'; $to.value='s'; }
+      else if (currentCatKey==='dataDec'){ $from.value='MB'; $to.value='GB'; }
+      else if (currentCatKey==='dataBin'){ $from.value='MiB'; $to.value='GiB'; }
+      else if (currentCatKey==='energy'){ $from.value='kWh'; $to.value='J'; }
+      else if (currentCatKey==='power'){ $from.value='kW'; $to.value='W'; }
+      else if (currentCatKey==='pressure'){ $from.value='bar'; $to.value='Pa'; }
+      else if (currentCatKey==='angle'){ $from.value='deg'; $to.value='rad'; }
+
+      $dataNote.style.display = (currentCatKey.startsWith('data')) ? '' : 'none';
+    }
+
+    // ============== Conversion core ==============
+    function toBase(cat, unitKey, val){
+      const u = cat.units[unitKey];
+      if (!u) return NaN;
+      if (cat===CATS.temperature) return u.toSI ? u.toSI(val) : val; // base K
+      return val * (u.factor ?? 1);
+    }
+    function fromBase(cat, unitKey, valBase){
+      const u = cat.units[unitKey];
+      if (!u) return NaN;
+      if (cat===CATS.temperature) return u.fromSI ? u.fromSI(valBase) : valBase;
+      return valBase / (u.factor ?? 1);
+    }
+
+    function parseNumber(str){
+      if (typeof str!=='string') return NaN;
+      // Autorise espace fine / espace / underscore comme séparateur milliers; "," comme décimale FR.
+      const s = str.trim().replace(/\s| |_/g,'').replace(',','.');
+      // Autorise notation scientifique
+      if (!/^[-+]?(\d+(\.\d*)?|\.\d+)(e[-+]?\d+)?$/i.test(s)) return NaN;
+      return Number(s);
+    }
+
+    function formatNumber(num, decimals, fr){
+      if (!isFinite(num)) return '—';
+      if (fr){
+        return new Intl.NumberFormat('fr-FR', {minimumFractionDigits:decimals, maximumFractionDigits:decimals}).format(num);
+      } else {
+        return num.toLocaleString('en-US', {minimumFractionDigits:decimals, maximumFractionDigits:decimals});
+      }
+    }
+
+    function compute(){
+      const cat = CATS[currentCatKey];
+      const v = parseNumber($input.value||'0');
+      const fromK = $from.value, toK = $to.value;
+      if (!isFinite(v)){ $output.value='—'; $note.textContent=''; return; }
+
+      const base = toBase(cat, fromK, v);
+      const out  = fromBase(cat, toK, base);
+
+      const dec = +$decs.value;
+      const fr  = $fmtFR.checked;
+      $output.value = formatNumber(out, dec, fr);
+
+      // Note formule pour température (non linéaire) sinon rappel base
+      if (cat===CATS.temperature){
+        $note.textContent = 'Conversion non linéaire (offset + échelle) via Kelvin.';
+      } else {
+        $note.textContent = `Base: ${cat.base} • Facteurs exacts stockés localement.`;
+      }
+
+      pushHistory(v, fromK, out, toK, currentCatKey);
+    }
+
+    // ============== Historique & Favoris ==============
+    function pill(text, onClick){
+      const el = document.createElement('button');
+      el.className='pill'; el.textContent=text; el.addEventListener('click', onClick);
+      return el;
+    }
+
+    function pushHistory(inp, fromK, out, toK, catKey){
+      if (!isFinite(inp) || !isFinite(out)) return;
+      const item = {t:Date.now(), catKey, fromK, toK, inp, out};
+      history.unshift(item);
+      if (history.length>10) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory(){
+      $histList.innerHTML='';
+      history.forEach(h=>{
+        const cat = CATS[h.catKey];
+        const fromL = cat.units[h.fromK].label.split('(')[0].trim();
+        const toL   = cat.units[h.toK].label.split('(')[0].trim();
+        $histList.appendChild(
+          pill(`${h.inp} ${h.fromK} → ${formatNumber(h.out, +$decs.value, $fmtFR.checked)} ${h.toK}`, ()=>{
+            selectCategory(h.catKey);
+            $from.value=h.fromK; $to.value=h.toK; $input.value=String(h.inp); compute();
+          })
+        );
+      });
+    }
+
+    function getFavs(){ try{ return JSON.parse(localStorage.getItem(FAVORITES_KEY)||'[]'); }catch{ return [] } }
+    function setFavs(arr){ localStorage.setItem(FAVORITES_KEY, JSON.stringify(arr)); }
+    function renderFavs(){
+      $favList.innerHTML='';
+      const favs=getFavs();
+      if (!favs.length){ $favList.innerHTML='<span class="mini">Aucun favori pour le moment.</span>'; return; }
+      favs.forEach((f,idx)=>{
+        const cat=CATS[f.catKey];
+        const text=`${cat.label}: ${f.fromK} → ${f.toK}`;
+        const el=pill(text, ()=>{
+          selectCategory(f.catKey);
+          $from.value=f.fromK; $to.value=f.toK; compute();
+        });
+        el.title='Clique pour charger ce favori (clic droit pour supprimer)';
+        el.addEventListener('contextmenu', (e)=>{ e.preventDefault();
+          const arr=getFavs(); arr.splice(idx,1); setFavs(arr); renderFavs();
+        });
+        $favList.appendChild(el);
+      });
+    }
+
+    function addFavorite(){
+      const favs=getFavs();
+      const exist=favs.some(f=>f.catKey===currentCatKey && f.fromK===$from.value && f.toK===$to.value);
+      if (exist){ toast('Déjà dans les favoris'); return; }
+      favs.push({catKey:currentCatKey, fromK:$from.value, toK:$to.value});
+      setFavs(favs); renderFavs(); toast('Ajouté aux favoris');
+    }
+
+    // ============== Misc UI helpers ==============
+    function selectCategory(key){
+      currentCatKey = key;
+      document.querySelectorAll('.chip').forEach(c=>{c.classList.toggle('active', c.dataset.key===key);});
+      populateUnits();
+    }
+
+    function swapUnits(){
+      const a=$from.value, b=$to.value;
+      $from.value=b; $to.value=a; compute();
+    }
+
+    function copyResult(){
+      const txt = $output.value;
+      if (!txt || txt==='—'){ toast('Aucune valeur à copier'); return; }
+      navigator.clipboard.writeText(txt).then(()=> toast('Résultat copié'));
+    }
+
+    function shareLink(){
+      const params = new URLSearchParams({
+        c:currentCatKey, f:$from.value, t:$to.value, v:$input.value, d:$decs.value, fr:$fmtFR.checked?'1':'0'
+      });
+      const url = location.origin + location.pathname + '?' + params.toString();
+      navigator.clipboard.writeText(url).then(()=> toast('Lien copié'));
+    }
+
+    function applyQuery(){
+      const q = new URLSearchParams(location.search);
+      const c = q.get('c'), f=q.get('f'), t=q.get('t'), v=q.get('v'), d=q.get('d'), fr=q.get('fr');
+      if (c && CATS[c]) selectCategory(c); else selectCategory(currentCatKey);
+      if (f && CATS[currentCatKey].units[f]) $from.value=f;
+      if (t && CATS[currentCatKey].units[t]) $to.value=t;
+      if (v!=null) $input.value=v;
+      if (d!=null) $decs.value=String(Math.max(0,Math.min(8, +d||0)));
+      if (fr!=null) $fmtFR.checked = fr==='1';
+      updateDecLabel(); compute();
+    }
+
+    function toast(msg){
+      let t=document.getElementById('toast');
+      if (!t){
+        t=document.createElement('div'); t.id='toast';
+        Object.assign(t.style,{
+          position:'fixed',left:'50%',bottom:'24px',transform:'translateX(-50%)',
+          background:'#0b0f1a',border:'1px solid #1a2340',color:'var(--text)',
+          padding:'10px 14px',borderRadius:'12px',fontSize:'13px',zIndex:9999,
+          boxShadow:'0 8px 22px rgba(0,0,0,.35)', transition:'opacity .15s ease', opacity:'0'
+        });
+        document.body.appendChild(t);
+      }
+      t.textContent=msg; requestAnimationFrame(()=>{t.style.opacity='1'; setTimeout(()=>t.style.opacity='0',1500);});
+    }
+
+    function updateDecLabel(){ $decLab.textContent = `${$decs.value} décimales`; }
+
+    // ============== Events ==============
+    $input.addEventListener('input', compute);
+    $from.addEventListener('change', compute);
+    $to.addEventListener('change', compute);
+    $fmtFR.addEventListener('change', compute);
+    $decs.addEventListener('input', ()=>{ updateDecLabel(); compute(); });
+    $swap.addEventListener('click', swapUnits);
+    $copy.addEventListener('click', copyResult);
+    $favBtn.addEventListener('click', addFavorite);
+    $share.addEventListener('click', shareLink);
+
+    // Raccourcis pratiques : Ctrl/Cmd+C copie résultat, Ctrl/Cmd+S swap
+    window.addEventListener('keydown', (e)=>{
+      if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='c'){ e.preventDefault(); copyResult(); }
+      if ((e.ctrlKey||e.metaKey) && e.key.toLowerCase()==='s'){ e.preventDefault(); swapUnits(); }
+    });
+
+    // ============== Init ==============
+    buildCategories();
+    populateUnits();
+    renderFavs();
+    applyQuery();
+  </script>
+</body>
+</html>

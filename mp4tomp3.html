@@ -1,0 +1,371 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — MP4 → MP3 (100% local)</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      /* ——— TOKENS DA (identiques sur tout le site) ——— */
+      --bg:#0B0B0D;
+      --panel:#0d1120;
+      --text:#E6ECF7;
+      --muted:#A4ADBD;
+      --border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF;
+      --accent2:#1B4CFF;
+      --ring:0 0 0 2px rgba(43,167,255,.35);
+
+      /* Règles d’usage */
+      --field:#0b0f1a;              /* Inputs/fonds secondaires */
+      --field-border:#1a2340;
+      --radius:18px;
+      --shadow:0 10px 30px rgba(12,18,40,.35);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+    }
+
+    /* ——— Header / Logo ——— */
+    header{
+      max-width:1100px;margin:28px auto 0;padding:0 20px;
+      display:flex;align-items:center;gap:12px;user-select:none
+    }
+    .logo-badge{
+      width:40px;height:40px;border-radius:999px;display:grid;place-items:center;
+      background: radial-gradient(120% 120% at 20% 15%, var(--accent1), var(--accent2));
+      box-shadow:0 0 0 1px rgba(255,255,255,.06), inset 0 1px 10px rgba(255,255,255,.08);
+      color:#fff;font-weight:800;font-size:22px;
+    }
+    .wordmark{
+      font-weight:800;letter-spacing:.2px;
+      background:linear-gradient(90deg,#fff,rgba(230,236,247,.9));
+      -webkit-background-clip:text;background-clip:text;color:transparent;
+    }
+
+    /* ——— Layout & Cards ——— */
+    main{max-width:1100px;margin:22px auto 60px;padding:0 20px;display:grid;gap:18px}
+    .card{
+      position:relative;overflow:hidden;border-radius:var(--radius);
+      border:1px solid var(--border);background:var(--panel);box-shadow:var(--shadow);padding:22px;
+    }
+    .card::before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(160deg, rgba(27,76,255,0.06), transparent)}
+    .card::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg, rgba(47,227,255,0.05), transparent 40%)}
+    h1{margin:4px 0 10px;font-size:28px;line-height:1.15}
+    p.lead{margin:0 0 18px;color:var(--muted)}
+
+    /* ——— Dropzone + input file full-cover (compatible Safari) ——— */
+    .drop{
+      position:relative; /* important pour la cover de l'input */
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      gap:10px;padding:28px;border-radius:16px;border:1px dashed var(--field-border);
+      background:linear-gradient(180deg, rgba(255,255,255,.02), transparent 40%), var(--field);
+      transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease;
+      text-align:center;
+    }
+    .drop.drag{ border-color:var(--accent1); box-shadow:0 0 0 3px rgba(47,227,255,.15) }
+    .drop .cover-input{
+      position:absolute;inset:0;width:100%;height:100%;
+      opacity:0;display:block;cursor:pointer; /* PAS display:none */
+    }
+    .hint{color:var(--muted);font-size:14px}
+
+    /* ——— Controls ——— */
+    .field{
+      background:var(--field);border:1px solid var(--field-border);border-radius:12px;
+      padding:10px 12px;color:var(--text);min-width:180px
+    }
+    select.field{
+      appearance:none;
+      background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="%23A4ADBD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>');
+      background-repeat:no-repeat;background-position:right 10px center;padding-right:36px
+    }
+    .btn{
+      border:0;border-radius:14px;padding:12px 16px;font-weight:700;cursor:pointer;
+      transition:transform .06s ease,opacity .2s ease, box-shadow .2s ease;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn[disabled]{opacity:.5;cursor:not-allowed}
+    .btn-primary{
+      color:#fff;background:linear-gradient(90deg, var(--accent1), var(--accent2));
+      box-shadow:0 6px 22px rgba(27,76,255,.35), 0 0 0 1px rgba(255,255,255,.04) inset;
+    }
+    .btn-ghost{color:var(--text);background:transparent;border:1px solid var(--field-border)}
+    .row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+
+    /* ——— Status + Progress ——— */
+    .status{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--muted)}
+    .dot{width:10px;height:10px;border-radius:999px;background:gray;box-shadow:0 0 0 2px rgba(255,255,255,.05) inset}
+    .dot.ready{background:linear-gradient(90deg,var(--accent1),var(--accent2))}
+    .dot.busy{background:conic-gradient(from 0deg, var(--accent1), var(--accent2))}
+    .progress{width:100%;height:10px;border-radius:999px;background:#0b0f1a;border:1px solid var(--field-border);overflow:hidden}
+    .bar{height:100%;width:0%;background:linear-gradient(90deg, var(--accent1), var(--accent2))}
+    .small{font-size:12px;color:var(--muted)}
+    .mono{font-family:ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace}
+
+    /* Focus visible */
+    :where(button,select){outline:none}
+    :where(button,select):focus-visible{box-shadow:var(--ring)}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo-badge">∞</div>
+    <div class="wordmark">Infinie & gratuit</div>
+  </header>
+
+  <main>
+    <!-- HERO -->
+    <section class="card">
+      <h1>Convertisseur MP4 → MP3 <span style="opacity:.6;font-weight:600">— 100% local</span></h1>
+      <p class="lead">Glissez votre MP4 ou cliquez. Extraction audio dans votre navigateur via FFmpeg (WASM). Aucune donnée n’est envoyée.</p>
+
+      <div id="drop" class="drop" aria-label="Déposez un MP4 ou cliquez pour choisir">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="url(#g1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2FE3FF"/><stop offset="1" stop-color="#1B4CFF"/></linearGradient></defs>
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 5 17 10"/>
+          <line x1="12" y1="5" x2="12" y2="15"/>
+        </svg>
+        <div><strong>Déposez votre MP4 ici</strong> ou cliquez pour choisir</div>
+        <div class="hint">Conseil : évitez &gt; 200&nbsp;Mo (limite mémoire navigateur)</div>
+        <!-- Input couvrant TOUTE la zone (compat Safari) -->
+        <input id="file" class="cover-input" type="file" accept="video/mp4,video/*" aria-label="Choisir un fichier vidéo"/>
+      </div>
+
+      <div id="controls" class="row" style="justify-content:space-between; margin-top:14px; display:none">
+        <div class="small mono" id="fileInfo"></div>
+        <div class="row">
+          <select id="quality" class="field" aria-label="Qualité MP3">
+            <option value="192k" selected>Qualité : 192 kbps (recommandé)</option>
+            <option value="128k">128 kbps (léger)</option>
+            <option value="256k">256 kbps</option>
+            <option value="320k">320 kbps (max)</option>
+          </select>
+          <button id="convertBtn" class="btn btn-primary">Convertir en MP3</button>
+          <button id="resetBtn" class="btn btn-ghost">Réinitialiser</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- STATUS / PROGRESS -->
+    <section class="card" aria-live="polite">
+      <div class="row" style="justify-content:space-between">
+        <div class="status">
+          <span id="stateDot" class="dot"></span>
+          <span id="stateText">Initialisation…</span>
+        </div>
+        <div class="small">FFmpeg WASM <span id="engineVer">—</span></div>
+      </div>
+      <div class="progress" style="margin-top:14px"><div id="bar" class="bar"></div></div>
+      <div class="small" style="margin-top:8px"><span id="progressText">0%</span></div>
+    </section>
+
+    <!-- RESULT -->
+    <section id="result" class="card" style="display:none">
+      <div class="row" style="justify-content:space-between">
+        <div>
+          <strong>Fichier généré</strong><br/>
+          <span class="small mono" id="outName">output.mp3</span>
+        </div>
+        <div class="row">
+          <a id="downloadLink" class="btn btn-primary" download>⬇️ Télécharger MP3</a>
+          <button id="againBtn" class="btn btn-ghost">Nouveau fichier</button>
+        </div>
+      </div>
+      <audio id="player" controls style="width:100%;margin-top:14px"></audio>
+      <div class="small" id="outMeta" style="margin-top:8px"></div>
+    </section>
+
+    <!-- NOTE -->
+    <section class="card">
+      <div class="small">
+        <strong>Confidentialité.</strong> Conversion 100% locale (aucun upload).<br/>
+        <strong>Astuce perf.</strong> Pour des chargements instantanés, auto-hébergez <code class="mono">ffmpeg-core.js</code> et mettez à jour <code class="mono">corePath</code> dans le script.
+      </div>
+    </section>
+  </main>
+
+  <!-- FFmpeg (WASM) -->
+  <script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/ffmpeg.min.js"></script>
+  <script>
+    const $ = (s)=>document.querySelector(s);
+
+    // UI refs
+    const drop = $('#drop');
+    const fileInput = $('#file');
+    const controls = $('#controls');
+    const fileInfo = $('#fileInfo');
+    const quality = $('#quality');
+    const convertBtn = $('#convertBtn');
+    const resetBtn = $('#resetBtn');
+
+    const stateDot = $('#stateDot');
+    const stateText = $('#stateText');
+    const bar = $('#bar');
+    const progressText = $('#progressText');
+    const engineVer = $('#engineVer');
+
+    const result = $('#result');
+    const outNameEl = $('#outName');
+    const outMeta = $('#outMeta');
+    const downloadLink = $('#downloadLink');
+    const player = $('#player');
+    const againBtn = $('#againBtn');
+
+    const { createFFmpeg, fetchFile, version } = FFmpeg;
+    engineVer.textContent = "v" + (version || "0.12.x");
+
+    // FFmpeg instance (CDN corePath; remplacez par votre hébergement si besoin)
+    const ffmpeg = createFFmpeg({
+      log: false,
+      corePath: "https://unpkg.com/@ffmpeg/core@0.12.6/dist/ffmpeg-core.js",
+    });
+
+    ffmpeg.setProgress(({ ratio }) => {
+      const pct = Math.min(100, Math.round((ratio || 0)*100));
+      bar.style.width = pct + '%';
+      progressText.textContent = pct + '%';
+    });
+
+    let currentFile = null;
+
+    // Helpers UI
+    function setReady(){
+      stateDot.classList.remove('busy'); stateDot.classList.add('ready');
+      stateText.textContent = 'Prête';
+      if(!bar.style.width || bar.style.width==='0%'){ progressText.textContent = '—'; }
+    }
+    function setBusy(label){
+      stateDot.classList.remove('ready'); stateDot.classList.add('busy');
+      stateText.textContent = label || 'Traitement…';
+    }
+    function prettySize(bytes){
+      if(bytes==null) return '—';
+      const u=['o','Ko','Mo','Go','To']; let i=0, v=bytes;
+      while(v>=1024 && i<u.length-1){ v/=1024; i++; }
+      return v.toFixed(v<10?2:1)+' '+u[i];
+    }
+    function resetAll(){
+      currentFile = null;
+      fileInput.value = "";
+      controls.style.display = 'none';
+      result.style.display = 'none';
+      bar.style.width = '0%';
+      progressText.textContent = '0%';
+      setReady();
+    }
+
+    // Initialisation FFmpeg
+    (async()=>{
+      try{
+        setBusy('Initialisation du moteur…');
+        await ffmpeg.load();
+        setReady();
+      }catch(e){
+        console.error(e);
+        stateText.textContent = 'Erreur : FFmpeg n’a pas pu charger';
+      }
+    })();
+
+    // Drag & drop (événements sur le conteneur ET sur l’input cover)
+    function bindDragEvents(el){
+      el.addEventListener('dragenter', (e)=>{ e.preventDefault(); drop.classList.add('drag'); });
+      el.addEventListener('dragover', (e)=>{ e.preventDefault(); drop.classList.add('drag'); });
+      el.addEventListener('dragleave', ()=> drop.classList.remove('drag'));
+      el.addEventListener('drop', (e)=>{
+        e.preventDefault(); drop.classList.remove('drag');
+        const f = e.dataTransfer?.files?.[0];
+        if(f) handleFile(f);
+      });
+    }
+    bindDragEvents(drop);
+    bindDragEvents(fileInput); // important car l’input couvre la zone
+
+    // Choix de fichier (clic ou drop)
+    fileInput.addEventListener('change', (e)=>{
+      const f = e.target.files?.[0];
+      if(f) handleFile(f);
+    });
+
+    function handleFile(f){
+      // Filtre simple vidéo
+      if(!/^video\//.test(f.type) && !/\.mp4$/i.test(f.name)){
+        alert('Merci de choisir un fichier vidéo (MP4, MOV, etc.).');
+        return;
+      }
+      currentFile = f;
+      fileInfo.textContent = `Sélection : ${f.name}  •  ${prettySize(f.size)}`;
+      controls.style.display = '';
+      result.style.display = 'none';
+    }
+
+    // Actions
+    resetBtn.addEventListener('click', resetAll);
+    againBtn.addEventListener('click', resetAll);
+
+    convertBtn.addEventListener('click', async ()=>{
+      if(!currentFile){ alert('Choisissez d’abord un fichier.'); return; }
+      try{
+        setBusy('Préparation…');
+        bar.style.width='0%'; progressText.textContent='0%';
+
+        // Noms
+        const inExt = (currentFile.name.match(/\.[^.]+$/) || ['.mp4'])[0].toLowerCase();
+        const inName = 'input' + inExt;
+        const outName = currentFile.name.replace(/\.[^.]+$/,'') + '.mp3';
+
+        // Écrit le fichier dans FS
+        ffmpeg.FS('writeFile', inName, await fetchFile(currentFile));
+
+        // Convertit → MP3 (libmp3lame)
+        setBusy('Conversion en cours…');
+        const br = quality.value || '192k';
+        await ffmpeg.run(
+          '-i', inName,
+          '-vn',
+          '-acodec', 'libmp3lame',
+          '-b:a', br,
+          '-ar', '44100',
+          '-map', 'a',
+          'out.mp3'
+        );
+
+        const data = ffmpeg.FS('readFile', 'out.mp3');
+        const blob = new Blob([data.buffer], { type:'audio/mpeg' });
+        const url = URL.createObjectURL(blob);
+
+        // Nettoyage FS
+        try{ ffmpeg.FS('unlink', inName); }catch{}
+        try{ ffmpeg.FS('unlink', 'out.mp3'); }catch{}
+
+        setReady();
+        outNameEl.textContent = outName;
+        outMeta.textContent = `Taille : ${prettySize(blob.size)} • Débit : ${br}`;
+        downloadLink.href = url;
+        downloadLink.download = outName;
+        player.src = url;
+        result.style.display = '';
+
+      }catch(err){
+        console.error(err);
+        setReady();
+        alert('Échec de la conversion. Le fichier peut être trop volumineux, ne pas contenir d’audio, ou la mémoire disponible est insuffisante.');
+      }
+    });
+  </script>
+</body>
+</html>

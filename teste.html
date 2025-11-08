@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Infinie & gratuit — DA Grid RPG (Noir & Or)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0A0B;
+    --text:#F2F3F6;
+    --muted:#A5A9B3;
+
+    --gold-1:#D8B45A; /* doré satiné */
+    --gold-2:#F2C76C; /* doré clair */
+    --gold-3:#BF8E2C; /* bronze profond */
+
+    --panel:#101218CC; /* verre fumé */
+    --border:rgba(212,172,82,.22);
+    --radius:18px;
+
+    --grid:#F2C76C22;    /* lignes du quadrillage (or très léger) */
+    --grid-strong:#F2C76C35;
+
+    --speed-grid: 60s;   /* vitesse du quadrillage ortho */
+    --speed-plane: 26s;  /* vitesse du plan 3D */
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; color:var(--text); font-family:Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    background:var(--bg);
+    overflow-x:hidden;
+  }
+
+  /* ============ BACKGROUND : Quadrillage infini premium ============ */
+  .back{
+    position:fixed; inset:0; pointer-events:none; z-index:-3;
+  }
+
+  /* Grille orthogonale qui glisse lentement (parallaxe) */
+  .grid-ortho{
+    position:absolute; inset:-20vmax;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 42px 42px, 42px 42px;
+    filter:saturate(120%) contrast(105%);
+    animation: drift var(--speed-grid) linear infinite;
+  }
+  @keyframes drift{
+    0%  { background-position: 0 0, 0 0; }
+    100%{ background-position: 420px 280px, 420px 280px; }
+  }
+
+  /* Plan de grille en perspective (effet “infini”) */
+  .grid-plane{
+    position:absolute; left:-10vw; right:-10vw; bottom:-6vh; height:60vh;
+    transform:perspective(900px) rotateX(68deg);
+    transform-origin:50% 100%;
+    background:
+      linear-gradient(var(--grid-strong) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+    background-size: 60px 60px, 60px 60px;
+    background-position: 0 0, 0 0;
+    mask:linear-gradient(to top, #000 30%, rgba(0,0,0,.85) 55%, rgba(0,0,0,.0) 100%);
+    animation: planeMove var(--speed-plane) linear infinite;
+  }
+  @keyframes planeMove{
+    0%  { background-position: 0 0, 0 0; }
+    100%{ background-position: 0 -600px, 0 -600px; } /* remonte à l'infini */
+  }
+
+  /* Halo & vignette pour un rendu luxe maîtrisé */
+  .halo{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(55% 40% at 50% 38%, rgba(242,199,108,.10), transparent 60%),
+      radial-gradient(80% 70% at 50% 100%, rgba(191,142,44,.18), transparent 70%);
+    mix-blend-mode:screen;
+  }
+  .vignette{
+    position:absolute; inset:0;
+    background:radial-gradient(120% 120% at 50% 20%, transparent 0 55%, rgba(0,0,0,.52) 80% 100%);
+  }
+
+  /* Accessibilité : si réduction du mouvement */
+  @media (prefers-reduced-motion: reduce){
+    .grid-ortho,.grid-plane{ animation:none }
+  }
+
+  /* ================== HEADER (marque) ================== */
+  header{
+    position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:14px 22px; border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.18));
+    backdrop-filter:blur(10px) saturate(160%);
+  }
+  .brand{display:flex; align-items:center; gap:10px; font-weight:800}
+  .logo{
+    display:grid; place-items:center; width:36px; height:36px; border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--gold-2), var(--gold-3));
+    color:#111; font-size:20px; font-weight:900;
+    box-shadow:0 0 18px rgba(212,172,82,.34), inset 0 0 6px rgba(255,255,255,.18);
+    text-shadow:0 1px 0 rgba(255,255,255,.45);
+  }
+  .badge{
+    border:1px solid var(--border); border-radius:999px; padding:6px 12px; font-size:12px; color:var(--muted);
+    background:linear-gradient(135deg, rgba(212,172,82,.12), rgba(0,0,0,.30));
+  }
+
+  /* ================== SCÈNE “JEU VIDÉO” ================== */
+  main{min-height:calc(100vh - 64px); display:grid; place-items:center; padding:32px 16px}
+  .stage{
+    width:min(1100px, 94vw);
+    display:grid; grid-template-columns: 280px 1fr; gap:22px;
+    align-items:end;
+  }
+  @media (max-width:900px){
+    .stage{ grid-template-columns:1fr; }
+  }
+
+  /* Portrait Shiby */
+  .npc{
+    align-self:center; justify-self:center;
+    width:min(320px, 58vw); aspect-ratio:1/1; border-radius:24px;
+    background:radial-gradient(120% 140% at 10% 0%, rgba(242,199,108,.10), rgba(0,0,0,.0)),
+               linear-gradient(180deg, rgba(0,0,0,.35), rgba(0,0,0,.15));
+    border:1px solid var(--border);
+    box-shadow:0 0 44px rgba(0,0,0,.55), 0 0 26px rgba(212,172,82,.18) inset;
+    display:grid; place-items:center; overflow:hidden;
+  }
+  .npc img{ width:88%; height:auto; display:block; filter:drop-shadow(0 8px 24px rgba(212,172,82,.22)); }
+
+  /* Boîte de dialogue façon RPG premium */
+  .dialog{
+    position:relative;
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:18px 18px 16px 18px;
+    box-shadow:
+      0 0 44px rgba(0,0,0,.55),
+      inset 0 0 .5px rgba(255,255,255,.06);
+    overflow:hidden;
+  }
+  .dialog::before{
+    content:""; position:absolute; left:10%; right:10%; top:0; height:1px; opacity:.55;
+    background:linear-gradient(90deg, transparent, rgba(242,199,108,.40), transparent);
+  }
+  .dialog .head{
+    display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px;
+  }
+  .dialog .head .who{ font-weight:800; letter-spacing:.3px;
+    background:linear-gradient(90deg, var(--gold-2), var(--gold-1), var(--gold-3));
+    -webkit-background-clip:text; color:transparent;
+  }
+
+  /* Indicateur d’étapes (hello / infos / merci) */
+  .steps{ display:flex; align-items:center; gap:8px; }
+  .dot{
+    width:8px; height:8px; border-radius:50%;
+    background:rgba(242,199,108,.28); box-shadow:inset 0 0 0 1px var(--border);
+  }
+  .dot.active{ background:linear-gradient(180deg, var(--gold-2), var(--gold-3)); box-shadow:0 0 12px rgba(242,199,108,.35) }
+
+  .bubble{
+    font-size:15px; line-height:1.65; color:var(--text);
+    background:linear-gradient(180deg, rgba(212,172,82,.06), rgba(0,0,0,.02));
+    border:1px solid rgba(212,172,82,.18);
+    border-radius:14px;
+    padding:16px 14px;
+  }
+  .tips{ margin-top:10px; color:var(--muted); font-size:13px }
+
+  /* ============ Scènes (CSS-only toggle pour preview) ============ */
+  .screens{ position:relative; min-height:220px; }
+  .screen{
+    position:absolute; inset:0; display:grid; align-content:flex-start; gap:10px;
+    opacity:0; transform:translateY(8px) scale(.985); pointer-events:none;
+    transition:opacity .35s ease, transform .35s ease;
+  }
+  /* Radio “debug preview” */
+  .preview{
+    position:fixed; right:14px; top:74px; z-index:6; display:flex; gap:8px; align-items:center;
+    padding:6px 10px; border-radius:999px; font-size:12px; color:var(--muted);
+    background:linear-gradient(135deg, rgba(212,172,82,.10), rgba(0,0,0,.30));
+    border:1px solid var(--border); backdrop-filter:blur(8px);
+  }
+  .preview input{ appearance:none; width:10px; height:10px; border-radius:50%; border:1px solid var(--border); outline:none; cursor:pointer; }
+  .preview input:checked{ background:linear-gradient(180deg, var(--gold-2), var(--gold-3)); box-shadow:0 0 8px rgba(242,199,108,.45) }
+  .hide-mobile{ display:inline }
+  @media (max-width:720px){ .hide-mobile{ display:none } }
+
+  /* Mapping des radios → écrans visibles (sans JS) */
+  #step-hello:checked ~ main .screen.hello,
+  #step-infos:checked ~ main .screen.infos,
+  #step-merci:checked ~ main .screen.merci{
+    opacity:1; transform:none; pointer-events:auto;
+  }
+  /* État par défaut si JS pilote plus tard : on simule “hello” coché en CSS */
+  #step-hello:not(:checked):not(:indeterminate) ~ main .screen.hello{ opacity:1; transform:none; pointer-events:auto; }
+
+  footer{ text-align:center; margin-top:26px; color:var(--muted); font-size:13px }
+
+</style>
+</head>
+<body>
+
+  <!-- BACKGROUND -->
+  <div class="back" aria-hidden="true">
+    <div class="grid-ortho"></div>
+    <div class="grid-plane"></div>
+    <div class="halo"></div>
+    <div class="vignette"></div>
+  </div>
+
+  <!-- Petit toggle CSS pour prévisualiser les 3 états (à supprimer quand tu branches le JS) -->
+  <div class="preview" title="Prévisualisation sans JS">
+    <span class="hide-mobile">État :</span>
+    <label><input type="radio" name="step" id="step-hello" checked> Hello</label>
+    <label><input type="radio" name="step" id="step-infos"> Infos</label>
+    <label><input type="radio" name="step" id="step-merci"> Merci</label>
+  </div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="brand">
+      <div class="logo">∞</div>
+      <span>Infinie & gratuit</span>
+    </div>
+    <div class="badge">Grid RPG — Noir & Or</div>
+  </header>
+
+  <!-- STAGE -->
+  <main>
+    <div class="stage">
+      <!-- Portrait -->
+      <figure class="npc">
+        <!-- Remplace l’image selon l’état via JS plus tard -->
+        <img src="hello.png" alt="Shiby — Hello" id="npc-img">
+      </figure>
+
+      <!-- Boîte de dialogue -->
+      <section class="dialog">
+        <div class="head">
+          <div class="who">Shiby</div>
+          <div class="steps" aria-hidden="true">
+            <span class="dot active" id="dot-1"></span>
+            <span class="dot" id="dot-2"></span>
+            <span class="dot" id="dot-3"></span>
+          </div>
+        </div>
+
+        <div class="screens">
+          <!-- Écran 1 : HELLO -->
+          <div class="screen hello" id="screen-hello" aria-live="polite">
+            <div class="bubble">
+              Salut 👋 — bienvenue dans l’outil <strong>Infinie & gratuit</strong>.<br/>
+              Je suis <strong>Shiby</strong>. On va faire ça ensemble, simple et propre.
+            </div>
+            <div class="tips">Astuce : tout est 100% local. Tes fichiers ne quittent jamais ton appareil.</div>
+          </div>
+
+          <!-- Écran 2 : INFOS / EXPLICATIONS -->
+          <div class="screen infos" id="screen-infos">
+            <div class="bubble">
+              Voici comment ça marche :<br/>
+              1) <strong>Importe</strong> ton fichier dans le panneau.<br/>
+              2) <strong>Paramètre</strong> les options (sécurité, style, etc.).<br/>
+              3) <strong>Génère</strong> et <strong>exporte</strong> le résultat en un clic.<br/>
+              C’est tout. Je reste là si tu as besoin d’un coup de main.
+            </div>
+            <div class="tips">Conseil : privilégie des noms de fichiers courts et évite les caractères spéciaux.</div>
+          </div>
+
+          <!-- Écran 3 : MERCI -->
+          <div class="screen merci" id="screen-merci">
+            <div class="bubble">
+              <strong>Merci !</strong> ✨<br/>
+              Opération terminée. Si le rendu te plaît, partage l’outil autour de toi — ça nous aide beaucoup.
+            </div>
+            <div class="tips">Tu peux relancer une nouvelle tâche à tout moment. Shiby reste dans le coin 🖤</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <footer>© Infinie & gratuit — DA “Grid RPG Noir & Or”. Quadrillage fin en mouvement infini.</footer>
+  </main>
+
+<!--
+NOTES D’INTÉGRATION (aucun JS inclus) :
+- Remplace dynamiquement l’image #npc-img par hello.png / infos.png / merci.png selon l’état.
+- Active l’écran correspondant en ajoutant/retirant la classe .active sur les .dot, ou en jouant sur l’affichage des .screen.
+- Le petit module .preview sert uniquement à tester les vues sans JS (radios CSS).
+-->
+</body>
+</html>

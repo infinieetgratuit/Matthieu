@@ -1,0 +1,546 @@
+
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Infinie & gratuit — Éditeur de Code en Temps Réel</title>
+  <meta name="color-scheme" content="dark"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0B0B0D;--panel:#0d1120;--text:#E6ECF7;--muted:#A4ADBD;--border:rgba(95,123,255,0.18);
+      --accent1:#2FE3FF;--accent2:#1B4CFF;--ring:0 0 0 2px rgba(43,167,255,.35);
+      --surface:#0b0f1a;--surface-border:#1a2340;--success: #06D6A0;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%; margin:0; overflow:hidden;}
+    body{
+      font-family:Inter,system-ui,sans-serif; color:var(--text);
+      background:
+        radial-gradient(1200px 600px at 8% 12%, rgba(43,167,255,0.12), transparent 60%),
+        radial-gradient(1000px 800px at 82% 85%, rgba(27,76,255,0.10), transparent 55%),
+        var(--bg);
+    }
+    .app-container{display:flex; flex-direction:column; height:100vh; padding:16px;}
+
+    /* Header */
+    header{display:flex; align-items:center; justify-content:space-between; gap:16px; margin-bottom:16px; flex-shrink:0;}
+    .brand{display:flex; align-items:center; gap:12px; text-decoration:none;}
+    .pill{width:32px; height:32px; border-radius:9999px; display:grid; place-items:center;
+      background:radial-gradient(120% 120% at 35% 25%, var(--accent1), rgba(47,227,255,0.35) 45%, transparent 60%), radial-gradient(120% 120% at 65% 75%, var(--accent2), rgba(27,76,255,0.6) 40%, transparent 70%);
+      box-shadow:0 4px 18px rgba(43,167,255,0.25), inset 0 0 0 1px rgba(255,255,255,0.06);
+    }
+    .pill span{font-weight:800; color:#fff; font-size:16px; line-height:1}
+    .wordmark{font-weight:700; color:var(--text);}
+    .toolbar{display:flex; gap:10px; align-items:center;}
+    .btn{appearance:none; border:1px solid var(--surface-border); background:var(--surface); color:var(--text); padding:8px 12px; border-radius:10px; font-weight:600; cursor:pointer; transition:all .15s ease; white-space:nowrap;}
+    .btn:hover{box-shadow:var(--ring); transform:translateY(-1px);}
+    .btn:active{transform:translateY(1px); box-shadow:none;}
+    .btn.btn-success{color:#fff; border-color:var(--success); background:var(--success);}
+
+    /* Layout */
+    .main-grid{display:flex; flex-grow:1; min-height:0;}
+    .panel{position:relative; background:var(--panel); border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.3); display:flex; flex-direction:column; overflow:hidden;}
+    .editor-panel{width:55%;}
+    .preview-panel{width:45%;}
+    .panel-header{display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border); flex-shrink:0;}
+    .panel-title{margin:0; font-size:13px; color:var(--muted); font-weight:600;}
+    .panel-body{flex-grow:1; min-height:0; display:flex; flex-direction:column;}
+    
+    /* Splitter */
+    .splitter{width:16px; cursor:col-resize; flex-shrink:0; display:flex; align-items:center; justify-content:center;}
+    .splitter::before{content:''; width:2px; height:32px; background:var(--surface-border); border-radius:1px;}
+
+    /* Tabs (Editor only) */
+    .tabs{position:relative; display:flex; gap:4px;}
+    .tabs button{border:none; background:transparent; padding:8px 10px; border-radius:8px; cursor:pointer; color:var(--muted); font-weight:600; transition: color .2s ease;}
+    .tabs button.active{color:#fff;}
+    .tab-indicator{position:absolute; bottom:-11px; left:0; height:2px; background:linear-gradient(90deg, var(--accent1), var(--accent2)); border-radius:1px; transition:all .3s cubic-bezier(0.4, 0, 0.2, 1);}
+    
+    /* Editor */
+    #editor{width:100%; height:100%; border:none; background:transparent; color:var(--text); font-family:'Fira Code',monospace; font-size:14px; line-height:1.6; padding:16px; resize:none; outline:none;}
+    
+    /* Preview Area */
+    #status{font-size:12px; display:flex; align-items:center; gap:6px; transition: color .3s ease;}
+    #status.syncing{color:var(--muted);}
+    #status.synced{color:var(--success);}
+    
+    .preview-area{
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 20px;
+      padding: 24px 20px;
+      overflow-y: auto;
+    }
+
+    .device-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+    }
+
+    .desktop-bezel {
+      position: relative;
+      width: 90%;
+      max-width: 550px;
+      aspect-ratio: 16 / 9;
+      background: #18181c;
+      border: 8px solid #2a2a30;
+      border-bottom-width: 20px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+      overflow: hidden;
+    }
+    .desktop-bezel::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20%;
+      height: 4px;
+      background: #444;
+      border-radius: 4px;
+    }
+    #preview-frame-desktop{
+      width: 100%;
+      height: 100%;
+      border:none; 
+      background-color:#ffffff; 
+    }
+    
+    .phone-bezel{
+      width: 140px;
+      height: 240px;
+      padding: 0;
+      background: #18181c;
+      border: 2px solid #2a2a30;
+      border-radius: 20px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 2px 1px rgba(0,0,0,0.5);
+      overflow: hidden;
+    }
+    #preview-frame-mobile{
+      width: 100%;
+      height: 100%;
+      border:none; 
+      background-color:#ffffff; 
+      border-radius: 18px; /* Slightly increased to match inner curve */
+    }
+
+    .btn-fullscreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background-color: rgba(255,255,255,0.05);
+      border: 1px solid var(--surface-border);
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .btn-fullscreen:hover {
+      background-color: rgba(255,255,255,0.1);
+      color: var(--text);
+    }
+    .btn-fullscreen svg {
+      width: 14px;
+      height: 14px;
+    }
+    
+    #fullscreen-preview {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(11, 11, 13, 0.9);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+    }
+    #fullscreen-iframe {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    }
+    #fullscreen-iframe.desktop {
+      width: 100%;
+      height: 100%;
+    }
+    #fullscreen-iframe.mobile {
+      width: 390px;
+      height: 844px;
+      max-width: 100%;
+      max-height: 100%;
+    }
+    #btn-fullscreen-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(0,0,0,0.3);
+      color: #fff;
+      font-size: 24px;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform .2s ease;
+    }
+    #btn-fullscreen-close:hover {
+      transform: scale(1.1);
+    }
+
+    @media (max-width: 900px){
+      .main-grid{flex-direction:column;}
+      .editor-panel, .preview-panel{width:100% !important; height:50%;}
+      .splitter{height:16px; width:100%; cursor:row-resize;}
+      .splitter::before{width:32px; height:2px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header>
+      <a href="#" class="brand">
+        <div class="pill" aria-hidden="true"><span>∞</span></div>
+        <div class="wordmark">Éditeur Temps Réel</div>
+      </a>
+      <div class="toolbar">
+        <button class="btn" id="btn-copy">Copier</button>
+        <button class="btn" id="btn-export">Exporter</button>
+        <button class="btn" id="btn-example">Modèle</button>
+        <button class="btn" id="btn-clear">Nouveau</button>
+      </div>
+    </header>
+
+    <div class="main-grid">
+      <section class="panel editor-panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Code</h2>
+            <div class="tabs" id="editor-tabs">
+              <button data-lang="html" class="active">HTML</button>
+              <button data-lang="css">CSS</button>
+              <button data-lang="js">JS</button>
+              <div class="tab-indicator" id="editor-tab-indicator"></div>
+            </div>
+        </div>
+        <div class="panel-body">
+            <textarea id="editor" spellcheck="false" autocomplete="off" autocapitalize="off"></textarea>
+        </div>
+      </section>
+
+      <div class="splitter" id="splitter"></div>
+
+      <section class="panel preview-panel">
+        <div class="panel-header">
+            <h2 class="panel-title">Aperçu</h2>
+            <span id="status"></span>
+        </div>
+        <div class="panel-body preview-area">
+          <div class="device-container">
+            <div class="desktop-bezel">
+              <iframe id="preview-frame-desktop" title="Aperçu Ordinateur" sandbox="allow-scripts"></iframe>
+            </div>
+            <button class="btn-fullscreen" id="btn-fullscreen-desktop" aria-label="Plein écran ordinateur" title="Plein écran">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 2h-2v3h-3v2h5v-5zm-3-4V5h-2v2h3v3h2V5h-5z"/></svg>
+            </button>
+          </div>
+          <div class="device-container">
+            <div class="phone-bezel">
+              <iframe id="preview-frame-mobile" title="Aperçu Téléphone" sandbox="allow-scripts"></iframe>
+            </div>
+            <button class="btn-fullscreen" id="btn-fullscreen-mobile" aria-label="Plein écran mobile" title="Plein écran">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M7 14H5v5h5v-2H7v-3zm-2-4h2V7h3V5H5v5zm12 2h-2v3h-3v2h5v-5zm-3-4V5h-2v2h3v3h2V5h-5z"/></svg>
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="fullscreen-preview">
+    <iframe id="fullscreen-iframe" title="Aperçu Plein Écran" sandbox="allow-scripts"></iframe>
+    <button id="btn-fullscreen-close" aria-label="Fermer le plein écran">&times;</button>
+  </div>
+
+  <script>
+    // --- Selector Utilities ---
+    const $ = (selector) => document.querySelector(selector);
+    const $$ = (selector) => document.querySelectorAll(selector);
+
+    // --- DOM Elements ---
+    const editorEl = $('#editor');
+    const previewFrameDesktop = $('#preview-frame-desktop');
+    const previewFrameMobile = $('#preview-frame-mobile');
+    const editorTabs = $('#editor-tabs');
+    const editorTabIndicator = $('#editor-tab-indicator');
+    const statusEl = $('#status');
+    const btnFullscreenDesktop = $('#btn-fullscreen-desktop');
+    const btnFullscreenMobile = $('#btn-fullscreen-mobile');
+    const fullscreenPreview = $('#fullscreen-preview');
+    const fullscreenIframe = $('#fullscreen-iframe');
+    const btnFullscreenClose = $('#btn-fullscreen-close');
+    const splitter = $('#splitter');
+    const editorPanel = $('.editor-panel');
+    const previewPanel = $('.preview-panel');
+
+    // --- State ---
+    let state = {
+        activeLang: 'html',
+        code: {
+            html: '<h1>Bonjour le monde !</h1>\n\n<p>Ceci est un éditeur en temps réel.</p>',
+            css: 'body { \n  font-family: system-ui, -apple-system, BlinkMacSystemFont, \'Segoe UI\', Roboto, Oxygen, Ubuntu, Cantarell, \'Open Sans\', \'Helvetica Neue\', sans-serif;\n  text-align: center; \n  padding: 50px; \n  background-color: #f0f4f8;\n  color: #333;\n}',
+            js: 'console.log("Le JavaScript est chargé !");'
+        }
+    };
+
+    // --- Utils ---
+    const debounce = (func, delay) => {
+        let timeout;
+        return (...args) => {
+            clearTimeout(timeout);
+            timeout = window.setTimeout(() => func.apply(this, args), delay);
+        };
+    };
+
+    // --- Core Functions ---
+    const updateStatus = (status, text) => {
+        if (!statusEl) return;
+        statusEl.className = status;
+        statusEl.textContent = text;
+    };
+
+    const updatePreview = () => {
+        if (!previewFrameDesktop || !previewFrameMobile) return;
+        updateStatus('syncing', 'Synchronisation...');
+        const srcDoc = `
+            <!DOCTYPE html>
+            <html>
+                <head>
+                    <style>${state.code.css}</style>
+                </head>
+                <body>
+                    ${state.code.html}
+                    <script>${state.code.js}<\/script>
+                </body>
+            </html>
+        `;
+        setTimeout(() => {
+            previewFrameDesktop.srcdoc = srcDoc;
+            previewFrameMobile.srcdoc = srcDoc;
+            if (fullscreenIframe && fullscreenPreview && fullscreenPreview.style.display === 'flex') {
+                fullscreenIframe.srcdoc = srcDoc;
+            }
+            updateStatus('synced', 'Synchronisé');
+        }, 50);
+    };
+    const debouncedUpdatePreview = debounce(updatePreview, 300);
+
+    // --- Event Handlers ---
+    editorTabs?.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.tagName !== 'BUTTON' || !editorTabs || !editorTabIndicator || !editorEl) return;
+
+        const lang = target.dataset.lang;
+        if (!lang || lang === state.activeLang) return;
+
+        state.code[state.activeLang] = editorEl.value;
+        state.activeLang = lang;
+
+        editorTabs.querySelector('.active')?.classList.remove('active');
+        target.classList.add('active');
+
+        editorEl.value = state.code[lang];
+        editorEl.focus();
+
+        const targetRect = target.getBoundingClientRect();
+        const tabsRect = editorTabs.getBoundingClientRect();
+        editorTabIndicator.style.width = `${targetRect.width}px`;
+        editorTabIndicator.style.left = `${targetRect.left - tabsRect.left}px`;
+    });
+
+    editorEl?.addEventListener('input', () => {
+        state.code[state.activeLang] = editorEl.value;
+        debouncedUpdatePreview();
+    });
+
+    // Fullscreen Logic
+    const openFullscreen = (type) => {
+        if (!fullscreenIframe || !fullscreenPreview || !previewFrameDesktop) return;
+        fullscreenIframe.srcdoc = previewFrameDesktop.srcdoc;
+        fullscreenIframe.className = type;
+        fullscreenPreview.style.display = 'flex';
+    };
+    const closeFullscreen = () => {
+        if (!fullscreenPreview || !fullscreenIframe) return;
+        fullscreenPreview.style.display = 'none';
+        fullscreenIframe.srcdoc = '';
+    };
+
+    btnFullscreenDesktop?.addEventListener('click', () => openFullscreen('desktop'));
+    btnFullscreenMobile?.addEventListener('click', () => openFullscreen('mobile'));
+    btnFullscreenClose?.addEventListener('click', closeFullscreen);
+    fullscreenPreview?.addEventListener('click', (e) => {
+        if (e.target === fullscreenPreview) closeFullscreen();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && fullscreenPreview && fullscreenPreview.style.display === 'flex') {
+            closeFullscreen();
+        }
+    });
+
+    // Splitter Logic
+    if (splitter && editorPanel && previewPanel) {
+        let isDragging = false;
+
+        const onDragStart = (e) => {
+            isDragging = true;
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = window.innerWidth <= 900 ? 'row-resize' : 'col-resize';
+            e.preventDefault();
+        };
+
+        const onDragEnd = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            document.body.style.userSelect = 'auto';
+            document.body.style.cursor = 'default';
+        };
+
+        const onDragMove = (e) => {
+            if (!isDragging) return;
+
+            const container = $('.main-grid');
+            if (!container) return;
+
+            const containerRect = container.getBoundingClientRect();
+            const splitterSize = 16;
+
+            // Vertical layout (responsive)
+            if (window.innerWidth <= 900) {
+                let newEditorHeight = e.clientY - containerRect.top;
+
+                const minHeight = containerRect.height * 0.2;
+                const maxHeight = containerRect.height * 0.8;
+                if (newEditorHeight < minHeight) newEditorHeight = minHeight;
+                if (newEditorHeight > maxHeight) newEditorHeight = maxHeight;
+
+                const newPreviewHeight = containerRect.height - newEditorHeight - splitterSize;
+
+                editorPanel.style.height = `${newEditorHeight}px`;
+                previewPanel.style.height = `${newPreviewHeight}px`;
+                editorPanel.style.width = '';
+                previewPanel.style.width = '';
+            }
+            // Horizontal layout (desktop)
+            else {
+                let newEditorWidth = e.clientX - containerRect.left;
+
+                const minWidth = containerRect.width * 0.2;
+                const maxWidth = containerRect.width * 0.8;
+                if (newEditorWidth < minWidth) newEditorWidth = minWidth;
+                if (newEditorWidth > maxWidth) newEditorWidth = maxWidth;
+
+                const newPreviewWidth = containerRect.width - newEditorWidth - splitterSize;
+
+                editorPanel.style.width = `${newEditorWidth}px`;
+                previewPanel.style.width = `${newPreviewWidth}px`;
+                editorPanel.style.height = '';
+                previewPanel.style.height = '';
+            }
+        };
+
+        splitter.addEventListener('mousedown', onDragStart);
+        document.addEventListener('mouseup', onDragEnd);
+        document.addEventListener('mouseleave', onDragEnd);
+        document.addEventListener('mousemove', onDragMove);
+
+        // Reset styles on resize to let CSS media queries take over
+        new ResizeObserver(() => {
+            if (!isDragging) {
+                editorPanel.style.width = '';
+                editorPanel.style.height = '';
+                previewPanel.style.width = '';
+                previewPanel.style.height = '';
+            }
+        }).observe(document.body);
+    }
+
+
+    // Toolbar Logic
+    $('#btn-clear')?.addEventListener('click', () => {
+        if (confirm('Êtes-vous sûr de vouloir tout effacer ?')) {
+            state.code = { html: '', css: '', js: '' };
+            if (editorEl) editorEl.value = state.code[state.activeLang];
+            updatePreview();
+        }
+    });
+    $('#btn-example')?.addEventListener('click', () => {
+        const example = {
+            html: '<h1>Exemple de titre</h1>\n<p>Cliquez sur le bouton !</p>\n<button onclick="saluer()">Saluer</button>',
+            css: 'body { font-family: sans-serif; color: #333; background-color: #f4f4f4; text-align: center; padding: 2rem; }\nbutton { padding: 10px 15px; border: none; background-color: #007BFF; color: white; border-radius: 5px; cursor: pointer; }',
+            js: 'function saluer() {\n  alert("Bonjour depuis JavaScript !");\n}'
+        };
+        if (confirm('Charger un modèle écrasera votre code. Continuer ?')) {
+            state.code = example;
+            if (editorEl) editorEl.value = state.code[state.activeLang];
+            updatePreview();
+        }
+    });
+    $('#btn-copy')?.addEventListener('click', () => {
+        const fullCode = `<style>\n${state.code.css}\n</style>\n\n${state.code.html}\n\n<script>\n${state.code.js}\n<\/script>`;
+        navigator.clipboard.writeText(fullCode).then(() => {
+            alert('Code HTML complet copié dans le presse-papiers !');
+        }, () => {
+            alert('La copie a échoué.');
+        });
+    });
+    $('#btn-export')?.addEventListener('click', () => {
+        const fullCode = `<!DOCTYPE html>\n<html>\n<head>\n  <title>Export</title>\n  <style>${state.code.css}</style>\n</head>\n<body>\n${state.code.html}\n<script>${state.code.js}<\/script>\n</body>\n</html>`;
+        const blob = new Blob([fullCode], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+
+    // --- Initialization ---
+    const init = () => {
+        if (!editorEl || !editorTabs || !editorTabIndicator) return;
+
+        editorEl.value = state.code[state.activeLang];
+        updatePreview();
+
+        const activeTab = editorTabs.querySelector('.active');
+        if (activeTab) {
+            const targetRect = activeTab.getBoundingClientRect();
+            const tabsRect = editorTabs.getBoundingClientRect();
+            editorTabIndicator.style.width = `${targetRect.width}px`;
+            editorTabIndicator.style.left = `${targetRect.left - tabsRect.left}px`;
+        }
+    };
+
+    init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Diagramme Or & Noir (Single File)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      :root{
+        --bg:#0A0A0B; --text:#F2F3F6; --muted:#A5A9B3;
+        --gold-1:#D8B45A; --gold-2:#F2C76C; --gold-3:#BF8E2C;
+        --panel:#101218CC; --border:rgba(212,172,82,.22);
+        --grid:#F2C76C22; --grid-strong:#F2C76C35;
+        --radius:14px; --ring:0 0 0 2px rgba(212,172,82,.35);
+        --speed-grid:60s; --speed-plane:26s;
+      }
+      *{box-sizing:border-box}
+      html,body{height:100%}
+      body{
+        margin:0; color:var(--text); font-family:Inter,-apple-system,Segoe UI,Roboto,Helvetica,Arial;
+        background:var(--bg); overflow-x:hidden; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      }
+      :focus-visible{outline:none; box-shadow:var(--ring)}
+      ::selection{background:rgba(242,199,108,.25)}
+
+      .back{position:fixed; inset:0; pointer-events:none; z-index:-3}
+      .grid-ortho{
+        position:absolute; inset:-20vmax;
+        background:
+          linear-gradient(var(--grid) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+        background-size:42px 42px,42px 42px; filter:saturate(120%) contrast(105%);
+        animation:drift var(--speed-grid) linear infinite;
+      }
+      @keyframes drift{0%{background-position:0 0,0 0}100%{background-position:420px 280px,420px 280px}}
+      .grid-plane{
+        position:absolute; left:-10vw; right:-10vw; bottom:-6vh; height:60vh;
+        transform:perspective(900px) rotateX(68deg); transform-origin:50% 100%;
+        background:
+          linear-gradient(var(--grid-strong) 1px, transparent 1px),
+          linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+        background-size:60px 60px,60px 60px;
+        mask:linear-gradient(to top,#000 30%,rgba(0,0,0,.85) 55%,rgba(0,0,0,0) 100%);
+        animation:planeMove var(--speed-plane) linear infinite;
+      }
+      @keyframes planeMove{0%{background-position:0 0,0 0}100%{background-position:0 -600px,0 -600px}}
+      .halo{position:absolute; inset:0; background:
+          radial-gradient(55% 40% at 50% 38%, rgba(242,199,108,.10), transparent 60%),
+          radial-gradient(80% 70% at 50% 100%, rgba(191,142,44,.18), transparent 70%); mix-blend-mode:screen}
+      .vignette{position:absolute; inset:0; background:radial-gradient(120% 120% at 50% 20%, transparent 0 55%, rgba(0,0,0,.52) 80% 100%)}
+      @media (prefers-reduced-motion:reduce){.grid-ortho,.grid-plane{animation:none}}
+      input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+      input[type="color"]::-webkit-color-swatch { border: none; border-radius: 50%; }
+      input[type="number"]::-webkit-inner-spin-button, 
+      input[type="number"]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+    </style>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="importmap">
+    {
+      "imports": {
+        "recharts": "https://aistudiocdn.com/recharts@^3.3.0",
+        "react": "https://aistudiocdn.com/react@^19.2.0",
+        "react-dom/client": "https://aistudiocdn.com/react-dom@^19.2.0/client",
+        "html-to-image": "https://aistudiocdn.com/html-to-image@^1.11.13"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel" data-type="module">
+        import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+        import ReactDOM from 'react-dom/client';
+        import {
+          BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+        } from 'recharts';
+        import { toPng } from 'html-to-image';
+
+        // From components/icons.tsx
+        const PlusIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        );
+
+        const TrashIcon = ({ className }) => (
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            <line x1="10" y1="11" x2="10" y2="17"></line>
+            <line x1="14" y1="11" x2="14" y2="17"></line>
+          </svg>
+        );
+        
+        // From components/Background.tsx
+        const Background = () => (
+          <div className="back" aria-hidden="true">
+            <div className="grid-ortho"></div>
+            <div className="grid-plane"></div>
+            <div className="halo"></div>
+            <div className="vignette"></div>
+          </div>
+        );
+
+        // From components/Header.tsx
+        const Header = () => (
+          <header
+            className="sticky top-0 z-10 flex items-center justify-between gap-2.5 px-4 py-2.5 border-b"
+            style={{
+              borderColor: 'var(--border)',
+              background: 'linear-gradient(180deg, rgba(0,0,0,.55), rgba(0,0,0,.18))',
+              backdropFilter: 'blur(10px) saturate(160%)'
+            }}
+          >
+            <div className="flex items-center gap-2 font-extrabold">
+              <div 
+                className="grid place-items-center w-7 h-7 rounded-full text-black font-black"
+                style={{
+                    background:'radial-gradient(circle at 30% 30%, var(--gold-2), var(--gold-3))',
+                    boxShadow:'0 0 14px rgba(212,172,82,.34), inset 0 0 6px rgba(255,255,255,.18)'
+                }}
+              >
+                ∞
+              </div>
+              <span>Infinie et gratuit</span>
+            </div>
+            <div 
+              className="border rounded-full px-2.5 py-1 text-xs"
+              style={{ borderColor: 'var(--border)', color: '#CDBB8A', background: 'rgba(16,18,24,.6)'}}
+            >
+              Simple & Logique
+            </div>
+          </header>
+        );
+
+        // From components/ControlsPanel.tsx
+        const Card = ({ children, className }) => (
+            <div className={`p-4 relative overflow-hidden ${className}`}
+                style={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 0 36px rgba(0,0,0,.55), inset 0 0 .5px rgba(255,255,255,.06)'
+                }}>
+                {children}
+            </div>
+        );
+
+        const SectionTitle = ({ children }) => (
+            <h3 className="text-base font-bold mb-3" style={{ color: 'var(--gold-2)' }}>{children}</h3>
+        );
+
+        const Input = (props) => (
+            <input {...props} className={`w-full bg-[#0b0d12] border p-2 rounded-lg text-sm transition focus:border-[var(--gold-1)] focus:shadow-[var(--ring)] ${props.className}`} style={{ borderColor: 'var(--border)' }} />
+        );
+
+        const Button = (props) => (
+            <button {...props} className={`bg-[#0b0d12] border border-[var(--border)] text-white px-3 py-2 rounded-lg text-sm font-bold transition hover:shadow-[var(--ring)] hover:border-[var(--gold-1)] disabled:opacity-50 disabled:cursor-not-allowed ${props.className}`} />
+        );
+
+        const InputRow = ({ value, onChange, onDelete, isDeletable, placeholder }) => (
+          <div className="flex items-center gap-2">
+            <Input 
+              type="text" 
+              value={value} 
+              onChange={(e) => onChange(e.target.value)} 
+              placeholder={placeholder}
+              className="text-sm p-2 flex-grow"
+            />
+            <button 
+              onClick={onDelete} 
+              disabled={!isDeletable} 
+              className="p-1 text-[var(--muted)] hover:text-[var(--gold-1)] disabled:opacity-30 disabled:hover:text-[var(--muted)] transition-colors"
+              aria-label="Supprimer"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </button>
+          </div>
+        );
+
+        const ControlsPanel = ({
+          title, setTitle, chartType, setChartType, labels, series,
+          onAddLabel, onUpdateLabel, onDeleteLabel, onAddSeries, onUpdateSeries, onUpdateSeriesData, onDeleteSeries
+        }) => {
+          return (
+            <div className="flex flex-col gap-6">
+              <Card>
+                <SectionTitle>Paramètres Généraux</SectionTitle>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs text-[var(--muted)] block mb-1">Titre du diagramme</label>
+                    <Input type="text" value={title} onChange={(e) => setTitle(e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="text-xs text-[var(--muted)] block mb-1">Type de diagramme</label>
+                    <select
+                      value={chartType}
+                      onChange={(e) => setChartType(e.target.value)}
+                      className="w-full bg-[#0b0d12] border p-2 rounded-lg text-sm transition focus:border-[var(--gold-1)] focus:shadow-[var(--ring)]"
+                      style={{ borderColor: 'var(--border)' }}
+                    >
+                      <option value="bar">Barres</option>
+                      <option value="line">Lignes</option>
+                      <option value="pie">Circulaire</option>
+                    </select>
+                    {chartType === 'pie' && series.length > 1 && <p className="text-xs text-[var(--muted)] mt-1">Un diagramme circulaire ne peut afficher qu'une seule série.</p>}
+                  </div>
+                </div>
+              </Card>
+
+              <Card>
+                <SectionTitle>Catégories (Abscisse)</SectionTitle>
+                <div className="flex flex-col gap-2">
+                    {labels.map((label, index) => (
+                        <InputRow
+                            key={index}
+                            value={label}
+                            onChange={(value) => onUpdateLabel(index, value)}
+                            onDelete={() => onDeleteLabel(index)}
+                            isDeletable={labels.length > 1}
+                            placeholder={`Catégorie ${index + 1}`}
+                        />
+                    ))}
+                </div>
+                <Button onClick={onAddLabel} className="w-full mt-4 flex items-center justify-center gap-2">
+                    <PlusIcon className="w-4 h-4"/> Ajouter une catégorie
+                </Button>
+              </Card>
+              
+              <SectionTitle>Séries de données (Ordonnée)</SectionTitle>
+
+              {chartType !== 'pie' ? series.map((s, seriesIndex) => (
+                <Card key={s.id}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <input 
+                            type="color" 
+                            value={s.color} 
+                            onChange={(e) => onUpdateSeries(s.id, 'color', e.target.value)} 
+                            className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-none p-0 appearance-none"
+                            aria-label="Choisir la couleur de la série"
+                        />
+                        <div className="flex-grow">
+                          <label className="text-xs text-[var(--muted)]">Nom de la série {seriesIndex + 1}</label>
+                          <Input 
+                              type="text" 
+                              value={s.name} 
+                              onChange={(e) => onUpdateSeries(s.id, 'name', e.target.value)} 
+                              className="text-sm p-1"
+                          />
+                        </div>
+                        <button 
+                            onClick={() => onDeleteSeries(s.id)} 
+                            disabled={series.length <= 1} 
+                            className="p-1 text-[var(--muted)] hover:text-[var(--gold-1)] disabled:opacity-30 disabled:hover:text-[var(--muted)] self-end mb-1"
+                            aria-label="Supprimer la série"
+                        >
+                            <TrashIcon className="w-5 h-5" />
+                        </button>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-4">
+                        {labels.map((label, labelIndex) => (
+                            <div key={labelIndex}>
+                                <label className="text-xs text-[var(--muted)] block mb-1 truncate" title={label}>{label}</label>
+                                <Input
+                                    type="number"
+                                    value={s.data[labelIndex] || 0}
+                                    onChange={(e) => onUpdateSeriesData(s.id, labelIndex, parseFloat(e.target.value) || 0)}
+                                    className="text-sm p-2"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+              )) : (
+                <Card>
+                     <div className="flex items-center gap-3 mb-4">
+                        <input 
+                            type="color" 
+                            value={series[0]?.color || '#D8B45A'} 
+                            onChange={(e) => series[0] && onUpdateSeries(series[0].id, 'color', e.target.value)} 
+                            className="w-8 h-8 rounded-full cursor-pointer bg-transparent border-none p-0 appearance-none"
+                            aria-label="Choisir la couleur de la série"
+                        />
+                        <div className="flex-grow">
+                          <label className="text-xs text-[var(--muted)]">Nom de la série</label>
+                          <Input 
+                              type="text" 
+                              value={series[0]?.name || ''} 
+                              onChange={(e) => series[0] && onUpdateSeries(series[0].id, 'name', e.target.value)} 
+                              className="text-sm p-1"
+                          />
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-3 gap-y-4">
+                        {labels.map((label, labelIndex) => (
+                            <div key={labelIndex}>
+                                <label className="text-xs text-[var(--muted)] block mb-1 truncate" title={label}>{label}</label>
+                                <Input
+                                    type="number"
+                                    value={series[0]?.data[labelIndex] || 0}
+                                    onChange={(e) => series[0] && onUpdateSeriesData(series[0].id, labelIndex, parseFloat(e.target.value) || 0)}
+                                    className="text-sm p-2"
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </Card>
+              )}
+
+              {chartType !== 'pie' && (
+                <Button onClick={onAddSeries} className="w-full flex items-center justify-center gap-2">
+                    <PlusIcon className="w-4 h-4"/> Ajouter une série
+                </Button>
+              )}
+
+            </div>
+          );
+        };
+
+        // From components/ChartPreview.tsx
+        const PIE_COLORS = ['#D8B45A', '#F2C76C', '#BF8E2C', '#A5A9B3', '#8e887a', '#6b665c'];
+
+        const ChartPreview = ({ title, chartType, labels, series }) => {
+          const chartRef = useRef(null);
+          const [isExporting, setIsExporting] = useState(false);
+
+          const chartData = useMemo(() => {
+            if (chartType === 'pie') {
+              if (!series.length) return [];
+              return labels.map((label, index) => ({
+                name: label,
+                value: series[0].data[index] || 0,
+              }));
+            }
+
+            return labels.map((label, index) => {
+              const dataPoint = { name: label };
+              series.forEach(s => {
+                dataPoint[s.name] = s.data[index] || 0;
+              });
+              return dataPoint;
+            });
+          }, [labels, series, chartType]);
+          
+          const pieLegendPayload = useMemo(() => {
+            if (chartType !== 'pie' || !chartData.length) return undefined;
+            return chartData.map((entry, index) => ({
+                value: entry.name,
+                type: 'square',
+                id: entry.name,
+                color: PIE_COLORS[index % PIE_COLORS.length],
+            }));
+          }, [chartType, chartData]);
+
+          const handleExport = async () => {
+            if (!chartRef.current) return;
+            setIsExporting(true);
+            try {
+                const dataUrl = await toPng(chartRef.current, { 
+                    backgroundColor: 'transparent', 
+                    pixelRatio: 2, 
+                    style: { fontFamily: 'Inter, sans-serif' }
+                });
+                const link = document.createElement('a');
+                link.download = `${title.replace(/\s+/g, '_').toLowerCase() || 'diagramme'}.png`;
+                link.href = dataUrl;
+                link.click();
+            } catch (error) {
+                console.error('Erreur lors de l\'exportation du diagramme :', error);
+            } finally {
+                setIsExporting(false);
+            }
+          };
+          
+          const CustomTooltip = ({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              return (
+                <div className="p-2 text-sm rounded-lg" style={{ background: 'var(--panel)', border: '1px solid var(--border)' }}>
+                  <p className="font-bold text-[var(--gold-1)]">{label || payload[0].name}</p>
+                  {payload.map((pld, index) => (
+                    <div key={index} style={{ color: pld.color || pld.payload.fill }}>{`${pld.name} : ${pld.value}`}</div>
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          };
+
+          const renderChart = () => {
+            if (!series.length || !labels.length) {
+                return <div className="flex items-center justify-center h-full text-[var(--muted)]">Ajoutez des données pour afficher le diagramme.</div>;
+            }
+            switch (chartType) {
+              case 'bar':
+                return (
+                  <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--muted)' }} tickLine={{ stroke: 'var(--muted)' }} />
+                    <YAxis tick={{ fill: 'var(--muted)' }} tickLine={{ stroke: 'var(--muted)' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(216, 180, 90, 0.1)' }} />
+                    <Legend wrapperStyle={{color: 'var(--text)', bottom: 0}} />
+                    {series.map(s => (
+                      <Bar key={s.id} dataKey={s.name} fill={s.color} />
+                    ))}
+                  </BarChart>
+                );
+              case 'line':
+                return (
+                  <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                    <XAxis dataKey="name" tick={{ fill: 'var(--muted)' }} tickLine={{ stroke: 'var(--muted)' }} />
+                    <YAxis tick={{ fill: 'var(--muted)' }} tickLine={{ stroke: 'var(--muted)' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'var(--gold-1)', strokeWidth: 1 }}/>
+                    <Legend wrapperStyle={{color: 'var(--text)', bottom: 0}} />
+                    {series.map(s => (
+                      <Line key={s.id} type="monotone" dataKey={s.name} stroke={s.color} strokeWidth={2} activeDot={{ r: 8, fill: s.color, stroke: 'var(--bg)', strokeWidth: 2 }} />
+                    ))}
+                  </LineChart>
+                );
+              case 'pie':
+                return (
+                  <PieChart>
+                    <Pie data={chartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius="70%" labelLine={false} label={({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+                         const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+                         const x = cx + (radius+20) * Math.cos(-midAngle * Math.PI / 180);
+                         const y = cy + (radius+20) * Math.sin(-midAngle * Math.PI / 180);
+                         return ( <text x={x} y={y} fill="var(--text)" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize="12">
+                             {`${(percent * 100).toFixed(0)}%`}
+                         </text>);
+                     }}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]}/>
+                      ))}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend payload={pieLegendPayload} wrapperStyle={{color: 'var(--text)', bottom: 0}} />
+                  </PieChart>
+                );
+              default:
+                return null;
+            }
+          };
+
+          return (
+            <div 
+                className="p-4 flex flex-col h-full sticky top-[80px]"
+                style={{
+                    background: 'var(--panel)',
+                    border: '1px solid var(--border)',
+                    borderRadius: 'var(--radius)',
+                    boxShadow: '0 0 36px rgba(0,0,0,.55), inset 0 0 .5px rgba(255,255,255,.06)'
+                }}
+            >
+                <div className="flex justify-between items-center mb-4">
+                    <h2 className="font-bold text-lg" style={{ color: 'var(--gold-1)' }}>Aperçu en direct</h2>
+                    <button 
+                        onClick={handleExport}
+                        disabled={isExporting}
+                        className="bg-gradient-to-r from-[var(--gold-2)] to-[var(--gold-3)] text-black px-4 py-2 rounded-lg text-sm font-bold transition hover:shadow-[var(--ring)] disabled:opacity-50"
+                    >
+                        {isExporting ? 'Exportation...' : 'Exporter en PNG'}
+                    </button>
+                </div>
+                <div className="flex-grow w-full h-[400px] lg:h-auto" ref={chartRef} style={{ background: 'transparent' }}>
+                     <h3 className="text-xl font-bold text-center mb-4" style={{color: 'var(--text)'}}>{title}</h3>
+                     <ResponsiveContainer width="100%" height="90%">
+                        {renderChart()}
+                     </ResponsiveContainer>
+                </div>
+            </div>
+          );
+        };
+
+        // From App.tsx
+        const CHART_COLORS = ['#D8B45A', '#F2C76C', '#BF8E2C', '#A5A9B3', '#F2F3F6', '#8884d8'];
+
+        const App = () => {
+          const [title, setTitle] = useState('Ventes trimestrielles');
+          const [chartType, setChartType] = useState('bar');
+          const [labels, setLabels] = useState(['Trimestre 1', 'Trimestre 2', 'Trimestre 3', 'Trimestre 4']);
+          const [series, setSeries] = useState([
+            { id: 's1', name: 'Produit A', data: [4000, 3000, 2000, 2780], color: CHART_COLORS[0] },
+            { id: 's2', name: 'Produit B', data: [2400, 1398, 9800, 3908], color: CHART_COLORS[1] },
+          ]);
+
+          useEffect(() => {
+            if (chartType === 'pie' && series.length > 1) {
+              setSeries(s => [s[0]]);
+            }
+          }, [chartType, series.length]);
+
+          const handleAddLabel = useCallback(() => {
+            setLabels(prev => [...prev, `Nouvelle catégorie ${prev.length + 1}`]);
+            setSeries(prev => prev.map(s => ({ ...s, data: [...s.data, 0] })));
+          }, []);
+
+          const handleUpdateLabel = useCallback((index, value) => {
+            setLabels(prev => prev.map((l, i) => (i === index ? value : l)));
+          }, []);
+
+          const handleDeleteLabel = useCallback((index) => {
+            if (labels.length <= 1) return;
+            setLabels(prev => prev.filter((_, i) => i !== index));
+            setSeries(prev => prev.map(s => ({ ...s, data: s.data.filter((_, i) => i !== index) })));
+          }, [labels.length]);
+
+          const handleAddSeries = useCallback(() => {
+            if (chartType === 'pie') return;
+            setSeries(prev => [
+              ...prev,
+              {
+                id: `s${Date.now()}`,
+                name: `Nouvelle série ${prev.length + 1}`,
+                data: Array(labels.length).fill(0),
+                color: CHART_COLORS[prev.length % CHART_COLORS.length],
+              },
+            ]);
+          }, [labels.length, chartType]);
+
+          const handleUpdateSeries = useCallback((seriesId, key, value) => {
+            setSeries(prev => prev.map(s => (s.id === seriesId ? { ...s, [key]: value } : s)));
+          }, []);
+          
+          const handleUpdateSeriesData = useCallback((seriesId, dataIndex, value) => {
+            setSeries(prev => prev.map(s => {
+              if (s.id === seriesId) {
+                const newData = [...s.data];
+                newData[dataIndex] = value;
+                return { ...s, data: newData };
+              }
+              return s;
+            }));
+          }, []);
+
+          const handleDeleteSeries = useCallback((seriesId) => {
+            if (series.length <= 1) return;
+            setSeries(prev => prev.filter(s => s.id !== seriesId));
+          }, [series.length]);
+
+          return (
+            <div className="min-h-screen">
+              <Background />
+              <Header />
+              <main className="p-4 md:p-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
+                  <ControlsPanel
+                    title={title}
+                    setTitle={setTitle}
+                    chartType={chartType}
+                    setChartType={setChartType}
+                    labels={labels}
+                    series={series}
+                    onAddLabel={handleAddLabel}
+                    onUpdateLabel={handleUpdateLabel}
+                    onDeleteLabel={handleDeleteLabel}
+                    onAddSeries={handleAddSeries}
+                    onUpdateSeries={handleUpdateSeries}
+                    onUpdateSeriesData={handleUpdateSeriesData}
+                    onDeleteSeries={handleDeleteSeries}
+                  />
+                  <ChartPreview
+                    title={title}
+                    chartType={chartType}
+                    labels={labels}
+                    series={series}
+                  />
+                </div>
+              </main>
+            </div>
+          );
+        };
+
+        // From index.tsx
+        const rootElement = document.getElementById('root');
+        if (!rootElement) {
+          throw new Error("Could not find root element to mount to");
+        }
+
+        const root = ReactDOM.createRoot(rootElement);
+        root.render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        );
+    </script>
+</body>
+</html>
